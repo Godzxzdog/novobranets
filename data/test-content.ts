@@ -12,8 +12,6 @@ export const TEST_CARDS: Card[] = [
     phase: [1],
     once: true,
     text: 'Повістка в поштовій скриньці. Папір щільний, пахне свіжою фарбою. Мама каже: «Може, помилка». Ти вже знаєш, що не помилка.',
-    photo: 'cemetery_lychakiv',
-    photoCaption: 'Повістка в поштовій скриньці',
     options: [
       {
         id: 'hide',
@@ -82,8 +80,6 @@ export const TEST_CARDS: Card[] = [
     kind: 'routine',
     phase: [1],
     text: 'Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.',
-    photo: 'training_47a',
-    photoCaption: 'Збираєш сумку. Земля в частині — як камінь.',
     options: [
       { id: 'take', text: 'Взяти все й не сперечатися', effects: { stats: { supplies: 2, bonds: 1, energy: -1 } } },
       {
@@ -108,8 +104,6 @@ export const TEST_CARDS: Card[] = [
     once: true,
     character: 'Сусід дядько Гриша',
     text: 'Дядько Гриша з третього поверху виходить на балкон і каже вниз те, що казав усім: «Я в Афгані був. Нічого не бійся, головне — не висовуйся».',
-    photo: 'training_cqb',
-    photoCaption: 'Автобус, який іде не туди, куди ти думав',
     options: [
       { id: 'listen', text: 'Слухати й кивати', effects: { stats: { understanding: 1, energy: 1 } } },
       {
@@ -161,8 +155,6 @@ export const TEST_CARDS: Card[] = [
     phase: [1],
     once: true,
     text: 'Вечір перед від\'їздом. Мама вийшла на кухню й там стоїть. Ти чуєш, як вода з крана тече надто довго.',
-    photo: 'trench_100',
-    photoCaption: 'Останній вечір удома',
     options: [
       { id: 'go', text: 'Піти на кухню й обійняти', effects: { stats: { bonds: 3, energy: -1 } } },
       {
@@ -257,8 +249,6 @@ export const TEST_CARDS: Card[] = [
     phase: [2],
     once: true,
     text: 'Автобус із запітнілими вікнами везе вас на схід. Хтось намагається заснути, хтось — доїсти домашнє. Водій мовчить усі шість годин.',
-    photo: 'training_47b',
-    photoCaption: 'Дорога в частину',
     options: [
       {
         id: 'watch',
@@ -410,8 +400,6 @@ export const TEST_CARDS: Card[] = [
     phase: [2],
     once: true,
     text: '«Дідівщина» в новому вигляді: новачкам — прибирати, старшим — нічого. Один із сержантів називає це «традиціями».',
-    photo: 'training_cqb',
-    photoCaption: 'Зимове навчання: маркери замість зброї',
     options: [
       {
         id: 'obey',
@@ -464,8 +452,6 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [2],
     text: 'Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.',
-    photo: 'training_47a',
-    photoCaption: 'Окоп на навчаннях — земля як камінь',
     options: [
       { id: 'dig', text: 'Копати до світанку', effects: { stats: { energy: -3, health: -1 }, skills: { survival: 1 } } },
       {
@@ -487,8 +473,6 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [2],
     text: 'Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.',
-    photo: 'training_47b',
-    photoCaption: 'Боєць на дні окопу, другий за ним',
     options: [
       { id: 'sing', text: 'Заспівати', effects: { stats: { trust: 2, bonds: -1, energy: -1 } } },
       {
@@ -583,8 +567,6 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [3],
     text: 'Твій окоп заливає вода. Сусідній — теж. Ніхто не пропонує допомогти, але всі дивляться.',
-    photo: 'trench_avdiivka',
-    photoCaption: 'Позиція в лісі: окоп, гілля, сині стрічки',
     options: [
       {
         id: 'share_spot',
@@ -638,8 +620,6 @@ export const TEST_CARDS: Card[] = [
     phase: [3, 4],
     once: true,
     text: 'Уранці хлопця з сусіднього відділення немає. Ніхто не знає, що казати. Хтось каже: «Я його бачив увечері». Ще хтось: «Я теж».',
-    photo: 'cemetery_lychakiv',
-    photoCaption: 'Військова ділянка Личаківського цвинтаря',
     options: [
       {
         id: 'say',
@@ -981,8 +961,6 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [4, 5],
     text: 'Мороз крізь спальник. Спальник — не твій, тобі віддав сусід. Уночі він кашляє.',
-    photo: 'trench_avdiivka',
-    photoCaption: 'Холод у лісі',
     options: [
       {
         id: 'return',
@@ -1346,8 +1324,6 @@ export const TEST_CARDS: Card[] = [
     phase: [4, 5],
     once: true,
     text: 'Наказ тримати позицію. Ніхто не пояснює навіщо. Рація шипить.',
-    photo: 'trench_100',
-    photoCaption: 'Окоп 100-ї бригади',
     options: [
       {
         id: 'hold',
@@ -2002,8 +1978,6 @@ export const TEST_ENDINGS: Ending[] = [
       'Його винесли з позиції, яку ніхто не мав тримати. Той, хто вижив, не знав його прізвища, але запам’ятав його спальник.',
     defaultEpitaph: 'Віддав спальник. Більше не змерз.',
     weight: 3,
-    photo: 'cemetery_lychakiv',
-    photoCaption: 'Військова ділянка Личаківського цвинтаря',
     // Не лише великі зв'язки: ще й передчасний день, щоб не перекривати пізні фінали.
     requires: { statAtLeast: { bonds: 8 }, dayAtMost: 38 },
   },

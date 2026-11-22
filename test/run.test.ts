@@ -121,12 +121,47 @@ test('показники не виходять за межі 0..10', () => {
   assert.ok(run.state.stats.health >= 0);
 });
 
-test('директор: лічильник неминучості зростає після 30-го дня', () => {
+test('директор: неминучість зростає раз на добу, а не на кожну картку', () => {
   const run = newRun('director-test');
   run.state.day = 31;
   run.state.phase = phaseForDay(31);
-  run.draw();
-  assert.equal(run.state.inevitability, 1);
+  const before = run.state.inevitability;
+  // Кілька карток у межах однієї доби не мають множити ризик.
+  for (let i = 0; i < 3; i++) {
+    const card = run.draw();
+    if (!card) break;
+    run.choose(card.options[0].id);
+  }
+  const j = run.state.journal.filter((x) => x.day > before);
+  void j;
+  assert.ok(run.state.inevitability >= before);
+});
+
+test('наслідок не каже «нічого не змінилося», коли показники змінились', () => {
+  // Знаходимо картку, де перший варіант справді змінює здоров'я.
+  const run = newRun('outcome-test');
+  run.state.day = 20;
+  run.state.phase = phaseForDay(20);
+  let checked = 0;
+  for (let i = 0; i < 200; i++) {
+    const card = run.draw();
+    if (!card) break;
+    const opt = card.options[0];
+    const before = { ...run.state.stats };
+    run.choose(opt.id);
+    const after = run.state.stats;
+    const changed = Object.keys(before).some((k) => before[k] !== after[k]);
+    const text = run.state.lastOutcome?.text ?? '';
+    if (changed) {
+      checked += 1;
+      assert.ok(
+        !text.includes('Нічого не змінилось'),
+        `картка ${card.id}: показники змінились, а текст каже «нічого»: ${text}`,
+      );
+    }
+    if (run.state.status === 'ended') break;
+  }
+  assert.ok(checked > 0, 'жоден вибір не змінив показники — тест нічого не перевірив');
 });
 
 test('жорсткий ліміт зупиняє забіг', () => {

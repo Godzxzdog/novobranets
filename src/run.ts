@@ -113,16 +113,7 @@ export class Run {
       return null;
     }
 
-    // Лічильник неминучості.
-    if (s.day > this.director.inevitabilityStartsDay) {
-      s.inevitability += 1;
-    }
-    const fatalChance = this.fatalChance();
-    if (s.day > this.director.safeUntilDay && this.rng.chance(fatalChance)) {
-      this.endWith('accident');
-      return null;
-    }
-
+    // Доля кидає кубик раз на добу — в advanceTime, не на кожну картку.
     const pool = this.config.content.cards.filter((c) => this.isEligible(c));
     if (pool.length === 0) {
       this.endWith('exhausted');
@@ -145,6 +136,7 @@ export class Run {
     if (!option) return false;
     if (!meetsCondition(option.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
 
+    const statsBefore = { ...s.stats };
     const applied = applyEffect(option.effects, s.stats, s.skills, s.flags, this.statRange);
     s.stats = applied.stats;
     s.skills = applied.skills;
@@ -169,7 +161,8 @@ export class Run {
     // Сцена-наслідок: конкретний текст «що з цього вийшло», а не переказ вибору.
     s.lastOutcome = {
       ...(option.outcome ?? {}),
-      text: option.outcome?.text ?? describeOutcome(option, applied.stats, s.stats, option.text),
+      text:
+        option.outcome?.text ?? describeOutcome(statsBefore, s.stats),
       optionId: option.id,
       cardId: card.id,
     } as RunState['lastOutcome'];
@@ -193,22 +186,37 @@ export class Run {
 
   private advanceTime(): void {
     const s = this.state;
-    const perDayThisDay = s.day % Math.max(1, this.cardsPerDay.min);
     const doneToday = s.journal.filter((j) => j.day === s.day).length;
     const target = this.targetCardsForDay(s.day);
 
-    if (doneToday >= target) {
-      s.day += 1;
-      s.phase = phaseForDay(s.day);
-      // Денна втома: енергія падає, запаси витрачаються.
-      s.stats = {
-        ...s.stats,
-        energy: Math.max(this.statRange.min, s.stats.energy - 1),
-        supplies: Math.max(this.statRange.min, s.stats.supplies - 1),
-      };
+    if (doneToday < target) return;
+
+    s.day += 1;
+    s.phase = phaseForDay(s.day);
+    // Денна втома: енергія падає, запаси витрачаються.
+    s.stats = {
+      ...s.stats,
+      energy: Math.max(this.statRange.min, s.stats.energy - 1),
+      supplies: Math.max(this.statRange.min, s.stats.supplies - 1),
+    };
+
+    // Неминучість: вона не «лічильник для краси», а множник ризику.
+    if (s.day > this.director.inevitabilityStartsDay) {
+      s.inevitability = (s.inevitability ?? 0) + 1;
     }
-    void perDayThisDay;
-    if (s.day >= this.director.hardEndDay) this.endWith('hardend');
+
+    if (s.day >= this.director.hardEndDay) {
+      this.endWith('hardend');
+      return;
+    }
+
+    // Доля кидає кубик раз на добу — і це той самий день, що й у календарі.
+    if (s.day > this.director.safeUntilDay) {
+      let chance = this.fatalChance();
+      if (this.rng.chance(chance)) {
+        this.endWith('accident');
+      }
+    }
   }
 
   private targetCardsForDay(day: number): number {
@@ -227,7 +235,9 @@ export class Run {
     if (s.stats.supplies <= 2) mod += 0.35;
     if (s.stats.energy <= 2) mod += 0.35;
     if (s.stats.health <= 3) mod += 0.5;
-    return Math.min(this.director.maxFatalChance, raw * mod);
+    // Кожен день після старту неминучості додає ваги долі — лічильник працює.
+    const inevitabilityBoost = 1 + (s.inevitability ?? 0) * 0.012;
+    return Math.min(this.director.maxFatalChance, raw * mod * inevitabilityBoost);
   }
 
   private isEligible(card: Card): boolean {
@@ -354,14 +364,10 @@ function hurtByOwnChoice(state: RunState): boolean {
  * Якщо в контенті для варіанта немає готової сцени — збираємо її з того,
  * що рішення справді змінило. Це завжди конкретно: показники й навички.
  */
-/**
- * Наслідок без авторського тексту: спершу — що саме ти зробив, потім — чим
- * це обернулось для тіла й людей. Без цього кожен вибір звучав однаково.
- */
-function describeOutcome(option: ChoiceOption, before: Stats, after: Stats, choiceText: string): string {
+function describeOutcome(before: Stats, after: Stats): string {
   const STAT_WORDS: Record<keyof Stats, [string, string]> = {
     health: ['Тіло тримається краще', 'Тіло відгукується болем'],
-    energy: ['Сна стало більше', 'Сил поменшало'],
+    energy: ['Сна побільшало', 'Сил поменшало'],
     supplies: ['У кишені додалось', 'Запасів поменшало'],
     trust: ['Начальство задоволене', 'Начальство це запам\'ятає'],
     understanding: ['Тепер ти розумієш більше', 'Щось у картині світу зсунулось'],
@@ -373,29 +379,6 @@ function describeOutcome(option: ChoiceOption, before: Stats, after: Stats, choi
     if (d === 0) continue;
     parts.push(STAT_WORDS[k][d > 0 ? 0 : 1]);
   }
-  const acted = rephrase(choiceText);
-  if (parts.length === 0) return `${acted} Нічого не змінилося — поки що.`;
-  return `${acted} ${parts.slice(0, 2).join('. ')}.`;
-}
-
-/**
- * Вибір записаний наказним способом («Пустити сусіда…»), а наслідок має бути
- * від першої особи. Переводимо дієслово в минулий час за закінченням.
- */
-function rephrase(choiceText: string): string {
-  const clean = choiceText.replace(/\.$/, '').trim();
-  const words = clean.split(' ');
-  // «Сказати про коліно, яке ниє» → дієслово й решта.
-  const verb = words[0];
-  const rest = words.slice(1).join(' ');
-  const lc = verb.charAt(0).toLowerCase() + verb.slice(1);
-  const past = lc
-    .replace(/ити$/, 'ив')
-    .replace(/іти$/, 'ів')
-    .replace(/ати$/, 'ав')
-    .replace(/яти$/, 'яв')
-    .replace(/ути$/, 'ув')
-    .replace(/ти$/, 'в');
-  if (past === lc) return rest ? `Ти ${lc} ${rest}.` : `Ти ${lc}.`;
-  return rest ? `Ти ${past} ${rest}.` : `Ти ${past}.`;
+  if (parts.length === 0) return 'Нічого не змінилось — принаймні зараз.';
+  return `${parts.slice(0, 2).join('. ')}.`;
 }

@@ -1,6 +1,5 @@
 import { Run } from '../src/run.ts';
 import { TEST_CARDS, TEST_ENDINGS } from '../data/test-content.ts';
-import { PHOTOS } from '../data/photos.ts';
 
 const STAT_LABELS = {
   health: 'Здор',
@@ -94,7 +93,6 @@ function render() {
     <div class="card">
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
       ${lead ? `<div class="lead">${isContinuation ? '↳ ' : ''}${escapeHtml(lead)}</div>` : ''}
-      ${photoBlock(card.photo, card.photoCaption)}
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">
@@ -135,13 +133,10 @@ function onChoose(card, btn) {
 
   // Сцена-наслідок замінює картку цілком: що саме сталося і що це змінило.
   const scene = run.state.lastOutcome ?? {};
-  const scenePhoto = scene.photo ?? option.outcome?.photo;
-  const sceneCaption = scene.photoCaption ?? option.outcome?.photoCaption;
   const box = document.createElement('div');
   box.className = 'outcome';
   box.innerHTML = `
     <div class="o-head">Що з цього вийшло</div>
-    ${photoBlock(scenePhoto, sceneCaption)}
     <p class="o-text">${escapeHtml(scene.text ?? reaction.line)}</p>
     ${scene.voice ? `<p class="o-voice">${escapeHtml(scene.voice)}</p>` : ''}
     <div class="o-choice">➜ ${escapeHtml(option.text)}</div>
@@ -215,7 +210,6 @@ function renderEnding() {
 
   elMain.innerHTML = `
     <div class="ending">
-      ${photoBlock(e?.photo, e?.photoCaption)}
       <div class="meta">${title} · день ${st.day} · ${st.decisions} рішень</div>
       <h1>${escapeHtml(title)}</h1>
       <p class="ep">${escapeHtml(epitaph)}</p>
@@ -240,13 +234,3 @@ function renderEnding() {
 }
 
 render();
-
-/** Фото + обов'язковий підпис: автор і ліцензія — умова використання. */
-function photoBlock(key, caption) {
-  const p = key ? PHOTOS[key] : null;
-  if (!p) return '';
-  return `<figure class="photo">
-    <img src="${p.file}" alt="${escapeHtml(caption ?? p.caption)}" loading="lazy">
-    <figcaption>${escapeHtml(caption ?? p.caption)} · <span>${escapeHtml(p.author)}, ${escapeHtml(p.license)}</span></figcaption>
-  </figure>`;
-}
