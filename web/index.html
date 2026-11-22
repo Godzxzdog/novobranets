@@ -95,6 +95,37 @@
   button.opt.chosen::before { content: '➜ '; color: var(--good); }
   button.opt.faded { opacity: .28; transition: opacity .2s; }
 
+  .outcome {
+    padding: 18px 16px 14px; border: 1px solid var(--line);
+    border-left: 3px solid var(--good); border-radius: 4px; background: #191911;
+    animation: in .2s ease-out;
+  }
+  .outcome .o-head {
+    font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--good); margin-bottom: 12px;
+  }
+  .outcome .o-text { font-size: 17px; line-height: 1.55; margin: 0 0 12px; }
+  .outcome .o-voice {
+    font-style: italic; color: #b0ab94; margin: 0 0 12px; font-size: 14px;
+    border-left: 2px solid var(--line); padding-left: 10px;
+  }
+  .outcome .o-choice {
+    font-family: ui-monospace, monospace; font-size: 11px; color: #6f6b58;
+    border-top: 1px solid var(--line); padding-top: 10px; line-height: 1.5;
+  }
+
+  figure.photo { margin: 0 0 14px; }
+  figure.photo img {
+    display: block; width: 100%; height: auto; max-height: 230px; object-fit: cover;
+    border-radius: 3px; border: 1px solid var(--line);
+    filter: grayscale(.45) contrast(1.02) brightness(.92);
+  }
+  figure.photo figcaption {
+    font-family: ui-monospace, monospace; font-size: 9.5px; color: #6f6b58;
+    padding-top: 5px; line-height: 1.5;
+  }
+  figure.photo figcaption span { color: #55523f; }
+
   .reaction {
     margin-top: 14px; padding: 14px 14px 12px; border: 1px solid var(--line);
     border-left: 2px solid var(--good); border-radius: 3px; background: #191911;

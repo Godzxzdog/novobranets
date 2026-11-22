@@ -166,6 +166,14 @@ export class Run {
       s.recentHurt = (s.recentHurt ?? 0) + 1;
     }
 
+    // Сцена-наслідок: конкретний текст «що з цього вийшло», а не переказ вибору.
+    s.lastOutcome = {
+      ...(option.outcome ?? {}),
+      text: option.outcome?.text ?? describeOutcome(option, applied.stats, s.stats, option.text),
+      optionId: option.id,
+      cardId: card.id,
+    } as RunState['lastOutcome'];
+
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
     s.pending = undefined;
@@ -340,4 +348,54 @@ export class Run {
  */
 function hurtByOwnChoice(state: RunState): boolean {
   return (state.recentHurt ?? 0) > 0;
+}
+
+/**
+ * Якщо в контенті для варіанта немає готової сцени — збираємо її з того,
+ * що рішення справді змінило. Це завжди конкретно: показники й навички.
+ */
+/**
+ * Наслідок без авторського тексту: спершу — що саме ти зробив, потім — чим
+ * це обернулось для тіла й людей. Без цього кожен вибір звучав однаково.
+ */
+function describeOutcome(option: ChoiceOption, before: Stats, after: Stats, choiceText: string): string {
+  const STAT_WORDS: Record<keyof Stats, [string, string]> = {
+    health: ['Тіло тримається краще', 'Тіло відгукується болем'],
+    energy: ['Сна стало більше', 'Сил поменшало'],
+    supplies: ['У кишені додалось', 'Запасів поменшало'],
+    trust: ['Начальство задоволене', 'Начальство це запам\'ятає'],
+    understanding: ['Тепер ти розумієш більше', 'Щось у картині світу зсунулось'],
+    bonds: ['Люди навколо ближчі', 'Хтось відійшов далі'],
+  };
+  const parts: string[] = [];
+  for (const k of Object.keys(STAT_WORDS) as (keyof Stats)[]) {
+    const d = after[k] - before[k];
+    if (d === 0) continue;
+    parts.push(STAT_WORDS[k][d > 0 ? 0 : 1]);
+  }
+  const acted = rephrase(choiceText);
+  if (parts.length === 0) return `${acted} Нічого не змінилося — поки що.`;
+  return `${acted} ${parts.slice(0, 2).join('. ')}.`;
+}
+
+/**
+ * Вибір записаний наказним способом («Пустити сусіда…»), а наслідок має бути
+ * від першої особи. Переводимо дієслово в минулий час за закінченням.
+ */
+function rephrase(choiceText: string): string {
+  const clean = choiceText.replace(/\.$/, '').trim();
+  const words = clean.split(' ');
+  // «Сказати про коліно, яке ниє» → дієслово й решта.
+  const verb = words[0];
+  const rest = words.slice(1).join(' ');
+  const lc = verb.charAt(0).toLowerCase() + verb.slice(1);
+  const past = lc
+    .replace(/ити$/, 'ив')
+    .replace(/іти$/, 'ів')
+    .replace(/ати$/, 'ав')
+    .replace(/яти$/, 'яв')
+    .replace(/ути$/, 'ув')
+    .replace(/ти$/, 'в');
+  if (past === lc) return rest ? `Ти ${lc} ${rest}.` : `Ти ${lc}.`;
+  return rest ? `Ти ${past} ${rest}.` : `Ти ${past}.`;
 }

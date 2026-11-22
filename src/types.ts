@@ -77,6 +77,23 @@ export interface ChoiceOption {
   /** Додаткова «ціна»: якщо умова виконана — ефект застосовується замість звичайного? Ні, обидва. */
   /** Наслідки, що спрацьовують лише за певних умов. */
   conditionalEffects?: { when: Condition; then: Effect }[];
+  /**
+   * Сцена-наслідок: показується окремим екраном після вибору, перш ніж
+   * гра піде далі. Тут описується, що саме сталося, і що це змінило.
+   */
+  outcome?: OutcomeScene;
+}
+
+/** Окрема сцена після рішення: «ось що з цього вийшло». */
+export interface OutcomeScene {
+  /** 1–3 речення конкретного наслідку, не переказ вибору. */
+  text: string;
+  /** Необов'язковий рядок-«голос» — думка героя або чужа фраза. */
+  voice?: string;
+  /** Ідентифікатор фото з data/photos.ts. */
+  photo?: string;
+  /** Підпис під фото (для alt і для совісті). */
+  photoCaption?: string;
 }
 
 export type CardKind = 'event' | 'routine' | 'person' | 'system' | 'final';
@@ -108,6 +125,9 @@ export interface Card {
   after?: string[];
   /** Короткий опис ситуації, що веде до картки (для UI-підказки «що було раніше»). */
   lead?: string;
+  /** Фото сцени з data/photos.ts. */
+  photo?: string;
+  photoCaption?: string;
 }
 
 export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
@@ -122,6 +142,9 @@ export interface Ending {
   requires?: Condition;
   /** Вага при виборі серед доступних. */
   weight?: number;
+  /** Фото фіналу з data/photos.ts. */
+  photo?: string;
+  photoCaption?: string;
 }
 
 /** «Директор долі»: параметри неминучості. */
@@ -188,6 +211,8 @@ export interface RunState {
   recentHurt?: number;
   /** Остання показана картка — для ланцюгів продовження. */
   lastCardId?: string;
+  /** Остання сцена-наслідок (для екрана після вибору). */
+  lastOutcome?: OutcomeScene & { optionId: string; cardId: string };
   /** Поточна картка, якщо є. */
   pending?: { cardId: string; options: string[] };
 }
