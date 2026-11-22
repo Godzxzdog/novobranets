@@ -72,7 +72,10 @@ function renderLog() {
 }
 
 function fadeOut(node, done) {
-  if (!node) return done();
+  // Один і той самий вузол не може йти в анімацію двічі: подвійний клік по «Далі»
+  // викликав би render() двічі й лишав картку «застряглою».
+  if (!node || node.dataset.leaving === '1') return;
+  node.dataset.leaving = '1';
   node.classList.add('leaving');
   setTimeout(done, 160);
 }
@@ -143,10 +146,12 @@ function onChoose(card, btn) {
   const next = document.getElementById('next');
   next.addEventListener('click', () => {
     reactionOpen = false;
-    fadeOut(elMain.querySelector('.card'), () => {
-      lastChoice = null;
-      render();
-    });
+    // Кнопка гасне одразу: без цього другий швидкий клік встигає викликати
+    // обробник ще раз і картка застрягає.
+    next.disabled = true;
+    elMain.querySelectorAll('button.opt').forEach((b) => b.setAttribute('disabled', ''));
+    lastChoice = null;
+    render();
   });
 }
 

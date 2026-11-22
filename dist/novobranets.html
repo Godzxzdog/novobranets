@@ -2462,11 +2462,6 @@ function renderLog() {
   const last = run.state.journal.slice(-3).reverse();
   elLog.innerHTML = last.map((j) => `<div>\u0434${j.day} \xB7 ${escapeHtml(j.text)}</div>`).join("");
 }
-function fadeOut(node, done) {
-  if (!node) return done();
-  node.classList.add("leaving");
-  setTimeout(done, 160);
-}
 function render() {
   elDay.textContent = `\u0414\u0435\u043D\u044C ${run.state.day} \xB7 \u0444\u0430\u0437\u0430 ${run.state.phase}`;
   renderStats();
@@ -2525,10 +2520,10 @@ function onChoose(card, btn) {
   const next = document.getElementById("next");
   next.addEventListener("click", () => {
     reactionOpen = false;
-    fadeOut(elMain.querySelector(".card"), () => {
-      lastChoice = null;
-      render();
-    });
+    next.disabled = true;
+    elMain.querySelectorAll("button.opt").forEach((b) => b.setAttribute("disabled", ""));
+    lastChoice = null;
+    render();
   });
 }
 function buildReaction(option, before, after) {
