@@ -14,6 +14,7 @@ const PHASES: Phase[] = [1, 2, 3, 4, 5];
 export function validateContent(cards: Card[], endings: Ending[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const ids = new Set<string>();
+  const chainRefs: { card: string; from: string }[] = [];
   const flagWrites = new Set<string>();
   const flagReads = new Set<string>();
 
@@ -29,6 +30,10 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
     const where = `card ${card.id}`;
     if (ids.has(card.id)) issues.push({ level: 'error', where, message: 'дубль id' });
     ids.add(card.id);
+
+    for (const from of [...(card.follows ?? []), ...(card.after ?? [])]) {
+      chainRefs.push({ card: card.id, from });
+    }
 
     if (!card.phase.length) issues.push({ level: 'error', where, message: 'порожній phase' });
     for (const p of card.phase) {
@@ -103,6 +108,21 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
   for (const p of PHASES) {
     const count = cards.filter((c) => c.phase.includes(p)).length;
     if (count < 4) issues.push({ level: 'warn', where: `phase ${p}`, message: `лише ${count} карток` });
+  }
+
+  // Ланцюги: посилання на неіснуючу картку ламає зв'язність непомітно.
+  for (const ref of chainRefs) {
+    if (!ids.has(ref.from)) {
+      issues.push({ level: 'error', where: `card ${ref.card}`, message: `ланцюг веде на неіснуючу картку: ${ref.from}` });
+    }
+  }
+  // Картка-продовження без жодного зв'язку — просто шум у пулі.
+  const chained = new Set<string>();
+  for (const c of cards) for (const f of c.follows ?? []) chained.add(f);
+  for (const c of cards) {
+    if ((c.follows ?? []).length === 0 && (c.after ?? []).length === 0 && !chained.has(c.id) && c.kind !== 'final') {
+      issues.push({ level: 'warn', where: `card ${c.id}`, message: 'картка не має зв\'язків з іншими' });
+    }
   }
 
   return issues;

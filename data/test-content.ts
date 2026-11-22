@@ -33,6 +33,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.queue',
+    follows: ['call.paper'],
+    lead: 'Ти вже в черзі — повістка в кишені.',
     kind: 'system',
     phase: [1],
     text: 'Черга у військкоматі. Хтось попереду жартує, що беруть усіх, у кого є пульс. Ніхто не сміється.',
@@ -52,6 +54,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.medical',
+    follows: ['call.queue', 'call.queue_old'],
+    lead: 'Чергу пройдено, тепер кабінет із бланком.',
     kind: 'routine',
     phase: [1],
     text: 'Медкомісія. Лікар дивиться в бланк, не на тебе. «Скарги є?» — питає так, ніби відповідь уже надрукована.',
@@ -71,6 +75,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.bag',
+    follows: ['call.paper', 'call.farewell'],
+    lead: 'Вдома, за день до від\'їзду.',
     kind: 'routine',
     phase: [1],
     text: 'Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.',
@@ -91,6 +97,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.busstop',
+    follows: ['call.paper'],
+    lead: 'Двір, знайомі обличчя, чужі поради.',
     kind: 'person',
     phase: [1],
     once: true,
@@ -113,6 +121,8 @@ export const TEST_CARDS: Card[] = [
   {
     // Відкривається в наступних фазах, якщо пробував піти з черги.
     id: 'call.tried_to_leave_after',
+    follows: ['call.queue', 'call.street'],
+    lead: 'Наслідок того, що ти колись вагався.',
     kind: 'system',
     phase: [3, 4],
     once: true,
@@ -139,6 +149,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.farewell',
+    follows: ['call.bag'],
+    lead: 'Останній вечір удома.',
     kind: 'event',
     phase: [1],
     once: true,
@@ -159,6 +171,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.queue_old',
+    follows: ['call.paper'],
+    lead: 'Той самий ранок, та сама черга.',
     kind: 'person',
     phase: [1],
     text: 'Перед тобою в черзі стоїть чоловік років п\'ятдесяти й тримає повістку двома руками, ніби вона може вирватись.',
@@ -182,6 +196,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.street',
+    follows: ['call.paper', 'call.bag'],
+    lead: 'Дорога, яка вже не веде додому.',
     kind: 'event',
     phase: [1],
     text: 'Дорогою до військкомату повз проходять двоє з пакетами. Один каже другому: «Не наша війна». Той киває. Ніхто не дивиться на тебе.',
@@ -205,6 +221,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'call.toilet',
+    follows: ['call.medical'],
+    lead: 'Перший день у частині.',
     kind: 'routine',
     phase: [1],
     text: 'Туалет у військкоматі не має дверей. Інструктор каже: «Привикайте». Перші три дні це здається найбільшою проблемою.',
@@ -251,6 +269,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.sapper',
+    follows: ['phase2.bus', 'phase2.hole'],
+    lead: 'Хтось, хто вже знає, як тут живуть.',
     kind: 'person',
     phase: [2, 3],
     character: 'Сапер Толік',
@@ -276,6 +296,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.soup',
+    follows: ['phase2.bus'],
+    lead: 'Перший обід у полі.',
     kind: 'routine',
     phase: [2, 3],
     text: 'Польова кухня. У каструлі щось, що називають борщем. Хлопець поруч упевнено каже: «Головне — гаряче».',
@@ -295,6 +317,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.phone',
+    follows: ['call.farewell', 'phase2.bus'],
+    lead: 'Дзвінок, якого чекав і боявся.',
     kind: 'event',
     phase: [2, 3],
     text: 'Мама телефонує. Голос тремтить: по телевізору кажуть, що все добре. Ти дивишся на розбите вікно казарми.',
@@ -318,6 +342,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.split',
+    follows: ['phase2.bus'],
+    lead: 'Шикування, де тебе вперше ділять.',
     kind: 'system',
     phase: [2, 3],
     once: true,
@@ -343,6 +369,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.commander_orders',
+    follows: ['phase2.split', 'phase2.hazing'],
+    lead: 'Порядок, який ніхто не питав, чи потрібен.',
     kind: 'system',
     phase: [2, 3],
     text: 'Новий наказ: щоденна муштра на плацу, попри мороз. «Солдат має виглядати солдатом».',
@@ -366,6 +394,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.hazing',
+    follows: ['phase2.bus'],
+    lead: 'Перші дні в чужому колективі.',
     kind: 'system',
     phase: [2],
     once: true,
@@ -391,6 +421,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.weapon',
+    follows: ['phase2.bus', 'phase2.split'],
+    lead: 'Тепер ти не просто новобранець.',
     kind: 'routine',
     phase: [2],
     text: 'Тобі видають автомат. Він старий, важкий і, здається, пам\'ятає більше, ніж ти. Сержант каже: «Це твій найкращий друг».',
@@ -415,6 +447,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.hole',
+    follows: ['phase2.bus'],
+    lead: 'Перша ніч поза казармою.',
     kind: 'event',
     phase: [2],
     text: 'Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.',
@@ -434,6 +468,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.test_song',
+    follows: ['phase2.bus', 'phase2.commander_orders'],
+    lead: 'Перевірка на «своїх».',
     kind: 'event',
     phase: [2],
     text: 'Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.',
@@ -453,6 +489,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.letters_home',
+    follows: ['phase2.phone', 'call.farewell'],
+    lead: 'Усі пишуть додому, ніхто не знає що.',
     kind: 'routine',
     phase: [2, 3],
     text: 'Хлопці пишуть листи додому. Один питає, що писати, якщо насправді нічого доброго немає.',
@@ -472,6 +510,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.socks',
+    follows: ['phase2.bus', 'phase2.hole'],
+    lead: 'Побут, який не закінчується.',
     kind: 'routine',
     phase: [2, 3],
     text: 'Прання. Сусід по намету миє шкарпетки в каску. Ти бачиш це й розумієш, що тепер каска — це назавжди два предмети.',
@@ -496,6 +536,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase2.first_fire',
+    follows: ['phase2.hole', 'phase2.weapon'],
+    lead: 'Те, до чого готували, починається.',
     kind: 'event',
     phase: [2, 3],
     once: true,
@@ -546,6 +588,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.water',
+    follows: ['phase3.trench'],
+    lead: 'Окоп залило, тепер закінчується вода.',
     kind: 'routine',
     phase: [3, 4],
     text: 'Вода в каністрі закінчується. Останній ковток — і треба йти через відкриту ділянку до колодязя.',
@@ -570,6 +614,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.loss',
+    follows: ['phase2.first_fire'],
+    lead: 'Після першого бою завжди когось немає.',
     kind: 'event',
     phase: [3, 4],
     once: true,
@@ -595,6 +641,8 @@ export const TEST_CARDS: Card[] = [
   {
     // Відкривається в наступних фазах, якщо почав писати.
     id: 'phase3.letter_followup',
+    follows: ['phase3.loss'],
+    lead: 'Лист, який ти почав писати.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -620,6 +668,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.propaganda',
+    follows: ['phase2.commander_orders', 'phase2.test_song'],
+    lead: 'Ті, хто хоче показати, що все гаразд.',
     kind: 'system',
     phase: [3, 4],
     text: 'Приїжджає «преса». Просить сфотографуватися з усмішкою. Хтось усміхається. Ти думаєш, кому потім покажуть це фото.',
@@ -643,6 +693,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.medic',
+    follows: ['phase2.sapper'],
+    lead: 'Людина, яка вчить не вмирати.',
     kind: 'person',
     phase: [3, 4],
     character: 'Санінструкторка Оля',
@@ -668,6 +720,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.break',
+    follows: ['phase2.first_fire', 'phase3.water'],
+    lead: 'Тіло здається раніше за людину.',
     kind: 'event',
     phase: [3, 4],
     text: 'Третій день без сну. Руки тремтять, думки плутаються. Командир каже, що це «нормально».',
@@ -691,6 +745,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.bribe',
+    follows: ['phase2.split', 'phase3.trench'],
+    lead: 'Той, хто продає вихід із цього.',
     kind: 'system',
     phase: [3, 4],
     once: true,
@@ -717,6 +773,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.food_ration',
+    follows: ['phase2.soup'],
+    lead: 'Хтось таки пам\'ятає про вас.',
     kind: 'routine',
     phase: [3, 4],
     text: 'Пакунок від волонтерів. Три шоколадки, два носки й записка «Тримайтесь, хлопці». Носки однакові.',
@@ -740,6 +798,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.coward',
+    follows: ['phase2.commander_orders', 'phase2.hazing'],
+    lead: 'Тебе помітили — але не з доброго боку.',
     kind: 'system',
     phase: [3, 4],
     text: 'Командир відділення пропонує тобі стати його «очима»: доносити, хто що каже про накази. Обіцяє «прикриття».',
@@ -765,6 +825,8 @@ export const TEST_CARDS: Card[] = [
   {
     // Прапорець informer має наслідки.
     id: 'phase4.informer_after',
+    follows: ['phase3.coward'],
+    lead: 'Те, що ти пообіцяв робити.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -790,6 +852,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.photo',
+    follows: ['phase2.letters_home'],
+    lead: 'Хочеться лишити слід.',
     kind: 'routine',
     phase: [3, 4],
     text: 'Хтось приніс фотоапарат. Хлопці хочуть фото «на пам\'ять». Ти думаєш, кому це фото потім показувати.',
@@ -813,6 +877,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.rot',
+    follows: ['phase3.trench', 'phase2.socks'],
+    lead: 'Вода й холод беруть своє.',
     kind: 'event',
     phase: [3, 4],
     text: 'Взуття розмокло й уже не сохне. Ноги в кволі. Медсестра каже: «Поки не чорні — все добре».',
@@ -836,6 +902,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.drill_hard',
+    follows: ['phase2.commander_orders'],
+    lead: 'Їхній «порядок» знову на твоєму сні.',
     kind: 'system',
     phase: [3],
     text: 'Раптовий «навчальний підйом» о третій ночі. Хтось засинає стоячи. Сержант кричить, що «це і є перевірка».',
@@ -860,6 +928,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase3.medicine',
+    follows: ['phase3.medic'],
+    lead: 'Оля знову рахує те, чого не вистачає.',
     kind: 'routine',
     phase: [3, 4],
     text: 'У медпункті лишилось три пігулки від болю. Оля каже: «Реальних претендентів — шестеро».',
@@ -886,6 +956,8 @@ export const TEST_CARDS: Card[] = [
   // ─────────────────────────── ФАЗА 4: холод, сумніви, люди ───────────────────────────
   {
     id: 'phase4.cold',
+    follows: ['phase3.rot'],
+    lead: 'Холод, який уже не відступає.',
     kind: 'event',
     phase: [4, 5],
     text: 'Мороз крізь спальник. Спальник — не твій, тобі віддав сусід. Уночі він кашляє.',
@@ -906,6 +978,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.letters',
+    follows: ['phase3.loss', 'phase2.letters_home'],
+    lead: 'Листи стають важливішими.',
     kind: 'routine',
     phase: [4, 5],
     text: 'Хлопець питає, як писати листи рідним. У нього вже три написаних, і жоден не відправлений.',
@@ -930,6 +1004,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.doubt',
+    follows: ['phase3.propaganda', 'phase4.gossip'],
+    lead: 'Те, що ти почув, не сходиться.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -955,6 +1031,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.standing',
+    follows: ['phase3.coward', 'phase3.bribe'],
+    lead: 'Той, хто теж не вірить у пафос.',
     kind: 'person',
     phase: [4, 5],
     character: 'Командир Нєвмєржицький',
@@ -980,6 +1058,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.desert',
+    follows: ['phase4.doubt'],
+    lead: 'Думка стала дією — але не твоєю.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1004,6 +1084,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.gossip',
+    follows: ['phase3.propaganda'],
+    lead: 'Хтось знає більше й каже це вголос.',
     kind: 'person',
     phase: [4, 5],
     text: 'Тиловий писар розповідає, що «нагорі» вже все вирішено й нас залишили як приманку. Він каже це з гордістю.',
@@ -1028,6 +1110,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.wound',
+    follows: ['phase2.first_fire', 'phase3.break'],
+    lead: 'Війна знаходить тебе прямо.',
     kind: 'event',
     phase: [4, 5],
     text: 'Уламок зайшов у стегно. Оля каже, що дійде й так. Каже це швидше собі.',
@@ -1052,6 +1136,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.quiet_evening',
+    follows: ['phase3.loss', 'phase4.letters'],
+    lead: 'Вечір без обстрілу — теж частина війни.',
     kind: 'routine',
     phase: [4, 5],
     text: 'Тихий вечір. Хтось дістає гітару й грає пісню, яку всі знають, але не пам\'ятають, звідки.',
@@ -1075,6 +1161,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.home_news',
+    follows: ['phase2.phone', 'phase4.letters'],
+    lead: 'Вдома теж іде своя війна.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1100,6 +1188,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.replacement',
+    follows: ['phase2.hazing', 'phase4.standing'],
+    lead: 'Ти вже не наймолодший.',
     kind: 'person',
     phase: [4, 5],
     text: 'Прийшов «молодий» — двадцять років і впевненість, що він знає все. Дивиться на тебе, як на старика.',
@@ -1123,6 +1213,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.night_watch',
+    follows: ['phase3.trench'],
+    lead: 'Ніч, яка не хоче закінчуватись.',
     kind: 'routine',
     phase: [4, 5],
     text: 'Твоя зміна на спостереженні. Мінус десять, ніч, тиша. Хочеться спати так, що боляче.',
@@ -1147,6 +1239,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.rumours',
+    follows: ['phase4.gossip'],
+    lead: 'Новини гірші за тишу.',
     kind: 'system',
     phase: [4, 5],
     text: 'Ходять чутки, що скоро «все закінчиться». Одні кажуть — добре, інші — що тоді нас точно не заберуть.',
@@ -1170,6 +1264,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.stolen',
+    follows: ['phase3.food_ration'],
+    lead: 'Голод робить людей простими.',
     kind: 'event',
     phase: [4, 5],
     text: 'У тебе зникли сухарі. Хтось їх узяв. Ти знаєш, хто — він не їв три дні.',
@@ -1193,6 +1289,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase4.tolko_dies',
+    follows: ['phase2.sapper', 'phase3.loss'],
+    lead: 'Той, хто вчив тебе жити, не вижив.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1220,8 +1318,10 @@ export const TEST_CARDS: Card[] = [
   // ─────────────────────────── ФАЗА 5: тиша, останній пост, вітер ───────────────────────────
   {
     id: 'phase5.lastpost',
+    follows: ['phase4.cold', 'phase4.wound', 'phase4.night_watch'],
+    lead: 'Наказ, який ніхто не пояснив.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     once: true,
     text: 'Наказ тримати позицію. Ніхто не пояснює навіщо. Рація шипить.',
     options: [
@@ -1244,8 +1344,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.epitaph',
+    follows: ['phase5.lastpost', 'phase4.desert'],
+    lead: 'Розмова, яку всі уникали.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     once: true,
     text: 'Хтось із хлопців питає: «Якщо що — що про нас скажуть?» Усі сміються. Потім тихо.',
     options: [
@@ -1268,8 +1370,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.silence',
+    follows: ['phase5.lastpost'],
+    lead: 'Коли стріляють — просто. Коли ні — страшно.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     text: 'Тиша. Довго. Хлопці починають шепотітися, що «це вже все». Ніхто не знає.',
     options: [
       {
@@ -1292,8 +1396,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.wind',
+    follows: ['phase5.silence'],
+    lead: 'Щось змінилось у повітрі.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     text: 'Вітер змінюється. Усі піднімають голови. Ти раптом думаєш про кухню вдома й про те, що там тепер ніхто не сидить.',
     options: [
       {
@@ -1315,8 +1421,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.final_wait',
+    follows: ['phase5.wind', 'phase5.lastpost'],
+    lead: 'Той самий день, якого чекали.',
     kind: 'final',
-    phase: [5],
+    phase: [4, 5],
     once: true,
     text: 'День, який не мав настати. Позиція тримається, але пил у повітрі вже не пил.',
     options: [
@@ -1339,8 +1447,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.last_cigarette',
+    follows: ['phase5.lastpost'],
+    lead: 'Дрібниця, яка тримає разом.',
     kind: 'routine',
-    phase: [5],
+    phase: [4, 5],
     text: 'Остання цигарка на відділення. Її пускають по колу, і кожен робить вигляд, що не хоче.',
     options: [
       {
@@ -1362,8 +1472,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.promises',
+    follows: ['phase5.epitaph'],
+    lead: 'Обіцянка, яку не можна виконати.',
     kind: 'person',
-    phase: [5],
+    phase: [4, 5],
     text: 'Хлопець просить обіцянку: «Якщо зі мною що — скажи мамі, що я не боявся». Ти знаєш, що це неправда.',
     options: [
       {
@@ -1386,8 +1498,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.quiet_meal',
+    follows: ['phase3.food_ration', 'phase5.lastpost'],
+    lead: 'Остання вечеря, як у людей.',
     kind: 'routine',
-    phase: [5],
+    phase: [4, 5],
     text: 'Вечеря. Хтось дістає останню банку тушонки й ділить на всіх, включно з тими, хто вже не їсть.',
     options: [
       {
@@ -1409,8 +1523,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.last_call',
+    follows: ['phase4.home_news', 'phase5.epitaph'],
+    lead: 'Зв\'язок, який дали востаннє.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     once: true,
     text: 'Зв\'язок. Кажуть, що «завтра буде важко». Мама в трубці питає, чи ти їв.',
     options: [
@@ -1433,8 +1549,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.plan_after',
+    follows: ['phase5.lastpost', 'phase4.quiet_evening'],
+    lead: 'Мрія, яка поки безпечніша за реальність.',
     kind: 'event',
-    phase: [5],
+    phase: [4, 5],
     text: 'Хтось починає планувати, що буде після. Ремонт у дворі, рибалка, шашлики. Усі слухають.',
     options: [
       {
@@ -1456,8 +1574,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.broken_radio',
+    follows: ['phase5.silence'],
+    lead: 'Тиша стала технічною.',
     kind: 'system',
-    phase: [5],
+    phase: [4, 5],
     text: 'Рація перестала приймати. Може, села батарея, може — позицію просто виключили зі списків.',
     options: [
       {
@@ -1480,8 +1600,10 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'phase5.photo_found',
+    follows: ['phase3.photo'],
+    lead: 'Фото, яке ти хотів надіслати мамі.',
     kind: 'routine',
-    phase: [5],
+    phase: [4, 5],
     requires: { flagTrue: ['photo_to_mom'] },
     once: true,
     text: 'У кишені — те фото. Мала, заламінована, з плямою від дощу. Мама його, мабуть, так і не отримала.',
@@ -1507,6 +1629,8 @@ export const TEST_CARDS: Card[] = [
   // ─────────────────────────── Наскрізні лінії: хто лишився, що з чиєї вини ───────────────────────────
   {
     id: 'line.volunteers_thanks',
+    follows: ['phase3.food_ration'],
+    lead: 'Ти ж подякував — і от відповідь.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1532,6 +1656,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'line.assault_after',
+    follows: ['phase2.split'],
+    lead: 'Наслідок того кроку вперед.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1557,6 +1683,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'line.fake_informer',
+    follows: ['phase3.coward'],
+    lead: 'Гра в мовчання закінчилась.',
     kind: 'event',
     phase: [4, 5],
     once: true,
@@ -1583,6 +1711,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'line.kept_promise',
+    follows: ['phase5.promises'],
+    lead: 'Обіцянка, яку ти дав.',
     kind: 'event',
     phase: [5],
     once: true,
@@ -1608,6 +1738,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'line.known_plan',
+    follows: ['phase4.standing'],
+    lead: 'План, який ти знаєш.',
     kind: 'event',
     phase: [5],
     once: true,
@@ -1634,6 +1766,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'line.named_photo',
+    follows: ['line.volunteers_thanks'],
+    lead: 'Відповідь на твій лист.',
     kind: 'routine',
     phase: [4, 5],
     once: true,
@@ -1661,6 +1795,8 @@ export const TEST_CARDS: Card[] = [
   // ─────────────────────────── Розрядка: людина, а не посада ───────────────────────────
   {
     id: 'misc.dog',
+    follows: ['phase2.hole', 'phase3.trench'],
+    lead: 'Хтось прийшов, кого не кликали.',
     kind: 'event',
     phase: [3, 4, 5],
     once: true,
@@ -1685,6 +1821,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'misc.dugout',
+    follows: ['phase3.trench'],
+    lead: 'Порожнеча між боями.',
     kind: 'routine',
     phase: [3, 4],
     text: 'У бліндажі знайшли старі газети 2014 року. Хтось читає вголос, і всі слухають, як казку.',
@@ -1708,6 +1846,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'misc.tea',
+    follows: ['phase2.soup'],
+    lead: 'Тепло, якого мало.',
     kind: 'routine',
     phase: [2, 3, 4, 5],
     text: 'Хтось заварив чай на буржуйці. У ньому щось плаває. Пахне дитинством.',
@@ -1731,6 +1871,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'misc.argue',
+    follows: ['phase2.commander_orders', 'phase3.loss'],
+    lead: 'Сварка після поганого дня.',
     kind: 'event',
     phase: [3, 4],
     text: 'Двоє сваряться, хто винен, що вчорашній вихід провалився. Кричать так, що чути на сусідній позиції.',
@@ -1754,6 +1896,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'misc.birthday',
+    follows: ['misc.tea', 'phase4.quiet_evening'],
+    lead: 'День, який мав бути святковим.',
     kind: 'routine',
     phase: [4, 5],
     once: true,
@@ -1779,6 +1923,8 @@ export const TEST_CARDS: Card[] = [
   },
   {
     id: 'misc.writing',
+    follows: ['phase2.letters_home'],
+    lead: 'Щось хоче, щоб його записали.',
     kind: 'routine',
     phase: [3, 4, 5],
     text: 'Ти починаєш записувати, що бачиш. Не для звіту. Просто щоб це не зникло.',

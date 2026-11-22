@@ -99,6 +99,15 @@ export interface Card {
   character?: string;
   /** Теги для аналітики й підбору. */
   tags?: string[];
+  /**
+   * Картки, після яких ця має сенс. Якщо вказано, ефективна вага множиться
+   * на chainBonus (за замовчуванням ×3.5) — гравець частіше бачить продовження.
+   */
+  follows?: string[];
+  /** Пряме продовження історії. Поки є такі картки, вони йдуть першими. */
+  after?: string[];
+  /** Короткий опис ситуації, що веде до картки (для UI-підказки «що було раніше»). */
+  lead?: string;
 }
 
 export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
@@ -177,6 +186,8 @@ export interface RunState {
   decisions: number;
   /** Скільки рішень у забігу били по здоров'ю (для вибору фіналу-поранення). */
   recentHurt?: number;
+  /** Остання показана картка — для ланцюгів продовження. */
+  lastCardId?: string;
   /** Поточна картка, якщо є. */
   pending?: { cardId: string; options: string[] };
 }

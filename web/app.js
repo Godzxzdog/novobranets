@@ -71,15 +71,6 @@ function renderLog() {
   elLog.innerHTML = last.map((j) => `<div>д${j.day} · ${escapeHtml(j.text)}</div>`).join('');
 }
 
-function fadeOut(node, done) {
-  // Один і той самий вузол не може йти в анімацію двічі: подвійний клік по «Далі»
-  // викликав би render() двічі й лишав картку «застряглою».
-  if (!node || node.dataset.leaving === '1') return;
-  node.dataset.leaving = '1';
-  node.classList.add('leaving');
-  setTimeout(done, 160);
-}
-
 function render() {
   elDay.textContent = `День ${run.state.day} · фаза ${run.state.phase}`;
   renderStats();
@@ -91,10 +82,17 @@ function render() {
   if (!card) return renderEnding();
 
   const available = new Set(run.availableOptions().map((o) => o.id));
+  // Зв'язок з попереднім: рядок «звідки» показуємо лише тоді, коли картка
+  // справді продовжує попередню сцену, а не просто має поле lead.
+  const link = run.lastCard();
+  const isContinuation = !!(link && card.id !== link.id
+    && ((card.follows ?? []).includes(link.id) || (card.after ?? []).includes(link.id)));
+  const lead = isContinuation ? (card.lead ?? `Після: ${link.text.slice(0, 60)}…`) : null;
 
   elMain.innerHTML = `
     <div class="card">
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
+      ${lead ? `<div class="lead">${isContinuation ? '↳ ' : ''}${escapeHtml(lead)}</div>` : ''}
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">

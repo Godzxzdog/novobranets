@@ -82,6 +82,12 @@ export class Run {
     return this.cardsById.get(this.state.pending.cardId) ?? null;
   }
 
+  /** Картка, показана останньою в цьому забігу (для ланцюгів і UI). */
+  lastCard(): Card | null {
+    const id = this.state.lastCardId;
+    return id ? (this.cardsById.get(id) ?? null) : null;
+  }
+
   /** Доступні варіанти поточної картки. */
   availableOptions(): ChoiceOption[] {
     const card = this.currentCard();
@@ -163,6 +169,9 @@ export class Run {
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
     s.pending = undefined;
+    // Показана картка стає «попередньою» лише після рішення — так продовження
+    // справді чіпляються до попередньої сцени, а не до самої себе.
+    s.lastCardId = card.id;
 
     // Смерть від показників: здоров'я 0 — явна помилка, не «доля».
     if (s.stats.health <= 0) {
@@ -226,10 +235,24 @@ export class Run {
   }
 
   private weightedPick(pool: Card[]): Card {
+    // Пряме продовження історії має пріоритет над усім іншим:
+    // якщо після щойно показаної картки є «after», беремо його першим.
+    const last = this.state.lastCardId;
+    if (last) {
+      const next = pool.filter((c) => (c.after ?? []).includes(last));
+      if (next.length > 0) return this.pickWeighted(next);
+    }
+
+    // Зв'язність: продовження того, що сталося нещодавно, важить значно більше
+    // за випадкову сцену. Інакше картки лишаються мозаїкою без історії.
     const weights = pool.map((c) => {
       const base = c.weight ?? 1;
       const seen = this.state.seenCards[c.id] ?? 0;
-      return base / (1 + seen);
+      const refs = c.follows ?? [];
+      const recent = last !== undefined && refs.includes(last);
+      const chained = refs.some((id) => (this.state.seenCards[id] ?? 0) > 0);
+      const mult = recent ? 6 : chained ? 2.5 : 1;
+      return (base * mult) / (1 + seen);
     });
     const total = weights.reduce((a, b) => a + b, 0);
     let r = this.rng.float() * total;
