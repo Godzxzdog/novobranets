@@ -1,0 +1,11 @@
+{
+  "name": "novobranets-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Engine prototype for the narrative card game Novobranets",
+  "scripts": {
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "sim": "node --experimental-strip-types scripts/simulate.ts"
+  }
+}
