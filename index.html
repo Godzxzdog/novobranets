@@ -1,0 +1,1536 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Новобранець</title>
+<style>
+  :root {
+    --bg: #14140f;
+    --panel: #1c1c16;
+    --line: #33332a;
+    --ink: #e6e2d4;
+    --dim: #8d8977;
+    --warn: #c9563f;
+    --good: #7e9b62;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--ink);
+    font-family: "Georgia", "Times New Roman", serif;
+    overscroll-behavior: none;
+  }
+  body { display: flex; flex-direction: column; min-height: 100dvh; }
+  .wrap { width: 100%; max-width: 520px; margin: 0 auto; padding: 0 16px; }
+
+  header {
+    padding: 14px 0 10px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px;
+    color: var(--dim); letter-spacing: .06em; text-transform: uppercase;
+  }
+  header .day { color: var(--ink); }
+
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 12px 0; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+  .stat .bar {
+    width: 100%; height: 26px; background: #22221a; border-radius: 2px;
+    position: relative; overflow: hidden; transition: box-shadow .3s;
+  }
+  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .3s ease; }
+  .stat .label { font-family: ui-monospace, monospace; font-size: 9px; color: var(--dim); letter-spacing: .04em; }
+  .stat .val { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ink); }
+  .stat.pair .fill { background: var(--good); }
+  .stat .delta {
+    position: absolute; top: -14px; left: 0; right: 0; text-align: center;
+    font-family: ui-monospace, monospace; font-size: 11px; font-weight: 600;
+    animation: floatUp 1.6s ease-out forwards; pointer-events: none;
+  }
+  .stat.up .delta { color: var(--good); }
+  .stat.down .delta { color: var(--warn); }
+  .stat.up .fill { box-shadow: 0 0 0 1px rgba(126,155,98,.75); }
+  .stat.down .fill { box-shadow: 0 0 0 1px rgba(201,86,63,.75); }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(4px); }
+    15% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
+
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px 0; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 22px 20px; font-size: 18px; line-height: 1.55;
+    min-height: 190px; display: flex; align-items: center;
+    animation: in .22s ease-out;
+  }
+  @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card.leaving, main.leaving { opacity: 0; transform: translateY(-8px); transition: opacity .16s, transform .16s; }
+  .card .kind {
+    position: absolute; font-family: ui-monospace, monospace; font-size: 9px;
+    color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+  button.opt {
+    font: inherit; font-size: 15px; line-height: 1.4; text-align: left;
+    background: #201f18; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 3px; padding: 13px 14px; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button.opt:hover { background: #282619; border-color: #4a4634; }
+  button.opt:active { transform: scale(.995); }
+  button.opt.locked { color: #555244; border-style: dashed; cursor: not-allowed; }
+  button.opt .hint { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  button.opt.chosen {
+    background: #2c3220; border-color: var(--good); color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--good);
+  }
+  button.opt.chosen::before { content: '➜ '; color: var(--good); }
+  button.opt.faded { opacity: .28; transition: opacity .2s; }
+
+  .reaction {
+    margin-top: 14px; padding: 14px 14px 12px; border: 1px solid var(--line);
+    border-left: 2px solid var(--good); border-radius: 3px; background: #191911;
+    animation: in .2s ease-out;
+  }
+  .reaction .r-choice {
+    font-family: ui-monospace, monospace; font-size: 11px; color: var(--good);
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .reaction .r-line { font-size: 15px; line-height: 1.5; font-style: italic; color: var(--ink); }
+  .reaction .r-changes {
+    margin-top: 9px; font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--dim); line-height: 1.6;
+  }
+  button.r-next {
+    margin-top: 12px; width: 100%; background: transparent; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 3px; padding: 11px;
+    font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button.r-next:hover { background: #22220f; border-color: #4a4634; }
+
+  .log { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); padding: 8px 0 4px; }
+  .log div { opacity: .55; padding: 2px 0; }
+  .log div:first-child { opacity: .9; color: #b0ab94; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  .ending { padding: 26px 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; }
+  .ending h1 { font-size: 24px; margin: 0 0 14px; font-weight: normal; }
+  .ending p { line-height: 1.6; margin: 0 0 16px; font-size: 15px; }
+  .ending .ep { font-style: italic; color: var(--dim); border-left: 2px solid var(--line); padding-left: 12px; }
+  .ending .meta { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); margin-bottom: 18px; }
+  a.btn, button.btn {
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    background: var(--ink); color: var(--bg); border: 0; border-radius: 3px;
+    padding: 14px; font: inherit; font-size: 15px; cursor: pointer; margin-top: 10px;
+  }
+  a.btn.second, button.btn.second { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .foot { font-family: ui-monospace, monospace; font-size: 10px; color: #55523f; text-align: center; padding: 12px 0 18px; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span>Новобранець</span>
+  <span class="day" id="day">День 1</span>
+</header>
+
+<div class="wrap"><div class="stats" id="stats"></div></div>
+
+<main class="wrap" id="main"></main>
+
+<div class="wrap"><div class="log" id="log"></div></div>
+<div class="foot">вигадані люди й частини · смерть гарантована</div>
+
+<script type="module">
+// src/types.ts
+var STAT_KEYS = [
+  "health",
+  "energy",
+  "supplies",
+  "trust",
+  "understanding",
+  "bonds"
+];
+var STAT_RANGE = { min: 0, max: 10 };
+var SKILL_KEYS = ["survival", "system", "people", "drill"];
+var DEFAULT_DIRECTOR = {
+  safeUntilDay: 20,
+  inevitabilityStartsDay: 30,
+  hardEndDay: 60,
+  baseFatalChance: 0.02,
+  rampPerDay: 0.015,
+  maxFatalChance: 0.55
+};
+
+// src/conditions.ts
+function meetsCondition(cond, stats, skills, flags, phase, day) {
+  if (!cond) return true;
+  if (cond.statAtLeast) {
+    for (const [k, v] of Object.entries(cond.statAtLeast)) {
+      if (stats[k] < v) return false;
+    }
+  }
+  if (cond.statAtMost) {
+    for (const [k, v] of Object.entries(cond.statAtMost)) {
+      if (stats[k] > v) return false;
+    }
+  }
+  if (cond.skillAtLeast) {
+    for (const [k, v] of Object.entries(cond.skillAtLeast)) {
+      if (skills[k] < v) return false;
+    }
+  }
+  if (cond.flagTrue) {
+    for (const f of cond.flagTrue) if (flags[f] !== true) return false;
+  }
+  if (cond.flagFalse) {
+    for (const f of cond.flagFalse) if (flags[f] === true) return false;
+  }
+  if (cond.phaseAtLeast !== void 0 && phase < cond.phaseAtLeast) return false;
+  if (cond.phaseAtMost !== void 0 && phase > cond.phaseAtMost) return false;
+  if (cond.dayAtLeast !== void 0 && day < cond.dayAtLeast) return false;
+  if (cond.dayAtMost !== void 0 && day > cond.dayAtMost) return false;
+  if (cond.anySkillAtLeast) {
+    const ok = cond.anySkillAtLeast.some((c) => skills[c.key] >= c.level);
+    if (!ok) return false;
+  }
+  return true;
+}
+function clampStats(stats, range = STAT_RANGE) {
+  const out = { ...stats };
+  for (const k of STAT_KEYS) {
+    out[k] = Math.max(range.min, Math.min(range.max, out[k]));
+  }
+  return out;
+}
+function applyEffect(effect, stats, skills, flags, range = STAT_RANGE) {
+  if (!effect) return { stats, skills, flags };
+  const nextStats = { ...stats };
+  if (effect.stats) {
+    for (const [k, v] of Object.entries(effect.stats)) {
+      nextStats[k] += v;
+    }
+  }
+  const nextSkills = { ...skills };
+  if (effect.skills) {
+    for (const [k, v] of Object.entries(effect.skills)) {
+      nextSkills[k] = Math.max(0, Math.min(3, nextSkills[k] + v));
+    }
+  }
+  const nextFlags = { ...flags };
+  if (effect.flags) {
+    for (const [k, v] of Object.entries(effect.flags)) nextFlags[k] = v;
+  }
+  return { stats: clampStats(nextStats, range), skills: nextSkills, flags: nextFlags };
+}
+
+// src/rng.ts
+function nextRandom(state) {
+  let t = state + 1831565813 | 0;
+  let x = t;
+  x = Math.imul(x ^ x >>> 15, 1 | x);
+  x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x;
+  const value = ((x ^ x >>> 14) >>> 0) / 4294967296;
+  return { value, state: t };
+}
+function seedToState(seed) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function createRng(seed) {
+  let state = seedToState(seed);
+  const float = () => {
+    const r = nextRandom(state);
+    state = r.state;
+    return r.value;
+  };
+  return {
+    float,
+    int: (min, max) => min + Math.floor(float() * (max - min + 1)),
+    pick: (items) => {
+      if (items.length === 0) throw new Error("pick() from empty array");
+      return items[Math.floor(float() * items.length)];
+    },
+    chance: (p) => float() < p,
+    state: () => state
+  };
+}
+
+// src/run.ts
+var PHASE_BY_DAY = [
+  { until: 3, phase: 1 },
+  { until: 12, phase: 2 },
+  { until: 24, phase: 3 },
+  { until: 40, phase: 4 },
+  { until: Number.MAX_SAFE_INTEGER, phase: 5 }
+];
+function phaseForDay(day) {
+  for (const p of PHASE_BY_DAY) if (day <= p.until) return p.phase;
+  return 5;
+}
+var DEFAULT_STATS = {
+  health: 7,
+  energy: 7,
+  supplies: 5,
+  trust: 6,
+  understanding: 2,
+  bonds: 4
+};
+var Run = class {
+  config;
+  director;
+  statRange;
+  cardsPerDay;
+  rng;
+  cardsById;
+  state;
+  constructor(config) {
+    this.config = config;
+    this.director = { ...DEFAULT_DIRECTOR, ...config.director };
+    this.statRange = config.statRange ?? STAT_RANGE;
+    this.cardsPerDay = config.cardsPerDay ?? { min: 2, max: 3 };
+    this.rng = createRng(config.seed);
+    this.cardsById = new Map(config.content.cards.map((c) => [c.id, c]));
+    const stats = { ...DEFAULT_STATS };
+    if (config.startStats) Object.assign(stats, config.startStats);
+    const skills = { survival: 0, system: 0, people: 0, drill: 0 };
+    if (config.startSkills) Object.assign(skills, config.startSkills);
+    this.state = {
+      seed: config.seed,
+      rngState: this.rng.state(),
+      status: "running",
+      day: 1,
+      phase: 1,
+      stats,
+      skills,
+      flags: {},
+      seenCards: {},
+      journal: [],
+      inevitability: 0,
+      decisions: 0
+    };
+  }
+  /** Поточна картка (для UI) або null, якщо забіг завершено. */
+  currentCard() {
+    if (!this.state.pending) return null;
+    return this.cardsById.get(this.state.pending.cardId) ?? null;
+  }
+  /** Доступні варіанти поточної картки. */
+  availableOptions() {
+    const card = this.currentCard();
+    if (!card) return [];
+    const s = this.state;
+    return card.options.filter(
+      (o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day)
+    );
+  }
+  /**
+   * Підтягнути наступну картку. Викликати, коли pending === undefined.
+   * Повертає картку або завершує забіг, якщо подій більше немає.
+   */
+  draw() {
+    const s = this.state;
+    if (s.status === "ended") return null;
+    if (s.pending) return this.currentCard();
+    if (s.day >= this.director.hardEndDay) {
+      this.endWith("hardend");
+      return null;
+    }
+    if (s.day > this.director.inevitabilityStartsDay) {
+      s.inevitability += 1;
+    }
+    const fatalChance = this.fatalChance();
+    if (s.day > this.director.safeUntilDay && this.rng.chance(fatalChance)) {
+      this.endWith("accident");
+      return null;
+    }
+    const pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    if (pool.length === 0) {
+      this.endWith("exhausted");
+      return null;
+    }
+    const card = this.weightedPick(pool);
+    s.pending = { cardId: card.id, options: card.options.map((o) => o.id) };
+    s.seenCards[card.id] = (s.seenCards[card.id] ?? 0) + 1;
+    return card;
+  }
+  /** Обрати варіант за id. Повертає true, якщо вибір прийнято. */
+  choose(optionId) {
+    const s = this.state;
+    const card = this.currentCard();
+    if (!card || s.status === "ended") return false;
+    const option = card.options.find((o) => o.id === optionId);
+    if (!option) return false;
+    if (!meetsCondition(option.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
+    const applied = applyEffect(option.effects, s.stats, s.skills, s.flags, this.statRange);
+    s.stats = applied.stats;
+    s.skills = applied.skills;
+    s.flags = applied.flags;
+    if (option.conditionalEffects) {
+      for (const cond of option.conditionalEffects) {
+        if (meetsCondition(cond.when, s.stats, s.skills, s.flags, s.phase, s.day)) {
+          const extra = applyEffect(cond.then, s.stats, s.skills, s.flags, this.statRange);
+          s.stats = extra.stats;
+          s.skills = extra.skills;
+          s.flags = extra.flags;
+        }
+      }
+    }
+    s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
+    s.decisions += 1;
+    s.pending = void 0;
+    if (s.stats.health <= 0) {
+      this.endWith("wounds");
+      return true;
+    }
+    this.advanceTime();
+    return true;
+  }
+  advanceTime() {
+    const s = this.state;
+    const perDayThisDay = s.day % Math.max(1, this.cardsPerDay.min);
+    const doneToday = s.journal.filter((j) => j.day === s.day).length;
+    const target = this.targetCardsForDay(s.day);
+    if (doneToday >= target) {
+      s.day += 1;
+      s.phase = phaseForDay(s.day);
+      s.stats = {
+        ...s.stats,
+        energy: Math.max(this.statRange.min, s.stats.energy - 1),
+        supplies: Math.max(this.statRange.min, s.stats.supplies - 1)
+      };
+    }
+    if (s.day >= this.director.hardEndDay) this.endWith("hardend");
+  }
+  targetCardsForDay(day) {
+    const { min, max } = this.cardsPerDay;
+    if (max <= min) return min;
+    return min + day % (max - min + 1);
+  }
+  fatalChance() {
+    const s = this.state;
+    const over = Math.max(0, s.day - this.director.inevitabilityStartsDay);
+    const raw = this.director.baseFatalChance + over * this.director.rampPerDay;
+    let mod = 1;
+    if (s.stats.supplies <= 2) mod += 0.35;
+    if (s.stats.energy <= 2) mod += 0.35;
+    if (s.stats.health <= 3) mod += 0.5;
+    return Math.min(this.director.maxFatalChance, raw * mod);
+  }
+  isEligible(card) {
+    const s = this.state;
+    if (!card.phase.includes(s.phase)) return false;
+    if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
+    if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
+    const any = card.options.some(
+      (o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day)
+    );
+    return any;
+  }
+  weightedPick(pool) {
+    const weights = pool.map((c) => {
+      const base = c.weight ?? 1;
+      const seen = this.state.seenCards[c.id] ?? 0;
+      return base / (1 + seen);
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = this.rng.float() * total;
+    for (let i = 0; i < pool.length; i += 1) {
+      r -= weights[i];
+      if (r <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }
+  endWith(reason) {
+    const s = this.state;
+    const ending = this.pickEnding(reason);
+    s.status = "ended";
+    s.pending = void 0;
+    s.endingId = ending?.id ?? `fallback:${reason}`;
+    s.endingReason = reason;
+  }
+  pickEnding(reason) {
+    const s = this.state;
+    const all = this.config.content.endings;
+    const eligible = all.filter(
+      (e) => meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day)
+    );
+    const byKind = eligible.filter((e) => {
+      if (reason === "wounds") return e.kind === "accident" || e.kind === "quiet";
+      if (reason === "hardend") return e.kind === "system";
+      if (reason === "accident") return e.kind === "accident";
+      return true;
+    });
+    const pool = byKind.length > 0 ? byKind : eligible;
+    if (pool.length === 0) return void 0;
+    const total = pool.reduce((a, e) => a + (e.weight ?? 1), 0);
+    let r = this.rng.float() * total;
+    for (const e of pool) {
+      r -= e.weight ?? 1;
+      if (r <= 0) return e;
+    }
+    return pool[pool.length - 1];
+  }
+  ending() {
+    const id = this.state.endingId;
+    if (!id) return void 0;
+    return this.config.content.endings.find((e) => e.id === id);
+  }
+  /** Знімок для збереження/тестів. */
+  snapshot() {
+    return JSON.parse(JSON.stringify(this.state));
+  }
+  /** Перевірка цілісності стану (для автотестів). */
+  validate() {
+    const errors = [];
+    const s = this.state;
+    for (const k of SKILL_KEYS) {
+      if (s.skills[k] < 0 || s.skills[k] > 3) errors.push(`skill ${k} out of range: ${s.skills[k]}`);
+    }
+    for (const [k, v] of Object.entries(s.stats)) {
+      if (v < this.statRange.min || v > this.statRange.max) errors.push(`stat ${k} out of range: ${v}`);
+    }
+    if (s.status === "ended" && !s.endingId) errors.push("ended without endingId");
+    if (s.status === "running" && s.decisions > 500) errors.push("run too long");
+    return errors;
+  }
+};
+
+// data/test-content.ts
+var TEST_CARDS = [
+  {
+    id: "call.paper",
+    kind: "event",
+    phase: [1],
+    once: true,
+    text: "\u041F\u043E\u0432\u0456\u0441\u0442\u043A\u0430 \u0432 \u043F\u043E\u0448\u0442\u043E\u0432\u0456\u0439 \u0441\u043A\u0440\u0438\u043D\u044C\u0446\u0456. \u041F\u0430\u043F\u0456\u0440 \u0449\u0456\u043B\u044C\u043D\u0438\u0439, \u043F\u0430\u0445\u043D\u0435 \u0441\u0432\u0456\u0436\u043E\u044E \u0444\u0430\u0440\u0431\u043E\u044E. \u041C\u0430\u043C\u0430 \u043A\u0430\u0436\u0435: \xAB\u041C\u043E\u0436\u0435, \u043F\u043E\u043C\u0438\u043B\u043A\u0430\xBB. \u0422\u0438 \u0432\u0436\u0435 \u0437\u043D\u0430\u0454\u0448, \u0449\u043E \u043D\u0435 \u043F\u043E\u043C\u0438\u043B\u043A\u0430.",
+    options: [
+      {
+        id: "hide",
+        text: "\u0421\u0445\u043E\u0432\u0430\u0442\u0438 \u043F\u043E\u0432\u0456\u0441\u0442\u043A\u0443 \u043F\u0456\u0434 \u0441\u0442\u043E\u0441 \u0433\u0430\u0437\u0435\u0442 \u0456 \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438",
+        effects: { stats: { energy: -1, trust: 1 }, flags: { hid_call: true }, journal: "\u0421\u0445\u043E\u0432\u0430\u0432 \u043F\u043E\u0432\u0456\u0441\u0442\u043A\u0443." }
+      },
+      {
+        id: "tell",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438 \u043C\u0430\u043C\u0456 \u0439 \u0440\u0430\u0437\u043E\u043C \u043F\u0456\u0442\u0438 \u0434\u043E \u0432\u0456\u0439\u0441\u044C\u043A\u043A\u043E\u043C\u0430\u0442\u0443",
+        effects: { stats: { bonds: 1, trust: 1, energy: -1 }, journal: "\u041F\u0456\u0448\u043E\u0432 \u0434\u043E \u0432\u0456\u0439\u0441\u044C\u043A\u043A\u043E\u043C\u0430\u0442\u0443 \u0437 \u043C\u0430\u043C\u043E\u044E." }
+      },
+      {
+        id: "ask_friend",
+        text: "\u0417\u0430\u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0443\u0432\u0430\u0442\u0438 \u0434\u0440\u0443\u0433\u043E\u0432\u0456, \u044F\u043A\u0438\u0439 \u0443\u0436\u0435 \u0432\u0456\u0434\u0441\u043B\u0443\u0436\u0438\u0432",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 1 }, skills: { people: 1 }, journal: "\u0414\u0440\u0443\u0433 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0432, \u044F\u043A \u0446\u0435 \u043D\u0430\u0441\u043F\u0440\u0430\u0432\u0434\u0456." }
+      }
+    ]
+  },
+  {
+    id: "call.queue",
+    kind: "system",
+    phase: [1],
+    text: "\u0427\u0435\u0440\u0433\u0430 \u0443 \u0432\u0456\u0439\u0441\u044C\u043A\u043A\u043E\u043C\u0430\u0442\u0456. \u0425\u0442\u043E\u0441\u044C \u043F\u043E\u043F\u0435\u0440\u0435\u0434\u0443 \u0436\u0430\u0440\u0442\u0443\u0454, \u0449\u043E \u0431\u0435\u0440\u0443\u0442\u044C \u0443\u0441\u0456\u0445, \u0443 \u043A\u043E\u0433\u043E \u0454 \u043F\u0443\u043B\u044C\u0441. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0441\u043C\u0456\u0454\u0442\u044C\u0441\u044F.",
+    options: [
+      { id: "silent", text: "\u0421\u0442\u043E\u044F\u0442\u0438 \u043C\u043E\u0432\u0447\u043A\u0438 \u0439 \u0441\u043B\u0443\u0445\u0430\u0442\u0438", effects: { stats: { understanding: 1, energy: -1 } } },
+      {
+        id: "talk",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438 \u0432 \u0447\u043E\u043B\u043E\u0432\u0456\u043A\u0430 \u043F\u043E\u043F\u0435\u0440\u0435\u0434\u0443, \u043A\u0443\u0434\u0438 \u0440\u043E\u0437\u043F\u043E\u0434\u0456\u043B\u044F\u044E\u0442\u044C",
+        effects: { stats: { understanding: 1, bonds: 1 } }
+      },
+      {
+        id: "leave",
+        text: "\u0421\u043F\u0440\u043E\u0431\u0443\u0432\u0430\u0442\u0438 \u0432\u0438\u0439\u0442\u0438 \u0437 \u0447\u0435\u0440\u0433\u0438 \u0439 \u043F\u0456\u0442\u0438 \u0434\u043E\u0434\u043E\u043C\u0443",
+        effects: { stats: { health: -2, trust: -1, supplies: -1 }, flags: { tried_to_leave: true } }
+      }
+    ]
+  },
+  {
+    id: "call.medical",
+    kind: "routine",
+    phase: [1],
+    text: "\u041C\u0435\u0434\u043A\u043E\u043C\u0456\u0441\u0456\u044F. \u041B\u0456\u043A\u0430\u0440 \u0434\u0438\u0432\u0438\u0442\u044C\u0441\u044F \u0432 \u0431\u043B\u0430\u043D\u043A, \u043D\u0435 \u043D\u0430 \u0442\u0435\u0431\u0435. \xAB\u0421\u043A\u0430\u0440\u0433\u0438 \u0454?\xBB \u2014 \u043F\u0438\u0442\u0430\u0454 \u0442\u0430\u043A, \u043D\u0456\u0431\u0438 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0443\u0436\u0435 \u043D\u0430\u0434\u0440\u0443\u043A\u043E\u0432\u0430\u043D\u0430.",
+    options: [
+      {
+        id: "complain",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u043F\u0440\u043E \u043A\u043E\u043B\u0456\u043D\u043E, \u044F\u043A\u0435 \u043D\u0438\u0454 \u0437 \u0437\u0438\u043C\u0438",
+        effects: { stats: { health: 1, trust: -1 }, flags: { knee_noted: true } }
+      },
+      { id: "silent", text: "\xAB\u041D\u0435\u043C\u0430\u0454\xBB.", effects: { stats: { trust: 1, understanding: -1 } } },
+      {
+        id: "joke",
+        text: "\xAB\u0404 \u2014 \u0430\u043B\u0435\u0440\u0433\u0456\u044F \u043D\u0430 \u0434\u0443\u0440\u043D\u0456\u0432\xBB",
+        effects: { stats: { trust: -2, energy: 1 }, skills: { drill: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.bus",
+    kind: "event",
+    phase: [2],
+    once: true,
+    text: "\u0410\u0432\u0442\u043E\u0431\u0443\u0441 \u0456\u0437 \u0437\u0430\u043F\u0456\u0442\u043D\u0456\u043B\u0438\u043C\u0438 \u0432\u0456\u043A\u043D\u0430\u043C\u0438 \u0432\u0435\u0437\u0435 \u0432\u0430\u0441 \u043D\u0430 \u0441\u0445\u0456\u0434. \u0425\u0442\u043E\u0441\u044C \u043D\u0430\u043C\u0430\u0433\u0430\u0454\u0442\u044C\u0441\u044F \u0437\u0430\u0441\u043D\u0443\u0442\u0438, \u0445\u0442\u043E\u0441\u044C \u2014 \u0434\u043E\u0457\u0441\u0442\u0438 \u0434\u043E\u043C\u0430\u0448\u043D\u0454. \u0412\u043E\u0434\u0456\u0439 \u043C\u043E\u0432\u0447\u0438\u0442\u044C \u0443\u0441\u0456 \u0448\u0456\u0441\u0442\u044C \u0433\u043E\u0434\u0438\u043D.",
+    options: [
+      {
+        id: "watch",
+        text: "\u0414\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u0443 \u0432\u0456\u043A\u043D\u043E \u0439 \u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0438",
+        effects: { stats: { understanding: 2, energy: -1 }, journal: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0432\u0456\u0441\u0456\u043C \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0456\u0432." }
+      },
+      {
+        id: "share",
+        text: "\u0420\u043E\u0437\u0434\u0430\u0442\u0438 \u0441\u0432\u043E\u0457 \u043F\u0438\u0440\u0456\u0436\u043A\u0438 \u0441\u0443\u0441\u0456\u0434\u0430\u043C",
+        effects: { stats: { supplies: -2, bonds: 2 } }
+      },
+      {
+        id: "sleep",
+        text: "\u0421\u043F\u0430\u0442\u0438, \u043F\u043E\u043A\u0438 \u0434\u0430\u044E\u0442\u044C",
+        effects: { stats: { energy: 2, understanding: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.sapper",
+    kind: "person",
+    phase: [2, 3],
+    character: "\u0421\u0430\u043F\u0435\u0440 \u0422\u043E\u043B\u0456\u043A",
+    text: "\u0422\u043E\u043B\u0456\u043A, \u0441\u0430\u043F\u0435\u0440 \u0456\u0437 \u0442\u0440\u0435\u0442\u044C\u043E\u0457 \u0440\u043E\u0442\u0438, \u043F\u043E\u043A\u0430\u0437\u0443\u0454 \u0442\u043E\u0431\u0456 \xAB\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0438\u0439\xBB \u0441\u043F\u043E\u0441\u0456\u0431 \u0441\u0438\u0434\u0456\u0442\u0438 \u0432 \u043E\u043A\u043E\u043F\u0456. \u041A\u0430\u0436\u0435, \u0449\u043E \u0439\u043E\u0433\u043E \u0432\u0447\u0438\u0432 \u043F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A, \u044F\u043A\u0438\u0439 \u0432\u043E\u044E\u0454 \u0437 2015-\u0433\u043E.",
+    options: [
+      {
+        id: "learn",
+        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0432 \u0431\u043B\u043E\u043A\u043D\u043E\u0442 \u0456 \u043F\u0435\u0440\u0435\u043F\u0438\u0442\u0430\u0442\u0438 \u0434\u0432\u0456\u0447\u0456",
+        effects: { skills: { survival: 1 }, stats: { understanding: 1, energy: -1 }, flags: { knows_okop: true } }
+      },
+      {
+        id: "skeptic",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u0432\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0434\u043E\u043F\u043E\u043C\u043E\u0436\u0435",
+        effects: { stats: { bonds: -1, understanding: 1 } }
+      },
+      {
+        id: "ask_why",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u0437 \u0442\u0438\u0445, \u043A\u043E\u0433\u043E \u0432\u0456\u043D \u0443\u0447\u0438\u0432, \u0449\u0435 \u0436\u0438\u0432\u0456",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { tolko_honest: true } }
+      }
+    ]
+  },
+  {
+    id: "phase2.soup",
+    kind: "routine",
+    phase: [2, 3],
+    text: "\u041F\u043E\u043B\u044C\u043E\u0432\u0430 \u043A\u0443\u0445\u043D\u044F. \u0423 \u043A\u0430\u0441\u0442\u0440\u0443\u043B\u0456 \u0449\u043E\u0441\u044C, \u0449\u043E \u043D\u0430\u0437\u0438\u0432\u0430\u044E\u0442\u044C \u0431\u043E\u0440\u0449\u0435\u043C. \u0425\u043B\u043E\u043F\u0435\u0446\u044C \u043F\u043E\u0440\u0443\u0447 \u0443\u043F\u0435\u0432\u043D\u0435\u043D\u043E \u043A\u0430\u0436\u0435: \xAB\u0413\u043E\u043B\u043E\u0432\u043D\u0435 \u2014 \u0433\u0430\u0440\u044F\u0447\u0435\xBB.",
+    options: [
+      { id: "eat", text: "\u0417'\u0457\u0441\u0442\u0438 \u0439 \u043F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438", effects: { stats: { health: 1, energy: 1, supplies: -1 } } },
+      {
+        id: "point",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438 \u043A\u0443\u0445\u0430\u0440\u0435\u0432\u0456, \u0449\u043E \u0432 \u043A\u0430\u0441\u0442\u0440\u0443\u043B\u0456 \u043F\u043B\u0430\u0432\u0430\u0454 \u043F\u0430\u043F\u0456\u0440 \u0432\u0456\u0434 \u043C\u0456\u0448\u043A\u0430",
+        effects: { stats: { bonds: -1, trust: -1, understanding: 1 } }
+      },
+      {
+        id: "skip",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0441\u0432\u043E\u044E \u043F\u043E\u0440\u0446\u0456\u044E \u0445\u043B\u043E\u043F\u0446\u0435\u0432\u0456 \u0437 \u0441\u0443\u0441\u0456\u0434\u043D\u044C\u043E\u0433\u043E \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F",
+        effects: { stats: { bonds: 2, energy: -1, health: -1, supplies: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.phone",
+    kind: "event",
+    phase: [2, 3],
+    text: "\u041C\u0430\u043C\u0430 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0443\u0454. \u0413\u043E\u043B\u043E\u0441 \u0442\u0440\u0435\u043C\u0442\u0438\u0442\u044C: \u043F\u043E \u0442\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440\u0443 \u043A\u0430\u0436\u0443\u0442\u044C, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435. \u0422\u0438 \u0434\u0438\u0432\u0438\u0448\u0441\u044F \u043D\u0430 \u0440\u043E\u0437\u0431\u0438\u0442\u0435 \u0432\u0456\u043A\u043D\u043E \u043A\u0430\u0437\u0430\u0440\u043C\u0438.",
+    options: [
+      {
+        id: "lie",
+        text: "\xAB\u0423\u0441\u0435 \u0434\u043E\u0431\u0440\u0435, \u043C\u0430\u043C\u043E\xBB",
+        effects: { stats: { bonds: 1, understanding: 1, energy: -1 }, journal: "\u0417\u0431\u0440\u0435\u0445\u0430\u0432 \u043C\u0430\u043C\u0456." }
+      },
+      {
+        id: "truth",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u043F\u0440\u0430\u0432\u0434\u0443, \u043A\u043E\u0440\u043E\u0442\u043A\u043E",
+        effects: { stats: { bonds: -1, trust: -1, understanding: 2 } }
+      },
+      {
+        id: "hold",
+        text: "\u041C\u043E\u0432\u0447\u0430\u0442\u0438 \u0439 \u0441\u043B\u0443\u0445\u0430\u0442\u0438, \u044F\u043A \u0432\u043E\u043D\u0430 \u043F\u043B\u0430\u0447\u0435",
+        effects: { stats: { bonds: 2, energy: -2 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.split",
+    kind: "system",
+    phase: [2, 3],
+    text: "\u041F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A \u0431\u0443\u0434\u0443\u0454 \u0440\u043E\u0442\u0443. \u041A\u0430\u0436\u0435: \xAB\u0425\u0442\u043E \u0445\u043E\u0447\u0435 \u0432 \u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443 \u2014 \u043A\u0440\u043E\u043A \u0443\u043F\u0435\u0440\u0435\u0434\xBB. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0440\u0443\u0445\u0430\u0454\u0442\u044C\u0441\u044F. \u0412\u0456\u043D \u043E\u0431\u0438\u0440\u0430\u0454 \u0441\u0430\u043C.",
+    options: [
+      {
+        id: "volunteer",
+        text: "\u0412\u0438\u0439\u0434\u0438 \u043F\u0435\u0440\u0448\u0438\u043C, \u043F\u043E\u043A\u0438 \u043D\u0435 \u043E\u0431\u0440\u0430\u043B\u0438",
+        effects: { stats: { health: -2, trust: 2, bonds: 1 }, flags: { assault: true }, journal: "\u041F\u0456\u0448\u043E\u0432 \u0443 \u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443 \u0434\u043E\u0431\u0440\u043E\u0432\u0456\u043B\u044C\u043D\u043E." }
+      },
+      {
+        id: "hide",
+        text: "\u0421\u0442\u0430\u0442\u0438 \u0437\u0430 \u0448\u0438\u0440\u043E\u043A\u0443 \u0441\u043F\u0438\u043D\u0443 \u0441\u0443\u0441\u0456\u0434\u0430",
+        effects: { stats: { trust: -2, understanding: 1, energy: -1 } }
+      },
+      {
+        id: "ask_where",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u043A\u0443\u0434\u0438 \u0441\u0430\u043C\u0435 \u0439 \u043D\u0430 \u0441\u043A\u0456\u043B\u044C\u043A\u0438",
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: -1, understanding: 2 }, flags: { asked_orders: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.trench",
+    kind: "event",
+    phase: [3],
+    text: "\u0422\u0432\u0456\u0439 \u043E\u043A\u043E\u043F \u0433\u043B\u0438\u0431\u0448\u0438\u0439 \u0437\u0430 \u0441\u0443\u0441\u0456\u0434\u0441\u044C\u043A\u0438\u0439 \u043D\u0430 \u043B\u043E\u043F\u0430\u0442\u0443. \u0421\u0443\u0441\u0456\u0434 \u043A\u0430\u0436\u0435, \u0449\u043E \u0442\u043E\u0431\u0456 \u043F\u0440\u043E\u0441\u0442\u043E \u043F\u043E\u0449\u0430\u0441\u0442\u0438\u043B\u043E \u0437 \u043C\u0456\u0441\u0446\u0435\u043C. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u043D\u043E\u0447\u0435\u0439 \u0439\u043E\u0433\u043E \u043A\u043E\u043F\u0430\u0432.",
+    options: [
+      {
+        id: "share_spot",
+        text: "\u0417\u0430\u043F\u0440\u043E\u0441\u0438\u0442\u0438 \u0441\u0443\u0441\u0456\u0434\u0430 \u043F\u0435\u0440\u0435\u0441\u0438\u0434\u0456\u0442\u0438 \u043E\u0431\u0441\u0442\u0440\u0456\u043B \u0440\u0430\u0437\u043E\u043C",
+        effects: { stats: { bonds: 2, health: -1, energy: -1 }, flags: { shared_trench: true } }
+      },
+      {
+        id: "keep",
+        text: "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438",
+        effects: { stats: { health: 1, bonds: -1 } }
+      },
+      {
+        id: "teach",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438, \u044F\u043A \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E \u043A\u043E\u043F\u0430\u0442\u0438",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { bonds: 2, energy: -2 }, skills: { people: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.water",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u0412\u043E\u0434\u0430 \u0432 \u0431\u0430\u043A\u043B\u0430\u0437\u0456 \u043F\u0430\u0445\u043D\u0435 \u043C\u0435\u0442\u0430\u043B\u043E\u043C. \u0423\u0441\u0456 \u043F\u2019\u044E\u0442\u044C. \u0422\u0438 \u0437\u0433\u0430\u0434\u0443\u0454\u0448, \u0449\u043E \u043A\u0430\u0437\u0430\u0432 \u0422\u043E\u043B\u0456\u043A \u043F\u0440\u043E \u0432\u043E\u0434\u0443 \u0437 \u0432\u0456\u0434\u0441\u0442\u0456\u0439\u043D\u0438\u043A\u0456\u0432.",
+    options: [
+      {
+        id: "drink",
+        text: "\u041F\u0438\u0442\u0438, \u0431\u043E \u0445\u043E\u0447\u0435\u0442\u044C\u0441\u044F",
+        effects: { stats: { health: -1, energy: 1 } }
+      },
+      {
+        id: "boil",
+        text: "\u041F\u0440\u043E\u043A\u0438\u043F\u2019\u044F\u0442\u0438\u0442\u0438 \u043D\u0430 \u0431\u0443\u0440\u0436\u0443\u0439\u0446\u0456",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { health: 1, supplies: -1, energy: -1 } }
+      },
+      {
+        id: "warn",
+        text: "\u041F\u043E\u043F\u0435\u0440\u0435\u0434\u0438\u0442\u0438 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F",
+        effects: { stats: { bonds: 1, trust: -1, understanding: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.loss",
+    kind: "event",
+    phase: [3, 4],
+    once: true,
+    text: "\u0423\u043D\u043E\u0447\u0456 \xAB\u043F\u0440\u0438\u043B\u0456\u0442\xBB \u0437\u0430\u0431\u0438\u0440\u0430\u0454 \u0441\u0443\u0441\u0456\u0434\u043D\u0456\u0439 \u0431\u043B\u0456\u043D\u0434\u0430\u0436. \u0423\u0440\u0430\u043D\u0446\u0456 \u043D\u0430 \u0442\u043E\u043C\u0443 \u043C\u0456\u0441\u0446\u0456 \u0437\u0431\u0438\u0440\u0430\u044E\u0442\u044C \u0440\u0435\u0447\u0456. \u0425\u0442\u043E\u0441\u044C \u043F\u0438\u0442\u0430\u0454, \u0447\u0438\u044F \u0446\u0435 \u043A\u0443\u0440\u0442\u043A\u0430. \u0422\u0438 \u0432\u043F\u0456\u0437\u043D\u0430\u0454\u0448 \u043A\u0443\u0440\u0442\u043A\u0443.",
+    options: [
+      {
+        id: "say",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0447\u0438\u044F \u0446\u0435",
+        effects: { stats: { bonds: 2, understanding: 1, energy: -2 }, journal: "\u0421\u043A\u0430\u0437\u0430\u0432, \u0447\u0438\u044F \u0431\u0443\u043B\u0430 \u043A\u0443\u0440\u0442\u043A\u0430." }
+      },
+      {
+        id: "silent",
+        text: "\u041F\u0440\u043E\u043C\u043E\u0432\u0447\u0430\u0442\u0438",
+        effects: { stats: { understanding: -1, energy: -1, bonds: -1 } }
+      },
+      {
+        id: "letter",
+        text: "\u0417\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0442\u0438 \u0456\u043C\u2019\u044F, \u0449\u043E\u0431 \u043F\u043E\u0442\u0456\u043C \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0440\u0456\u0434\u043D\u0438\u043C",
+        effects: { stats: { bonds: 1, understanding: 2 }, flags: { will_write_letter: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.propaganda",
+    kind: "system",
+    phase: [3, 4],
+    text: "\u0423 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456 \u043F\u043E \u0440\u0430\u0446\u0456\u0457 \u043F\u0435\u0440\u0435\u0434\u0430\u044E\u0442\u044C \u0437\u0432\u0435\u0434\u0435\u043D\u043D\u044F. \u0426\u0438\u0444\u0440\u0438 \u0432\u0442\u0440\u0430\u0442 \xAB\u0432\u043E\u0440\u043E\u0433\u0430\xBB \u0437\u0432\u0443\u0447\u0430\u0442\u044C \u0442\u0430\u043A \u0443\u043F\u0435\u0432\u043D\u0435\u043D\u043E, \u0449\u043E \u0445\u043E\u0447\u0435\u0442\u044C\u0441\u044F \u043F\u043E\u0432\u0456\u0440\u0438\u0442\u0438. \u0425\u0442\u043E\u0441\u044C \u043F\u043E\u0440\u0443\u0447 \u0442\u0438\u0445\u043E \u0440\u0430\u0445\u0443\u0454 \u043D\u0430 \u043F\u0430\u043B\u044C\u0446\u044F\u0445.",
+    options: [
+      {
+        id: "believe",
+        text: "\u041F\u043E\u0432\u0456\u0440\u0438\u0442\u0438, \u0445\u043E\u0447 \u043D\u0430 \u0445\u0432\u0438\u043B\u0438\u043D\u0443",
+        effects: { stats: { trust: 2, understanding: -2 } }
+      },
+      {
+        id: "count",
+        text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0456\u0437 \u0441\u0443\u0441\u0456\u0434\u043E\u043C",
+        effects: { stats: { understanding: 2, trust: -1, bonds: 1 } }
+      },
+      {
+        id: "turn_off",
+        text: "\u0412\u0438\u043C\u043A\u043D\u0443\u0442\u0438 \u0440\u0430\u0446\u0456\u044E",
+        effects: { stats: { trust: -1, energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.medic",
+    kind: "person",
+    phase: [3, 4],
+    character: "\u0421\u0430\u043D\u0456\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440\u043A\u0430 \u041E\u043B\u044F",
+    text: "\u041E\u043B\u044F, \u0441\u0430\u043D\u0456\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440\u043A\u0430, \u043A\u0430\u0436\u0435, \u0449\u043E \u0434\u0436\u0433\u0443\u0442 \u0442\u0440\u0435\u0431\u0430 \u043D\u0430\u043A\u043B\u0430\u0434\u0430\u0442\u0438 \u0432\u0438\u0449\u0435, \u043D\u0456\u0436 \u0443\u0441\u0456 \u0434\u0443\u043C\u0430\u044E\u0442\u044C. \u041A\u0430\u0436\u0435 \u0442\u0438\u0445\u043E, \u043D\u0456\u0431\u0438 \u0434\u0456\u043B\u0438\u0442\u044C\u0441\u044F \u043A\u0440\u0430\u0434\u0435\u043D\u0438\u043C.",
+    options: [
+      {
+        id: "remember",
+        text: "\u041F\u0435\u0440\u0435\u043F\u0438\u0442\u0430\u0442\u0438 \u0439 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441",
+        effects: { skills: { survival: 1 }, stats: { understanding: 1, bonds: 1 } }
+      },
+      {
+        id: "mock",
+        text: "\xAB\u0422\u0430 \u044F \u0439 \u0442\u0430\u043A \u0437\u043D\u0430\u044E\xBB",
+        effects: { stats: { bonds: -1, trust: 1, understanding: -1 } }
+      },
+      {
+        id: "ask_supplies",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u0434\u0436\u0433\u0443\u0442\u0456\u0432 \u0440\u0435\u0430\u043B\u044C\u043D\u043E \u0454",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { knows_jgut_count: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.break",
+    kind: "event",
+    phase: [3, 4],
+    text: "\u0422\u0440\u0435\u0442\u0456\u0439 \u0434\u0435\u043D\u044C \u0431\u0435\u0437 \u0441\u043D\u0443. \u0420\u0443\u043A\u0438 \u0442\u0440\u0435\u043C\u0442\u044F\u0442\u044C, \u0434\u0443\u043C\u043A\u0438 \u043F\u043B\u0443\u0442\u0430\u044E\u0442\u044C\u0441\u044F. \u041A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u043A\u0430\u0436\u0435, \u0449\u043E \u0446\u0435 \xAB\u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u043E\xBB.",
+    options: [
+      {
+        id: "rest",
+        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438 \u0432\u0456\u0434\u043F\u043E\u0447\u0438\u043D\u043E\u043A, \u043D\u0430\u0432\u0456\u0442\u044C \u044F\u043A\u0449\u043E \u0446\u0435 \xAB\u043D\u0435 \u043F\u043E-\u0447\u043E\u043B\u043E\u0432\u0456\u0447\u043E\u043C\u0443\xBB",
+        effects: { stats: { energy: 3, trust: -1 } }
+      },
+      {
+        id: "hold",
+        text: "\u0422\u0440\u0438\u043C\u0430\u0442\u0438\u0441\u044F \u0434\u0430\u043B\u0456",
+        effects: { stats: { health: -2, trust: 1, energy: 1 } }
+      },
+      {
+        id: "help",
+        text: "\u0414\u043E\u043F\u043E\u043C\u043E\u0433\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u0435\u0432\u0456 \u043F\u043E\u0440\u0443\u0447 \u0437\u0430\u0441\u043D\u0443\u0442\u0438 \u0445\u043E\u0447 \u043D\u0430 \u0433\u043E\u0434\u0438\u043D\u0443",
+        effects: { stats: { bonds: 2, energy: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.bribe",
+    kind: "system",
+    phase: [3, 4],
+    text: "\u0422\u0438\u043B\u043E\u0432\u0438\u0439 \u043F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A \u043F\u0440\u043E\u043F\u043E\u043D\u0443\u0454 \xAB\u0432\u0438\u0440\u0456\u0448\u0438\u0442\u0438 \u043F\u0438\u0442\u0430\u043D\u043D\u044F\xBB \u0437 \u043F\u0435\u0440\u0435\u0432\u0435\u0434\u0435\u043D\u043D\u044F\u043C \u0443 \u0434\u0440\u0443\u0433\u0438\u0439 \u0435\u0448\u0435\u043B\u043E\u043D. \u0426\u0456\u043D\u0430 \u2014 \u0442\u0440\u0438 \u0442\u0438\u0441\u044F\u0447\u0456 \u0439 \u043C\u043E\u0432\u0447\u0430\u043D\u043D\u044F.",
+    options: [
+      {
+        id: "pay",
+        text: "\u0417\u0430\u043F\u043B\u0430\u0442\u0438\u0442\u0438",
+        requires: { statAtLeast: { supplies: 4 } },
+        effects: { stats: { supplies: -4, health: 1, trust: -1 }, flags: { who_paid: true } }
+      },
+      {
+        id: "refuse",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: 1, trust: -1 } }
+      },
+      {
+        id: "report",
+        text: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0440\u0430\u043F\u043E\u0440\u0442",
+        requires: { skillAtLeast: { system: 2 } },
+        effects: { stats: { trust: -3, understanding: 2, bonds: -1 }, flags: { reported: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.cold",
+    kind: "event",
+    phase: [4, 5],
+    text: "\u041C\u043E\u0440\u043E\u0437 \u043A\u0440\u0456\u0437\u044C \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A. \u0421\u043F\u0430\u043B\u044C\u043D\u0438\u043A \u2014 \u043D\u0435 \u0442\u0432\u0456\u0439, \u0442\u043E\u0431\u0456 \u0432\u0456\u0434\u0434\u0430\u0432 \u0441\u0443\u0441\u0456\u0434. \u0423\u043D\u043E\u0447\u0456 \u0432\u0456\u043D \u043A\u0430\u0448\u043B\u044F\u0454.",
+    options: [
+      {
+        id: "return",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A \u043D\u0430\u0437\u0430\u0434",
+        effects: { stats: { health: -2, bonds: 3, energy: -1 } }
+      },
+      { id: "keep", text: "\u0417\u0430\u043B\u0438\u0448\u0438\u0442\u0438 \u0441\u043E\u0431\u0456", effects: { stats: { health: 1, bonds: -2 } } },
+      {
+        id: "find",
+        text: "\u0417\u043D\u0430\u0439\u0442\u0438 \u0449\u0435 \u0449\u043E\u0441\u044C \u0442\u0435\u043F\u043B\u0435 \u043D\u0430 \u0441\u0443\u0441\u0456\u0434\u043D\u0456\u0439 \u043F\u043E\u0437\u0438\u0446\u0456\u0457",
+        requires: { skillAtLeast: { survival: 2 } },
+        effects: { stats: { supplies: 1, bonds: 2, energy: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.letters",
+    kind: "routine",
+    phase: [4, 5],
+    text: "\u0425\u043B\u043E\u043F\u0435\u0446\u044C \u043F\u0438\u0442\u0430\u0454, \u044F\u043A \u043F\u0438\u0441\u0430\u0442\u0438 \u043B\u0438\u0441\u0442\u0438 \u0440\u0456\u0434\u043D\u0438\u043C. \u0423 \u043D\u044C\u043E\u0433\u043E \u0432\u0436\u0435 \u0442\u0440\u0438 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u0438\u0445, \u0456 \u0436\u043E\u0434\u0435\u043D \u043D\u0435 \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0439.",
+    options: [
+      {
+        id: "help",
+        text: "\u0414\u043E\u043F\u043E\u043C\u043E\u0433\u0442\u0438 \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u043A\u043E\u0440\u043E\u0442\u043A\u043E \u0439 \u0447\u0435\u0441\u043D\u043E",
+        effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { letters_help: true } }
+      },
+      {
+        id: "joke",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043F\u043E\u0448\u0442\u0430 \u0432\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0434\u0456\u0439\u0434\u0435",
+        effects: { stats: { understanding: 1, bonds: -1 } }
+      },
+      {
+        id: "send",
+        text: "\u0417\u043D\u0430\u0439\u0442\u0438 \u0442\u043E\u0433\u043E, \u0445\u0442\u043E \u0432\u0438\u0457\u0434\u0435 \u043D\u0430 \u0440\u043E\u0442\u0430\u0446\u0456\u044E, \u0456 \u043F\u0435\u0440\u0435\u0434\u0430\u0442\u0438",
+        requires: { skillAtLeast: { people: 2 } },
+        effects: { stats: { bonds: 3, supplies: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.doubt",
+    kind: "event",
+    phase: [4, 5],
+    text: "\u0423\u043D\u043E\u0447\u0456, \u043A\u043E\u043B\u0438 \u0432\u0441\u0456 \u0441\u043F\u043B\u044F\u0442\u044C, \u0442\u0438 \u043B\u043E\u0432\u0438\u0448 \u0441\u0435\u0431\u0435 \u043D\u0430 \u0434\u0443\u043C\u0446\u0456: \xAB\u0410 \u0449\u043E, \u044F\u043A \u043D\u0430\u0441 \u0442\u0443\u0442 \u0443\u0437\u0430\u0433\u0430\u043B\u0456 \u043D\u0435\u043C\u0430\u0454 \u043F\u0440\u0438\u0447\u0438\u043D\u0438 \u0442\u0440\u0438\u043C\u0430\u0442\u0438?\xBB \u041F\u043E\u0442\u0456\u043C \u0437\u0433\u0430\u0434\u0443\u0454\u0448, \u0449\u043E \u0437\u0430 \u0446\u044E \u0434\u0443\u043C\u043A\u0443 \u0442\u0438 \u0432\u0436\u0435 \u043A\u043E\u043C\u0443\u0441\u044C \u043D\u0435 \u0434\u043E\u0432\u0456\u0440\u044F\u0454\u0448.",
+    options: [
+      {
+        id: "write",
+        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0446\u044E \u0434\u0443\u043C\u043A\u0443 \u0432 \u0431\u043B\u043E\u043A\u043D\u043E\u0442",
+        effects: { stats: { understanding: 3, energy: -1 } }
+      },
+      {
+        id: "suppress",
+        text: "\u041D\u0430\u043A\u0430\u0437\u0430\u0442\u0438 \u0441\u043E\u0431\u0456 \u043D\u0435 \u0434\u0443\u043C\u0430\u0442\u0438 \u043F\u0440\u043E \u0446\u0435",
+        effects: { stats: { understanding: -2, trust: 1, health: -1 } }
+      },
+      {
+        id: "share_doubt",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0422\u043E\u043B\u0456\u043A\u043E\u0432\u0456",
+        requires: { flagTrue: ["tolko_honest"] },
+        effects: { stats: { understanding: 2, bonds: 2 }, flags: { doubt_shared: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.standing",
+    kind: "person",
+    phase: [4, 5],
+    character: "\u041A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u041D\u0454\u0432\u043C\u0454\u0440\u0436\u0438\u0446\u044C\u043A\u0438\u0439",
+    text: "\u041A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u0440\u043E\u0442\u0438 \u0437\u0431\u0438\u0440\u0430\u0454 \u0442\u0438\u0445, \u0445\u0442\u043E \u0449\u0435 \u0432\u043C\u0456\u0454 \u0434\u0443\u043C\u0430\u0442\u0438. \u041A\u0430\u0436\u0435: \xAB\u041C\u0435\u043D\u0456 \u043F\u043E\u0442\u0440\u0456\u0431\u043D\u0456 \u043B\u044E\u0434\u0438 \u043D\u0435 \u0434\u043B\u044F \u043F\u043E\u0434\u0432\u0438\u0433\u0456\u0432, \u0430 \u0434\u043B\u044F \u0442\u043E\u0433\u043E, \u0449\u043E\u0431 \u0432\u0438\u0436\u0438\u0442\u0438\xBB.",
+    options: [
+      {
+        id: "accept",
+        text: "\u041F\u043E\u0433\u043E\u0434\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: 1, health: -1 }, flags: { commander_trusts: true } }
+      },
+      {
+        id: "refuse",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C \u2014 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u0430\u043B\u044C\u043D\u0456\u0441\u0442\u044C \u043D\u0435 \u043F\u043E\u0442\u0440\u0456\u0431\u043D\u0430",
+        effects: { stats: { trust: -1, energy: 1 } }
+      },
+      {
+        id: "ask_plan",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0443 \u0447\u043E\u043C\u0443 \u043F\u043B\u0430\u043D \u043F\u043E\u043B\u044F\u0433\u0430\u0454 \u043D\u0430\u0441\u043F\u0440\u0430\u0432\u0434\u0456",
+        requires: { skillAtLeast: { system: 2 } },
+        effects: { stats: { understanding: 3, bonds: 1 }, flags: { knows_plan: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.desert",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    text: "\u0414\u0432\u043E\u0454 \u0437 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043F\u0456\u0448\u043B\u0438 \u0432\u043D\u043E\u0447\u0456. \u0423\u0440\u0430\u043D\u0446\u0456 \u0446\u0435 \u043D\u0430\u0437\u0438\u0432\u0430\u044E\u0442\u044C \xAB\u0437\u0440\u0430\u0434\u043E\u044E\xBB. \u0422\u0438 \u0441\u0430\u043C \u0434\u0443\u043C\u0430\u0432 \u043F\u0440\u043E \u0446\u0435 \u0434\u0435\u0432\u2019\u044F\u0442\u044C \u043D\u043E\u0447\u0435\u0439.",
+    options: [
+      {
+        id: "condemn",
+        text: "\u041F\u0456\u0434\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0440\u043E\u0437\u043C\u043E\u0432\u0443 \u043F\u0440\u043E \u0437\u0440\u0430\u0434\u0443",
+        effects: { stats: { trust: 1, understanding: -2, bonds: -1 } }
+      },
+      {
+        id: "silence",
+        text: "\u041C\u043E\u0432\u0447\u0430\u0442\u0438",
+        effects: { stats: { understanding: 1, trust: -1, energy: -1 } }
+      },
+      {
+        id: "understand",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0440\u043E\u0437\u0443\u043C\u0456\u0454\u0448 \u0457\u0445",
+        effects: { stats: { understanding: 2, bonds: 1, trust: -1 }, flags: { spoke_for_them: true } }
+      }
+    ]
+  },
+  {
+    id: "phase5.lastpost",
+    kind: "event",
+    phase: [5],
+    once: true,
+    text: "\u041D\u0430\u043A\u0430\u0437 \u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u043F\u043E\u0437\u0438\u0446\u0456\u044E. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u043E\u044F\u0441\u043D\u044E\u0454 \u043D\u0430\u0432\u0456\u0449\u043E. \u0420\u0430\u0446\u0456\u044F \u0448\u0438\u043F\u0438\u0442\u044C.",
+    options: [
+      {
+        id: "hold",
+        text: "\u0422\u0440\u0438\u043C\u0430\u0442\u0438",
+        effects: { stats: { health: -2, trust: 2 }, flags: { held_post: true } }
+      },
+      {
+        id: "dig",
+        text: "\u041F\u043E\u0433\u043B\u0438\u0431\u0438\u0442\u0438 \u043E\u043A\u043E\u043F, \u043F\u043E\u043A\u0438 \u0454 \u0447\u0430\u0441",
+        effects: { stats: { energy: -2, health: 1, supplies: -1 }, skills: { survival: 1 } }
+      },
+      {
+        id: "gather",
+        text: "\u0417\u0456\u0431\u0440\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u0456\u0432 \u0456 \u043F\u043E\u0433\u043E\u0432\u043E\u0440\u0438\u0442\u0438, \u0449\u043E \u0440\u043E\u0431\u0438\u0442\u0438, \u044F\u043A\u0449\u043E \u0442\u0438\u0445\u043E \u043D\u0435 \u0441\u0442\u0430\u043D\u0435",
+        effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { last_talk: true } }
+      }
+    ]
+  },
+  {
+    id: "phase5.epitaph",
+    kind: "event",
+    phase: [5],
+    once: true,
+    text: "\u0425\u0442\u043E\u0441\u044C \u0456\u0437 \u0445\u043B\u043E\u043F\u0446\u0456\u0432 \u043F\u0438\u0442\u0430\u0454: \xAB\u042F\u043A\u0449\u043E \u0449\u043E \u2014 \u0449\u043E \u043F\u0440\u043E \u043D\u0430\u0441 \u0441\u043A\u0430\u0436\u0443\u0442\u044C?\xBB \u0423\u0441\u0456 \u0441\u043C\u0456\u044E\u0442\u044C\u0441\u044F. \u041F\u043E\u0442\u0456\u043C \u0442\u0438\u0445\u043E.",
+    options: [
+      {
+        id: "joke",
+        text: "\xAB\u0429\u043E \u043C\u0438 \u0434\u043E\u0431\u0440\u0435 \u043A\u043E\u043F\u0430\u043B\u0438\xBB",
+        effects: { stats: { energy: 1, bonds: 1, understanding: 1 }, flags: { joke_epitaph: true } }
+      },
+      {
+        id: "honest",
+        text: "\xAB\u0429\u043E \u043C\u0438 \u043D\u0435 \u0445\u043E\u0442\u0456\u043B\u0438 \u0442\u0443\u0442 \u0431\u0443\u0442\u0438\xBB",
+        effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { honest_epitaph: true } }
+      },
+      {
+        id: "nothing",
+        text: "\xAB\u041D\u0456\u0447\u043E\u0433\u043E. \u041D\u0435 \u0441\u043A\u0430\u0436\u0443\u0442\u044C\xBB",
+        effects: { stats: { understanding: 1, energy: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.commander_orders",
+    kind: "system",
+    phase: [2, 3],
+    text: "\u041D\u043E\u0432\u0438\u0439 \u043D\u0430\u043A\u0430\u0437: \u0449\u043E\u0434\u0435\u043D\u043D\u0430 \u043C\u0443\u0448\u0442\u0440\u0430 \u043D\u0430 \u043F\u043B\u0430\u0446\u0443, \u043F\u043E\u043F\u0440\u0438 \u043C\u043E\u0440\u043E\u0437. \xAB\u0421\u043E\u043B\u0434\u0430\u0442 \u043C\u0430\u0454 \u0432\u0438\u0433\u043B\u044F\u0434\u0430\u0442\u0438 \u0441\u043E\u043B\u0434\u0430\u0442\u043E\u043C\xBB.",
+    options: [
+      {
+        id: "attend",
+        text: "\u0421\u0443\u043C\u043B\u0456\u043D\u043D\u043E \u0445\u043E\u0434\u0438\u0442\u0438",
+        effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } }
+      },
+      {
+        id: "skip",
+        text: "\u041F\u0440\u043E\u043F\u0443\u0441\u043A\u0430\u0442\u0438 \u043F\u0456\u0434 \u043F\u0440\u0438\u0432\u043E\u0434\u043E\u043C \u043D\u0430\u0440\u044F\u0434\u0456\u0432",
+        effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } }
+      },
+      {
+        id: "pointless",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u043D\u0430\u0432\u0456\u0449\u043E \u0446\u0435 \u0432 \u043E\u043A\u043E\u043F\u0456",
+        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.food_ration",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u041F\u0430\u043A\u0443\u043D\u043E\u043A \u0432\u0456\u0434 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432. \u0422\u0440\u0438 \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0438, \u0434\u0432\u0430 \u043D\u043E\u0441\u043A\u0438 \u0439 \u0437\u0430\u043F\u0438\u0441\u043A\u0430 \xAB\u0422\u0440\u0438\u043C\u0430\u0439\u0442\u0435\u0441\u044C, \u0445\u043B\u043E\u043F\u0446\u0456\xBB. \u041D\u043E\u0441\u043A\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456.",
+    options: [
+      {
+        id: "split",
+        text: "\u0420\u043E\u0437\u0434\u0456\u043B\u0438\u0442\u0438 \u043F\u043E-\u0447\u0435\u0441\u043D\u043E\u043C\u0443",
+        effects: { stats: { supplies: 2, bonds: 2, energy: 1 } }
+      },
+      {
+        id: "keep",
+        text: "\u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0441\u043E\u0431\u0456, \u0431\u043E \u0442\u0438 \u0433\u0456\u0440\u0448\u0435 \u0437\u0430\u0431\u0435\u0437\u043F\u0435\u0447\u0435\u043D\u0438\u0439",
+        effects: { stats: { supplies: 3, bonds: -2, trust: 1 } }
+      },
+      {
+        id: "write_back",
+        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0430\u0434\u0440\u0435\u0441\u0443 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432, \u0449\u043E\u0431 \u043F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.wound",
+    kind: "event",
+    phase: [4, 5],
+    text: "\u0423\u043B\u0430\u043C\u043E\u043A \u0437\u0430\u0439\u0448\u043E\u0432 \u0443 \u0441\u0442\u0435\u0433\u043D\u043E. \u041E\u043B\u044F \u043A\u0430\u0436\u0435, \u0449\u043E \u0434\u0456\u0439\u0434\u0435 \u0439 \u0442\u0430\u043A. \u041A\u0430\u0436\u0435 \u0446\u0435 \u0448\u0432\u0438\u0434\u0448\u0435 \u0441\u043E\u0431\u0456.",
+    options: [
+      {
+        id: "stay",
+        text: "\u041B\u0438\u0448\u0438\u0442\u0438\u0441\u044C \u043D\u0430 \u043F\u043E\u0437\u0438\u0446\u0456\u0457",
+        effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } }
+      },
+      {
+        id: "evac",
+        text: "\u0414\u043E\u0437\u0432\u043E\u043B\u0438\u0442\u0438 \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u0438\u0442\u0438 \u0441\u0435\u0431\u0435 \u0432 \u0442\u0438\u043B",
+        effects: { stats: { health: 3, trust: -2, understanding: 1 } }
+      },
+      {
+        id: "self_help",
+        text: "\u041E\u0431\u0440\u043E\u0431\u0438\u0442\u0438 \u0441\u0430\u043C, \u044F\u043A \u0443\u0447\u0438\u043B\u0430 \u041E\u043B\u044F",
+        requires: { flagTrue: ["knows_jgut_count"] },
+        effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.silence",
+    kind: "event",
+    phase: [5],
+    text: "\u0422\u0438\u0448\u0430. \u0414\u043E\u0432\u0433\u043E. \u0425\u043B\u043E\u043F\u0446\u0456 \u043F\u043E\u0447\u0438\u043D\u0430\u044E\u0442\u044C \u0448\u0435\u043F\u043E\u0442\u0456\u0442\u0438\u0441\u044F, \u0449\u043E \xAB\u0446\u0435 \u0432\u0436\u0435 \u0432\u0441\u0435\xBB. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0437\u043D\u0430\u0454.",
+    options: [
+      {
+        id: "check",
+        text: "\u0412\u0438\u0441\u0443\u043D\u0443\u0442\u0438\u0441\u044F \u0439 \u043F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { health: -1, understanding: 2, energy: -1 }, flags: { checked_out: true } }
+      },
+      {
+        id: "wait",
+        text: "\u0427\u0435\u043A\u0430\u0442\u0438 \u043D\u0430\u043A\u0430\u0437",
+        effects: { stats: { energy: -1, trust: 1 } }
+      },
+      {
+        id: "talk_down",
+        text: "\u0417\u0430\u0441\u043F\u043E\u043A\u043E\u0457\u0442\u0438 \u0442\u0438\u0445, \u0445\u0442\u043E \u0445\u043E\u0447\u0435 \u0431\u0456\u0433\u0442\u0438",
+        effects: { stats: { bonds: 2, understanding: 1, energy: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.wind",
+    kind: "event",
+    phase: [5],
+    text: "\u0412\u0456\u0442\u0435\u0440 \u0437\u043C\u0456\u043D\u044E\u0454\u0442\u044C\u0441\u044F. \u0423\u0441\u0456 \u043F\u0456\u0434\u043D\u0456\u043C\u0430\u044E\u0442\u044C \u0433\u043E\u043B\u043E\u0432\u0438. \u0422\u0438 \u0440\u0430\u043F\u0442\u043E\u043C \u0434\u0443\u043C\u0430\u0454\u0448 \u043F\u0440\u043E \u043A\u0443\u0445\u043D\u044E \u0432\u0434\u043E\u043C\u0430 \u0439 \u043F\u0440\u043E \u0442\u0435, \u0449\u043E \u0442\u0430\u043C \u0442\u0435\u043F\u0435\u0440 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u0441\u0438\u0434\u0438\u0442\u044C.",
+    options: [
+      {
+        id: "remember",
+        text: "\u0417\u0433\u0430\u0434\u0430\u0442\u0438 \u0432\u0441\u0435, \u0449\u043E \u0431\u0443\u043B\u043E \u0432\u0434\u043E\u043C\u0430",
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 } }
+      },
+      {
+        id: "pray",
+        text: "\u041C\u043E\u043B\u0438\u0442\u0438\u0441\u044F, \u0445\u043E\u0447 \u0456 \u043D\u0435 \u0432\u0456\u0440\u0438\u0448",
+        effects: { stats: { energy: 1, understanding: -1, trust: 1 } }
+      },
+      {
+        id: "prepare",
+        text: "\u041F\u0440\u0438\u0433\u043E\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044F",
+        effects: { stats: { health: 1, energy: -1 }, skills: { survival: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.gossip",
+    kind: "person",
+    phase: [4, 5],
+    text: "\u0422\u0438\u043B\u043E\u0432\u0438\u0439 \u043F\u0438\u0441\u0430\u0440 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0434\u0430\u0454, \u0449\u043E \xAB\u043D\u0430\u0433\u043E\u0440\u0456\xBB \u0432\u0436\u0435 \u0432\u0441\u0435 \u0432\u0438\u0440\u0456\u0448\u0435\u043D\u043E \u0439 \u043D\u0430\u0441 \u0437\u0430\u043B\u0438\u0448\u0438\u043B\u0438 \u044F\u043A \u043F\u0440\u0438\u043C\u0430\u043D\u043A\u0443. \u0412\u0456\u043D \u043A\u0430\u0436\u0435 \u0446\u0435 \u0437 \u0433\u043E\u0440\u0434\u0456\u0441\u0442\u044E.",
+    options: [
+      {
+        id: "believe",
+        text: "\u041F\u043E\u0432\u0456\u0440\u0438\u0442\u0438 \u0439 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0441\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
+        effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } }
+      },
+      {
+        id: "dismiss",
+        text: "\u0412\u0456\u0434\u043C\u0430\u0445\u043D\u0443\u0442\u0438\u0441\u044F",
+        effects: { stats: { understanding: -1, energy: 1 } }
+      },
+      {
+        id: "check",
+        text: "\u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 \u0437\u043D\u0430\u0439\u043E\u043C\u043E\u0433\u043E \u0432 \u0448\u0442\u0430\u0431\u0456",
+        requires: { skillAtLeast: { system: 2 } },
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.photo",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u0425\u0442\u043E\u0441\u044C \u043F\u0440\u0438\u043D\u0456\u0441 \u0444\u043E\u0442\u043E\u0430\u043F\u0430\u0440\u0430\u0442. \u0425\u043B\u043E\u043F\u0446\u0456 \u0445\u043E\u0447\u0443\u0442\u044C \u0444\u043E\u0442\u043E \xAB\u043D\u0430 \u043F\u0430\u043C\u2019\u044F\u0442\u044C\xBB. \u0422\u0438 \u0434\u0443\u043C\u0430\u0454\u0448, \u043A\u043E\u043C\u0443 \u0446\u0435 \u0444\u043E\u0442\u043E \u043F\u043E\u0442\u0456\u043C \u043F\u043E\u043A\u0430\u0437\u0443\u0432\u0430\u0442\u0438.",
+    options: [
+      {
+        id: "pose",
+        text: "\u041F\u043E\u0437\u0443\u0432\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0437 \u0443\u0441\u0456\u043C\u0430",
+        effects: { stats: { bonds: 2, energy: 1 } }
+      },
+      {
+        id: "refuse",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: -1 } }
+      },
+      {
+        id: "send",
+        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438, \u0449\u043E\u0431 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043B\u0438 \u043C\u0430\u043C\u0456",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } }
+      }
+    ]
+  },
+  {
+    id: "phase2.hazing",
+    kind: "system",
+    phase: [2],
+    text: "\xAB\u0414\u0456\u0434\u0456\u0432\u0449\u0438\u043D\u0430\xBB \u0432 \u043D\u043E\u0432\u043E\u043C\u0443 \u0432\u0438\u0433\u043B\u044F\u0434\u0456: \u043D\u043E\u0432\u0430\u0447\u043A\u0430\u043C \u2014 \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438, \u0441\u0442\u0430\u0440\u0448\u0438\u043C \u2014 \u043D\u0456\u0447\u043E\u0433\u043E. \u041E\u0434\u0438\u043D \u0456\u0437 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u0456\u0432 \u043D\u0430\u0437\u0438\u0432\u0430\u0454 \u0446\u0435 \xAB\u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F\u043C\u0438\xBB.",
+    options: [
+      {
+        id: "obey",
+        text: "\u041F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438 \u0431\u0435\u0437 \u0441\u043B\u0456\u0432",
+        effects: { stats: { trust: 1, energy: -2 } }
+      },
+      {
+        id: "stand",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u043D\u0435 \u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F, \u0430 \u0431\u0435\u0437\u043B\u0430\u0434",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
+      },
+      {
+        id: "trade",
+        text: "\u0414\u043E\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C: \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u044E, \u0430\u043B\u0435 \u0437\u0430 \u0445\u0430\u0440\u0447\u0456",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.quiet_evening",
+    kind: "routine",
+    phase: [4, 5],
+    text: "\u0422\u0438\u0445\u0438\u0439 \u0432\u0435\u0447\u0456\u0440. \u0425\u0442\u043E\u0441\u044C \u0434\u0456\u0441\u0442\u0430\u0454 \u0433\u0456\u0442\u0430\u0440\u0443 \u0439 \u0433\u0440\u0430\u0454 \u043F\u0456\u0441\u043D\u044E, \u044F\u043A\u0443 \u0432\u0441\u0456 \u0437\u043D\u0430\u044E\u0442\u044C, \u0430\u043B\u0435 \u043D\u0435 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u044E\u0442\u044C, \u0437\u0432\u0456\u0434\u043A\u0438.",
+    options: [
+      {
+        id: "sing",
+        text: "\u041F\u0456\u0434\u0441\u043F\u0456\u0432\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } }
+      },
+      {
+        id: "listen",
+        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u043D\u0430 \u043E\u0431\u043B\u0438\u0447\u0447\u044F",
+        effects: { stats: { understanding: 2, energy: 1 } }
+      },
+      {
+        id: "ask",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F, \u0434\u0435 \u0432\u0456\u043D \u0446\u0435 \u0447\u0443\u0432",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } }
+      }
+    ]
+  },
+  {
+    id: "phase5.final_wait",
+    kind: "final",
+    phase: [5],
+    text: "\u0414\u0435\u043D\u044C, \u044F\u043A\u0438\u0439 \u043D\u0435 \u043C\u0430\u0432 \u043D\u0430\u0441\u0442\u0430\u0442\u0438. \u041F\u043E\u0437\u0438\u0446\u0456\u044F \u0442\u0440\u0438\u043C\u0430\u0454\u0442\u044C\u0441\u044F, \u0430\u043B\u0435 \u043F\u0438\u043B \u0443 \u043F\u043E\u0432\u0456\u0442\u0440\u0456 \u0432\u0436\u0435 \u043D\u0435 \u043F\u0438\u043B.",
+    options: [
+      {
+        id: "ready",
+        text: "\u041F\u0440\u0438\u0433\u043E\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044F \u0439 \u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u043F\u0440\u044F\u043C\u043E",
+        effects: { stats: { understanding: 1, bonds: 1 } }
+      },
+      {
+        id: "hide",
+        text: "\u0417\u0430\u043B\u044F\u0433\u0442\u0438 \u043D\u0430 \u0434\u043D\u043E \u043E\u043A\u043E\u043F\u0443",
+        effects: { stats: { health: -1, energy: -1 } }
+      },
+      {
+        id: "comfort",
+        text: "\u041F\u0440\u0438\u043A\u0440\u0438\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F \u043F\u043E\u0440\u0443\u0447",
+        effects: { stats: { bonds: 2, health: -2 } }
+      }
+    ]
+  }
+];
+var TEST_ENDINGS = [
+  {
+    id: "ending.morkva",
+    kind: "accident",
+    title: "\u0417\u0430 \u0431\u0430\u043D\u043A\u0443 \u043C\u043E\u0440\u043A\u0432\u0438",
+    epilogue: "\u0412\u0456\u043D \u0437\u0430\u0433\u0438\u043D\u0443\u0432 \u0437\u0430 \u0431\u0430\u043D\u043A\u0443 \u0442\u0443\u0448\u043A\u043E\u0432\u0430\u043D\u043E\u0457 \u043C\u043E\u0440\u043A\u0432\u0438, \u044F\u043A\u0443 \u043F\u0440\u0438\u043D\u0456\u0441 \u0456\u0437 \u0441\u043E\u0431\u043E\u044E \u0432 \u043E\u043A\u043E\u043F. \u0423 \u0437\u0432\u0435\u0434\u0435\u043D\u043D\u0456 \u0446\u044C\u043E\u0433\u043E \u043D\u0435 \u0431\u0443\u0434\u0435. \u0423 \u0441\u0435\u043B\u0456 \u2014 \u0442\u0435\u0436.",
+    defaultEpitaph: "\u041D\u043E\u0441\u0438\u0432 \u0456\u0437 \u0441\u043E\u0431\u043E\u044E \u043C\u043E\u0440\u043A\u0432\u0443. \u041D\u0435 \u0434\u043E\u043D\u0456\u0441.",
+    weight: 1
+  },
+  {
+    id: "ending.tihiy",
+    kind: "system",
+    title: "\u0422\u0438\u0445\u0438\u0439 \u0437\u0430\u043F\u0430\u0441",
+    epilogue: "\u0419\u043E\u0433\u043E \xAB\u0441\u043F\u0438\u0441\u0430\u043B\u0438\xBB \u0437\u0430 \u0440\u043E\u0437\u043A\u043B\u0430\u0434\u0435\u043D\u0438\u043C \u0433\u0440\u0430\u0444\u0456\u043A\u043E\u043C. \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0438 \u0432 \u043F\u043E\u0440\u044F\u0434\u043A\u0443, \u0434\u0430\u0442\u0430 \u0432 \u043D\u0430\u043A\u0430\u0437\u0456 \u2014 \u0442\u043E\u0447\u043D\u0430. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u043E\u043C\u0456\u0442\u0438\u0432, \u043A\u043E\u043B\u0438 \u0441\u0430\u043C\u0435 \u0432\u0441\u0435 \u0441\u043A\u0456\u043D\u0447\u0438\u043B\u043E\u0441\u044F.",
+    defaultEpitaph: "\u0421\u043F\u0438\u0441\u0430\u043B\u0438 \u0437\u0430 \u0433\u0440\u0430\u0444\u0456\u043A\u043E\u043C. \u0411\u0435\u0437 \u043A\u043E\u043C\u0435\u043D\u0442\u0430\u0440\u0456\u0432.",
+    weight: 2,
+    requires: { statAtMost: { understanding: 4 } }
+  },
+  {
+    id: "ending.poruch",
+    kind: "accident",
+    title: "\u041F\u043E\u0440\u0443\u0447 \u0456\u0437 \u0442\u0438\u043C, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432",
+    epilogue: "\u0419\u043E\u0433\u043E \u0432\u0438\u043D\u0435\u0441\u043B\u0438 \u0437 \u043F\u043E\u0437\u0438\u0446\u0456\u0457, \u044F\u043A\u0443 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u043C\u0430\u0432 \u0442\u0440\u0438\u043C\u0430\u0442\u0438. \u0422\u043E\u0439, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432, \u043D\u0435 \u0437\u043D\u0430\u0432 \u0439\u043E\u0433\u043E \u043F\u0440\u0456\u0437\u0432\u0438\u0449\u0430, \u0430\u043B\u0435 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432 \u0439\u043E\u0433\u043E \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A.",
+    defaultEpitaph: "\u0412\u0456\u0434\u0434\u0430\u0432 \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A. \u0411\u0456\u043B\u044C\u0448\u0435 \u043D\u0435 \u0437\u043C\u0435\u0440\u0437.",
+    weight: 2,
+    requires: { statAtLeast: { bonds: 6 } }
+  },
+  {
+    id: "ending.dobra",
+    kind: "sacrifice",
+    title: "\u0414\u043E\u0431\u0440\u0430 \u043F\u0430\u043C\u2019\u044F\u0442\u044C",
+    epilogue: "\u041F\u0440\u043E \u043D\u044C\u043E\u0433\u043E \u0437\u0433\u0430\u0434\u0443\u044E\u0442\u044C \u0443 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u0456 \u0431\u0435\u0437 \u043F\u0430\u0444\u043E\u0441\u0443: \xAB\u0412\u0456\u043D \u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0438 \u0439 \u043F\u0438\u0442\u0430\u0432 \u0434\u0443\u0440\u043D\u0456 \u043F\u0438\u0442\u0430\u043D\u043D\u044F\xBB. \u0426\u0435 \u2014 \u043D\u0430\u0439\u043A\u0440\u0430\u0449\u0435, \u0449\u043E \u0442\u0443\u0442 \u043C\u043E\u0436\u043D\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438.",
+    defaultEpitaph: "\u041F\u0438\u0442\u0430\u0432 \u0434\u0443\u0440\u043D\u0456 \u043F\u0438\u0442\u0430\u043D\u043D\u044F. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0441\u043C\u0456\u0432 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438.",
+    weight: 1,
+    requires: { statAtLeast: { understanding: 6, bonds: 6 } }
+  },
+  {
+    id: "ending.kryk",
+    kind: "sacrifice",
+    title: "\u041F\u043E\u0442\u0430\u0439\u043D\u0438\u0439 \u043A\u0440\u0438\u043A",
+    epilogue: "\u0412\u0456\u043D \u0443\u0441\u0442\u0438\u0433 \u0441\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441 \u0442\u0435, \u0449\u043E \u0432\u0441\u0456 \u0434\u0443\u043C\u0430\u043B\u0438 \u0432\u043D\u043E\u0447\u0456. \u0426\u0435 \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E. \u0426\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E \u0442\u0440\u044C\u043E\u0445 \u043B\u044E\u0434\u0435\u0439 \u0443 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456.",
+    defaultEpitaph: "\u0421\u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0432\u0433\u043E\u043B\u043E\u0441. \u041E\u0434\u0438\u043D \u0440\u0430\u0437.",
+    weight: 1,
+    requires: { flagTrue: ["doubt_shared", "honest_epitaph"] }
+  },
+  {
+    id: "ending.hardend",
+    kind: "system",
+    title: "\u041D\u0435\u043B\u0456\u043F\u0430 \u0432\u0438\u043F\u0430\u0434\u043A\u043E\u0432\u0456\u0441\u0442\u044C",
+    epilogue: "\u041E\u0444\u0456\u0446\u0456\u0439\u043D\u043E \u2014 \u0432\u043B\u0443\u0447\u0430\u043D\u043D\u044F. \u041D\u0435\u043E\u0444\u0456\u0446\u0456\u0439\u043D\u043E \u2014 \u043D\u0456\u0445\u0442\u043E \u0432\u0436\u0435 \u043D\u0435 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0454, \u043D\u0430\u0432\u0456\u0449\u043E \u0446\u0435 \u043C\u0456\u0441\u0446\u0435 \u0442\u0440\u0438\u043C\u0430\u043B\u0438. \u0421\u043F\u0438\u0441\u043E\u043A \u0434\u043E\u0432\u0433\u0438\u0439, \u043F\u0440\u0456\u0437\u0432\u0438\u0449\u0430 \u0434\u0440\u0456\u0431\u043D\u0438\u043C \u0448\u0440\u0438\u0444\u0442\u043E\u043C.",
+    defaultEpitaph: "\u0422\u0440\u0438\u043C\u0430\u043B\u0438 \u043C\u0456\u0441\u0446\u0435, \u044F\u043A\u0435 \u043D\u0456\u043A\u043E\u043C\u0443 \u043D\u0435 \u043F\u043E\u0442\u0440\u0456\u0431\u043D\u0435.",
+    weight: 3
+  },
+  {
+    id: "ending.wounds",
+    kind: "accident",
+    title: "\u0421\u0432\u043E\u0457\u043C\u0438 \u043D\u043E\u0433\u0430\u043C\u0438, \u043D\u0435 \u0441\u0432\u043E\u0454\u044E \u0432\u043E\u043B\u0435\u044E",
+    epilogue: "\u0412\u0456\u043D \u0437\u0440\u043E\u0431\u0438\u0432 \u0443\u0441\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E \u2014 \u0456 \u0432\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0432\u0441\u0442\u0438\u0433. \u0420\u0430\u043D\u0430 \u0432\u0438\u044F\u0432\u0438\u043B\u0430\u0441\u044C \u0448\u0432\u0438\u0434\u0448\u043E\u044E \u0437\u0430 \u0431\u0443\u0434\u044C-\u044F\u043A\u0443 \u043D\u0430\u0432\u0438\u0447\u043A\u0443.",
+    defaultEpitaph: "\u0412\u0441\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E. \u0412\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0432\u0441\u0442\u0438\u0433.",
+    weight: 2,
+    requires: { statAtLeast: { understanding: 3 } }
+  },
+  {
+    id: "ending.letters",
+    kind: "quiet",
+    title: "\u041F\u043E\u0442\u0456\u043C \u043D\u0430\u043F\u0438\u0448\u0435\u0448",
+    epilogue: "\u0412\u0456\u043D \u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442\u0438, \u044F\u043A\u0456 \u043D\u0435 \u0434\u043E\u0445\u043E\u0434\u0438\u043B\u0438. \u041E\u0434\u043D\u043E\u0433\u043E \u043B\u0438\u0441\u0442\u0430 \u0442\u0430\u043A\u0438 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043B\u0438 \u2014 \u0447\u0435\u0440\u0435\u0437 \u0440\u0456\u043A, \u0432 \u0456\u043D\u0448\u043E\u043C\u0443 \u043C\u0456\u0441\u0442\u0456, \u0447\u0443\u0436\u0456 \u043B\u044E\u0434\u0438.",
+    defaultEpitaph: "\u041F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442\u0438. \u041E\u0434\u0438\u043D \u0434\u0456\u0439\u0448\u043E\u0432.",
+    weight: 1,
+    requires: { flagTrue: ["letters_help"] }
+  }
+];
+
+// web/app.js
+var STAT_LABELS = {
+  health: "\u0417\u0434\u043E\u0440",
+  energy: "\u0411\u0430\u0434\u044C",
+  supplies: "\u0417\u0430\u043F",
+  trust: "\u0414\u043E\u0432",
+  understanding: "\u0420\u043E\u0437",
+  bonds: "\u0417\u0432'\u044F\u0437"
+};
+var STAT_NAMES = {
+  health: "\u0417\u0434\u043E\u0440\u043E\u0432\u2019\u044F",
+  energy: "\u0411\u0430\u0434\u044C\u043E\u0440\u0456\u0441\u0442\u044C",
+  supplies: "\u0417\u0430\u043F\u0430\u0441\u0438",
+  trust: "\u0414\u043E\u0432\u0456\u0440\u0430",
+  understanding: "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F",
+  bonds: "\u0417\u0432\u2019\u044F\u0437\u043A\u0438"
+};
+var SKILL_NAMES = {
+  survival: "\u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F",
+  system: "\u0421\u0438\u0441\u0442\u0435\u043C\u0430",
+  people: "\u041B\u044E\u0434\u0438",
+  drill: "\u041C\u0443\u0448\u0442\u0440\u0430"
+};
+var KIND_LABELS = {
+  event: "\u043F\u043E\u0434\u0456\u044F",
+  routine: "\u043F\u043E\u0431\u0443\u0442",
+  person: "\u043B\u044E\u0434\u0438\u043D\u0430",
+  system: "\u0441\u0438\u0441\u0442\u0435\u043C\u0430",
+  final: "\u0444\u0456\u043D\u0430\u043B"
+};
+var elDay = document.getElementById("day");
+var elStats = document.getElementById("stats");
+var elMain = document.getElementById("main");
+var elLog = document.getElementById("log");
+var run = new Run({
+  seed: newSeed(),
+  content: { cards: TEST_CARDS, endings: TEST_ENDINGS }
+});
+var lastChoice = null;
+var reactionOpen = false;
+function newSeed() {
+  return Math.random().toString(36).slice(2, 10);
+}
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+function renderStats(highlight = {}) {
+  const s = run.state.stats;
+  elStats.innerHTML = Object.keys(STAT_LABELS).map((k) => {
+    const v = s[k];
+    const pct = v / 10 * 100;
+    const pair = k === "trust" || k === "understanding" ? " pair" : "";
+    const d = highlight[k] ?? 0;
+    const cls = d > 0 ? " up" : d < 0 ? " down" : "";
+    const delta = d === 0 ? "" : `<span class="delta">${d > 0 ? "+" : ""}${d}</span>`;
+    return `<div class="stat${pair}${cls}" title="${STAT_NAMES[k]}: ${v}/10">
+      <div class="bar"><div class="fill" style="height:${pct}%"></div></div>
+      <div class="label">${STAT_LABELS[k]}</div>${delta}
+    </div>`;
+  }).join("");
+}
+function renderLog() {
+  const last = run.state.journal.slice(-3).reverse();
+  elLog.innerHTML = last.map((j) => `<div>\u0434${j.day} \xB7 ${escapeHtml(j.text)}</div>`).join("");
+}
+function fadeOut(node, done) {
+  if (!node) return done();
+  node.classList.add("leaving");
+  setTimeout(done, 160);
+}
+function render() {
+  elDay.textContent = `\u0414\u0435\u043D\u044C ${run.state.day} \xB7 \u0444\u0430\u0437\u0430 ${run.state.phase}`;
+  renderStats();
+  renderLog();
+  if (run.state.status === "ended") return renderEnding();
+  const card = run.draw();
+  if (!card) return renderEnding();
+  const available = new Set(run.availableOptions().map((o) => o.id));
+  elMain.innerHTML = `
+    <div class="card">
+      <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ""}</span>
+      <div>${escapeHtml(card.text)}</div>
+    </div>
+    <div class="options">
+      ${card.options.map(
+    (o) => available.has(o.id) ? `<button class="opt" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}</button>` : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(o.lockedHint ?? "\u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E")}</span></button>`
+  ).join("")}
+    </div>
+  `;
+  elMain.querySelectorAll("button.opt[data-opt]").forEach((btn) => {
+    btn.addEventListener("click", () => onChoose(card, btn));
+  });
+}
+function onChoose(card, btn) {
+  if (reactionOpen) return;
+  reactionOpen = true;
+  const option = card.options.find((o) => o.id === btn.dataset.opt);
+  if (!option) {
+    reactionOpen = false;
+    return;
+  }
+  const before = { ...run.state.stats, ...run.state.skills };
+  if (!run.choose(option.id)) {
+    reactionOpen = false;
+    return;
+  }
+  const after = { ...run.state.stats, ...run.state.skills };
+  btn.classList.add("chosen");
+  elMain.querySelectorAll("button.opt").forEach((b) => {
+    if (b !== btn) b.classList.add("faded");
+    b.classList.add("locked");
+    b.setAttribute("disabled", "");
+  });
+  const reaction = buildReaction(option, before, after);
+  renderStats(reaction.statDelta);
+  renderLog();
+  const box = document.createElement("div");
+  box.className = "reaction";
+  box.innerHTML = `
+    <div class="r-choice">\u279C ${escapeHtml(option.text)}</div>
+    <div class="r-line">${escapeHtml(reaction.line)}</div>
+    ${reaction.changes.length ? `<div class="r-changes">${reaction.changes.join(" \xB7 ")}</div>` : ""}
+    <button class="r-next" id="next">\u0414\u0430\u043B\u0456</button>
+  `;
+  elMain.appendChild(box);
+  const next = document.getElementById("next");
+  next.addEventListener("click", () => {
+    reactionOpen = false;
+    fadeOut(elMain.querySelector(".card"), () => {
+      lastChoice = null;
+      render();
+    });
+  });
+}
+function buildReaction(option, before, after) {
+  const statDelta = {};
+  const changes = [];
+  for (const k of Object.keys(STAT_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) {
+      statDelta[k] = d;
+      changes.push(`${STAT_NAMES[k]} ${d > 0 ? "+" : ""}${d}`);
+    }
+  }
+  for (const k of Object.keys(SKILL_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) changes.push(`${SKILL_NAMES[k]} +${d}`);
+  }
+  let line = option.effects?.journal;
+  if (!line) line = pickNeutralLine(option.id, changes);
+  return { line, changes, statDelta };
+}
+function pickNeutralLine(id, changes) {
+  const pool = changes.length ? NEUTRAL.with : NEUTRAL.none;
+  let h = 0;
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) % 997;
+  return pool[h % pool.length];
+}
+var NEUTRAL = {
+  none: [
+    "\u0422\u0438 \u043E\u0431\u0440\u0430\u0432. \u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E\u0441\u044F \u2014 \u0456\u043D\u043E\u0434\u0456 \u0446\u0435 \u043D\u0430\u0439\u043A\u0440\u0430\u0449\u0435, \u0449\u043E \u0441\u0442\u0430\u043B\u043E\u0441\u044F \u0437\u0430 \u0434\u0435\u043D\u044C.",
+    "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0432\u0456\u0434\u0431\u0443\u043B\u043E\u0441\u044F. \u0414\u0435\u043D\u044C \u043F\u0456\u0448\u043E\u0432 \u0434\u0430\u043B\u0456, \u044F\u043A \u043F\u0456\u0448\u043E\u0432 \u0431\u0438 \u0439 \u0431\u0435\u0437 \u0442\u0435\u0431\u0435.",
+    "\u0420\u0456\u0448\u0435\u043D\u043D\u044F \u0431\u0435\u0437 \u043D\u0430\u0441\u043B\u0456\u0434\u043A\u0456\u0432. \u041F\u043E\u043A\u0438 \u0449\u043E."
+  ],
+  with: [
+    "\u0412\u0438\u0431\u0456\u0440 \u043C\u0430\u0454 \u0446\u0456\u043D\u0443. \u0412\u043E\u043D\u0430 \u0441\u043F\u0438\u0441\u0430\u043D\u0430 \u0437 \u0442\u0435\u0431\u0435, \u0430 \u043D\u0435 \u0437 \u043A\u043E\u0433\u043E\u0441\u044C \u0456\u043D\u0448\u043E\u0433\u043E.",
+    "\u0429\u043E\u0441\u044C \u0437\u043C\u0456\u043D\u0438\u043B\u043E\u0441\u044F. \u041D\u0435 \u0437\u0430\u0432\u0436\u0434\u0438 \u0432 \u0442\u043E\u0439 \u0431\u0456\u043A, \u0443 \u044F\u043A\u0438\u0439 \u0442\u0438 \u0434\u0443\u043C\u0430\u0432.",
+    "\u0422\u0438 \u0432\u0438\u0440\u0456\u0448\u0438\u0432. \u041D\u0430\u0441\u043B\u0456\u0434\u043A\u0438 \u0432\u0438\u0440\u0456\u0448\u0443\u0432\u0430\u0442\u0438\u043C\u0443\u0442\u044C \u0437\u0430 \u0442\u0435\u0431\u0435 \u0434\u0430\u043B\u0456.",
+    "\u0426\u0435 \u044F\u043A\u043E\u0441\u044C \u0432\u0456\u0434\u0433\u0443\u043A\u043D\u0435\u0442\u044C\u0441\u044F. \u041D\u0435 \u0437\u0430\u0440\u0430\u0437, \u0442\u043E \u043F\u0456\u0437\u043D\u0456\u0448\u0435.",
+    "\u0412\u0456\u0439\u0441\u044C\u043A\u043E \u043D\u0435 \u043F\u0438\u0442\u0430\u0454 \u0437\u0433\u043E\u0434\u043E\u043C \u2014 \u0432\u0456\u0439\u0441\u044C\u043A\u043E \u0432\u0436\u0435 \u0432\u0441\u0435 \u0437\u0430\u043F\u0438\u0441\u0430\u043B\u043E."
+  ]
+};
+function renderEnding() {
+  const e = run.ending();
+  const st = run.state;
+  const title = e?.title ?? "\u041A\u0456\u043D\u0435\u0446\u044C";
+  const epilogue = e?.epilogue ?? "\u0417\u0430\u0431\u0456\u0433 \u043E\u0431\u0456\u0440\u0432\u0430\u0432\u0441\u044F \u0431\u0435\u0437 \u0437\u0430\u043F\u0438\u0441\u0430\u043D\u043E\u0433\u043E \u0444\u0456\u043D\u0430\u043B\u0443.";
+  const epitaph = e?.defaultEpitaph ?? "";
+  elMain.innerHTML = `
+    <div class="ending">
+      <div class="meta">${title} \xB7 \u0434\u0435\u043D\u044C ${st.day} \xB7 ${st.decisions} \u0440\u0456\u0448\u0435\u043D\u044C</div>
+      <h1>${escapeHtml(title)}</h1>
+      <p class="ep">${escapeHtml(epitaph)}</p>
+      <p>${escapeHtml(epilogue)}</p>
+      <div class="meta">
+        \u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F ${st.stats.understanding}/10 \xB7 \u0417\u0432'\u044F\u0437\u043A\u0438 ${st.stats.bonds}/10 \xB7
+        \u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F ${st.skills.survival} \xB7 \u0421\u0438\u0441\u0442\u0435\u043C\u0430 ${st.skills.system} \xB7
+        \u041B\u044E\u0434\u0438 ${st.skills.people} \xB7 \u041C\u0443\u0448\u0442\u0440\u0430 ${st.skills.drill}
+      </div>
+      <button class="btn" id="again">\u041F\u0440\u043E\u0436\u0438\u0442\u0438 \u0449\u0435 \u0440\u0430\u0437</button>
+      <button class="btn second" id="same">\u0422\u043E\u0439 \u0441\u0430\u043C\u0438\u0439 \u0448\u043B\u044F\u0445 (seed ${escapeHtml(st.seed)})</button>
+    </div>
+  `;
+  document.getElementById("again").addEventListener("click", () => {
+    run = new Run({ seed: newSeed(), content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
+    render();
+  });
+  document.getElementById("same").addEventListener("click", () => {
+    run = new Run({ seed: st.seed, content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
+    render();
+  });
+}
+render();
+
+</script>
+</body>
+</html>
