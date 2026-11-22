@@ -141,6 +141,12 @@ export interface CardEcho {
 
 export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
 
+/** Чому забіг завершується: від цього залежить, які фінали взагалі можливі. */
+export type EndReason = 'accident' | 'wounds' | 'hardend' | 'exhausted';
+
+/** Прапорці, які ставить сам двигун (а не картки): їх можна читати в умовах і echo. */
+export const ENGINE_FLAGS: readonly string[] = ['carried_out'] as const;
+
 export interface Ending {
   id: string;
   kind: EndingKind;
@@ -151,6 +157,11 @@ export interface Ending {
   requires?: Condition;
   /** Вага при виборі серед доступних. */
   weight?: number;
+  /**
+   * За яких причин завершення фінал можливий. Якщо не задано — за видом (kind):
+   * accident → усі, окрім hardend; sacrifice/quiet → accident, hardend; system → accident, hardend, exhausted.
+   */
+  reasons?: EndReason[];
 }
 
 /** «Директор долі»: параметри неминучості. */
@@ -187,6 +198,11 @@ export interface RunConfig {
   startSkills?: Partial<Skills>;
   /** Скільки карток за день (мінімум/максимум). */
   cardsPerDay?: { min: number; max: number };
+  /**
+   * Перший раз, коли здоров'я падає до 0, героя «виносять» (здоров'я 2, прапорець carried_out),
+   * і лише вдруге це кінець. За замовчуванням увімкнено: смерть має бути не помилкою шкали, а сценою.
+   */
+  reprieve?: boolean;
 }
 
 export interface JournalEntry {
@@ -215,6 +231,8 @@ export interface RunState {
   decisions: number;
   /** Скільки рішень у забігу били по здоров'ю (для вибору фіналу-поранення). */
   recentHurt?: number;
+  /** Останні показані картки: щоб одна й та сама не поверталась за кілька кроків. */
+  recent?: string[];
   /** Остання показана картка — для ланцюгів продовження. */
   lastCardId?: string;
   /** Остання сцена-наслідок (для екрана після вибору). */

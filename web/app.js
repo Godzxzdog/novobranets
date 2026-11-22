@@ -41,6 +41,32 @@ let run = new Run({
 let lastChoice = null;
 // true, поки показуємо реакцію — кнопки заблоковані.
 let reactionOpen = false;
+// «Привид» минулого шляху: коли граєш той самий seed, видно, де рішення розійшлися.
+let ghost = null;
+
+function pathOf(r) {
+  return r.state.journal
+    .filter((j) => j.optionId !== '__carried_out')
+    .map((j) => ({ cardId: j.cardId, optionId: j.optionId, day: j.day }));
+}
+
+function ghostFor(card) {
+  const g = ghost?.[run.state.decisions];
+  return g && g.cardId === card.id ? g : null;
+}
+
+function divergence() {
+  if (!ghost) return '';
+  const now = pathOf(run);
+  const n = Math.max(now.length, ghost.length);
+  for (let i = 0; i < n; i += 1) {
+    if (!now[i] || !ghost[i] || now[i].cardId !== ghost[i].cardId || now[i].optionId !== ghost[i].optionId) {
+      const day = (now[i] ?? ghost[i]).day;
+      return `Ти розійшовся зі своїм минулим шляхом на рішенні №${i + 1} (день ${day}).`;
+    }
+  }
+  return 'Ти повторив той самий шлях до кінця.';
+}
 
 function newSeed() {
   return Math.random().toString(36).slice(2, 10);
@@ -82,6 +108,7 @@ function render() {
   if (!card) return renderEnding();
 
   const available = new Set(run.availableOptions().map((o) => o.id));
+  const ghostPick = ghostFor(card);
   // Зв'язок з попереднім: рядок «звідки» показуємо лише тоді, коли картка
   // справді продовжує попередню сцену, а не просто має поле lead.
   const link = run.lastCard();
@@ -99,10 +126,12 @@ function render() {
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">
-      ${card.options.map((o) => available.has(o.id)
-        ? `<button class="opt" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}</button>`
-        : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(o.lockedHint ?? 'недоступно')}</span></button>`
-      ).join('')}
+      ${card.options.map((o) => {
+        const tag = ghostPick && ghostPick.optionId === o.id ? '<span class="ghost-tag">↺ минулого разу ти обрав це</span>' : '';
+        return available.has(o.id)
+          ? `<button class="opt${tag ? ' ghost' : ''}" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}${tag}</button>`
+          : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
+      }).join('')}
     </div>
   `;
 
@@ -217,20 +246,23 @@ function renderEnding() {
       <h1>${escapeHtml(title)}</h1>
       <p class="ep">${escapeHtml(epitaph)}</p>
       <p>${escapeHtml(epilogue)}</p>
+      ${ghost ? `<div class="meta">${escapeHtml(divergence())}</div>` : ''}
       <div class="meta">
         Розуміння ${st.stats.understanding}/10 · Зв'язки ${st.stats.bonds}/10 ·
         Виживання ${st.skills.survival} · Система ${st.skills.system} ·
         Люди ${st.skills.people} · Муштра ${st.skills.drill}
       </div>
       <button class="btn" id="again">Прожити ще раз</button>
-      <button class="btn second" id="same">Той самий шлях (seed ${escapeHtml(st.seed)})</button>
+      <button class="btn second" id="same">Той самий світ — інші рішення (seed ${escapeHtml(st.seed)})</button>
     </div>
   `;
   document.getElementById('again').addEventListener('click', () => {
+    ghost = null;
     run = new Run({ seed: newSeed(), content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
     render();
   });
   document.getElementById('same').addEventListener('click', () => {
+    ghost = pathOf(run);
     run = new Run({ seed: st.seed, content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
     render();
   });

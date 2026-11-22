@@ -81,4 +81,48 @@ export function applyEffect(
   return { stats: clampStats(nextStats, range), skills: nextSkills, flags: nextFlags };
 }
 
+
+
+const STAT_NAMES: Record<keyof Stats, string> = {
+  health: 'Здоров’я',
+  energy: 'Бадьорість',
+  supplies: 'Запаси',
+  trust: 'Довіра',
+  understanding: 'Розуміння',
+  bonds: 'Зв’язки',
+};
+
+const SKILL_NAMES: Record<keyof Skills, string> = {
+  survival: 'Виживання',
+  system: 'Система',
+  people: 'Люди',
+  drill: 'Муштра',
+};
+
+/**
+ * Людський опис умови для заблокованого варіанта. Прапорці не розкриваємо:
+ * гравець має знати, що шлях існує, а не те, який саме вчинок його відкриває.
+ */
+export function describeRequirement(cond: Condition | undefined): string {
+  if (!cond) return '';
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(cond.statAtLeast ?? {}) as [keyof Stats, number][]) {
+    parts.push(`${STAT_NAMES[k]} ≥ ${v}`);
+  }
+  for (const [k, v] of Object.entries(cond.statAtMost ?? {}) as [keyof Stats, number][]) {
+    parts.push(`${STAT_NAMES[k]} ≤ ${v}`);
+  }
+  for (const [k, v] of Object.entries(cond.skillAtLeast ?? {}) as [keyof Skills, number][]) {
+    parts.push(`навичка «${SKILL_NAMES[k]}» ≥ ${v}`);
+  }
+  if (cond.anySkillAtLeast?.length) {
+    parts.push(cond.anySkillAtLeast.map((c) => `«${SKILL_NAMES[c.key]}» ≥ ${c.level}`).join(' або '));
+  }
+  if ((cond.flagTrue ?? []).length > 0) parts.push('потрібен вчинок, якого ти ще не зробив');
+  if ((cond.flagFalse ?? []).length > 0) parts.push('шлях закрито твоїм попереднім вибором');
+  if (cond.dayAtLeast !== undefined) parts.push(`не раніше дня ${cond.dayAtLeast}`);
+  if (cond.dayAtMost !== undefined) parts.push(`не пізніше дня ${cond.dayAtMost}`);
+  return parts.length ? `потрібно: ${parts.join(', ')}` : '';
+}
+
 export { SKILL_KEYS, STAT_KEYS };

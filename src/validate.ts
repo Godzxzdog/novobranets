@@ -1,7 +1,7 @@
 // Валідатор контенту: ловить помилки до того, як їх побачить гравець.
 
 import type { Card, Ending, Phase } from '../src/types.ts';
-import { SKILL_KEYS, STAT_KEYS } from '../src/types.ts';
+import { ENGINE_FLAGS, SKILL_KEYS, STAT_KEYS } from '../src/types.ts';
 
 export interface ValidationIssue {
   level: 'error' | 'warn';
@@ -97,9 +97,46 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
     readFlags(e.requires, where);
   }
 
+  // Echo теж читає прапорці: рядок-спогад про вчинок, якого гра ніде не фіксує, — мертвий рядок.
+  for (const card of cards) {
+    const echoes = card.echo ? (Array.isArray(card.echo) ? card.echo : [card.echo]) : [];
+    for (const e of echoes) {
+      if (!flagWrites.has(e.flag) && !ENGINE_FLAGS.includes(e.flag)) {
+        issues.push({ level: 'error', where: `card ${card.id}`, message: `echo читає прапорець, який ніде не ставиться: ${e.flag}` });
+      }
+    }
+  }
+
+  // Навички: якщо варіанти вимагають навичку, її має бути звідки взяти БЕЗ цієї ж навички.
+  // Інакше виходить замкнене коло («Люди» давались лише тим, у кого «Люди» вже є).
+  for (const sk of SKILL_KEYS) {
+    const gated = cards.flatMap((c) =>
+      c.options.filter((o) => (o.requires?.skillAtLeast?.[sk] ?? 0) > 0).map((o) => ({ c, o })),
+    );
+    if (gated.length === 0) continue;
+    const roots = cards.flatMap((c) =>
+      c.options
+        .filter((o) => (o.effects?.skills?.[sk] ?? 0) > 0 && !(o.requires?.skillAtLeast?.[sk] ?? 0))
+        .map((o) => ({ c, o })),
+    );
+    if (roots.length === 0) {
+      issues.push({ level: 'error', where: `skill ${sk}`, message: `${gated.length} варіантів вимагають навичку, але її ніде не отримати без неї самої` });
+      continue;
+    }
+    const firstRoot = Math.min(...roots.flatMap((r) => r.c.phase));
+    const early = gated.filter((g) => Math.max(...g.c.phase) < firstRoot);
+    for (const g of early) {
+      issues.push({
+        level: 'warn',
+        where: `card ${g.c.id}/${g.o.id}`,
+        message: `вимагає «${sk}», але перше джерело цієї навички лише з фази ${firstRoot}`,
+      });
+    }
+  }
+
   // Прапорці: читання без запису — мертва умова.
   for (const f of flagReads) {
-    if (!flagWrites.has(f)) {
+    if (!flagWrites.has(f) && !ENGINE_FLAGS.includes(f)) {
       issues.push({ level: 'error', where: `flag ${f}`, message: 'читається, але ніде не встановлюється' });
     }
   }

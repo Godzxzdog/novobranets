@@ -46,6 +46,18 @@ const STRATEGIES: Strategy[] = [
     },
   },
   {
+    // Грає «на вчинки»: шукає варіанти, що лишають слід (прапорці). Саме так відкриваються рідкісні фінали.
+    name: 'слідотворець (flags)',
+    pick: (options, run) => {
+      const f = (o: ChoiceOption) =>
+        Object.entries(o.effects?.flags ?? {}).filter(([k, v]) => v && !run.state.flags[k]).length * 3 +
+        Object.values(o.effects?.skills ?? {}).reduce((a, v) => a + Math.max(0, v ?? 0), 0) * 2 +
+        (o.effects?.stats?.understanding ?? 0) +
+        (o.effects?.stats?.bonds ?? 0) * 0.5;
+      return [...options].sort((a, b) => f(b) - f(a))[0]!;
+    },
+  },
+  {
     name: 'випадковий',
     pick: (options, run) => {
       const idx = Math.floor(Math.abs(Math.sin(run.state.decisions + run.state.day)) * options.length);
@@ -108,4 +120,14 @@ for (const [i, r] of results.entries()) {
   console.log(
     `${STRATEGIES[i]!.name}: ${r.avgDays.toFixed(1)} днів, ${r.avgDecisions.toFixed(0)} рішень, ${r.endings.size} різних фіналів`,
   );
+}
+
+// Недосяжні фінали: контент, який жоден стиль гри не відкрив, — мертвий вантаж.
+const reached = new Set<string>();
+for (const r of results) for (const t of r.endings.keys()) reached.add(t);
+const never = TEST_ENDINGS.filter((e) => !reached.has(e.title));
+if (never.length > 0) {
+  console.log(`\n⚠️  Жоден стиль не дійшов до фіналів: ${never.map((e) => e.title).join(', ')}`);
+} else {
+  console.log(`\n✅ Усі ${TEST_ENDINGS.length} фіналів досяжні хоча б одним стилем гри`);
 }

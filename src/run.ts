@@ -1,11 +1,12 @@
 // Ядро забігу: стан, картки, вибір, «директор долі», фінали.
 
-import { applyEffect, meetsCondition } from './conditions.ts';
+import { applyEffect, describeRequirement, meetsCondition } from './conditions.ts';
 import { createRng, type Rng } from './rng.ts';
 import {
   DEFAULT_DIRECTOR,
   type Card,
   type DirectorConfig,
+  type EndReason,
   type Ending,
   type Phase,
   type RunConfig,
@@ -15,6 +16,8 @@ import {
   type ChoiceOption,
 } from './types.ts';
 import { SKILL_KEYS, STAT_RANGE } from './types.ts';
+
+const RECENT_WINDOW = 4;
 
 const PHASE_BY_DAY: { until: number; phase: Phase }[] = [
   { until: 3, phase: 1 },
@@ -98,6 +101,11 @@ export class Run {
     );
   }
 
+  /** Підказка для заблокованого варіанта: авторська або зібрана з умови. */
+  lockedHint(option: ChoiceOption): string {
+    return option.lockedHint ?? (describeRequirement(option.requires) || 'недоступно');
+  }
+
   /**
    * Підтягнути наступну картку. Викликати, коли pending === undefined.
    * Повертає картку або завершує забіг, якщо подій більше немає.
@@ -120,9 +128,17 @@ export class Run {
       return null;
     }
 
-    const card = this.weightedPick(pool);
+    // Не повертаємо картку, яку щойно бачили, якщо є з чого обирати.
+    // Пряме продовження («after») вікном не блокується.
+    const recent = s.recent ?? [];
+    const fresh = pool.filter(
+      (c) => !recent.includes(c.id) || (s.lastCardId !== undefined && (c.after ?? []).includes(s.lastCardId)),
+    );
+
+    const card = this.weightedPick(fresh.length > 0 ? fresh : pool);
     s.pending = { cardId: card.id, options: card.options.map((o) => o.id) };
     s.seenCards[card.id] = (s.seenCards[card.id] ?? 0) + 1;
+    s.recent = [...recent, card.id].slice(-RECENT_WINDOW);
     return card;
   }
 
@@ -174,10 +190,27 @@ export class Run {
     // справді чіпляються до попередньої сцени, а не до самої себе.
     s.lastCardId = card.id;
 
-    // Смерть від показників: здоров'я 0 — явна помилка, не «доля».
+    // Здоров'я 0: перший раз героя виносять (сцена, а не «game over»), вдруге — кінець.
     if (s.stats.health <= 0) {
-      this.endWith('wounds');
-      return true;
+      const reprieve = this.config.reprieve ?? true;
+      if (reprieve && !s.flags.carried_out) {
+        s.flags = { ...s.flags, carried_out: true };
+        s.stats = {
+          ...s.stats,
+          health: 2,
+          energy: Math.min(s.stats.energy, 2),
+        };
+        s.lastOutcome = {
+          text: s.lastOutcome?.text ?? '',
+          voice: 'Тебе витягли. Ніхто не пояснив, чому саме тебе. Ти запам’ятав, чиї руки це були.',
+          optionId: option.id,
+          cardId: card.id,
+        };
+        s.journal.push({ day: s.day, cardId: card.id, optionId: '__carried_out', text: 'Тебе винесли з позиції.' });
+      } else {
+        this.endWith('wounds');
+        return true;
+      }
     }
 
     this.advanceTime();
@@ -245,8 +278,8 @@ export class Run {
     if (!card.phase.includes(s.phase)) return false;
     if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
-    // Картка-спогад без жодного сліду в минулому не має сенсу.
-    if (card.echo && !this.echoLines(card).length) return false;
+    // Echo — лише прикраса: картка без сліду в минулому показується як звичайна
+    // (так сказано в типах). Раніше такі картки зникали з гри, поки не було сліду.
     // Картка без жодного доступного варіанта — не показуємо.
     const any = card.options.some((o) =>
       meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day),
@@ -271,7 +304,7 @@ export class Run {
     const last = this.state.lastCardId;
     if (last) {
       const next = pool.filter((c) => (c.after ?? []).includes(last));
-      if (next.length > 0) return this.pickWeighted(next);
+      if (next.length > 0) return this.pickWeighted(next, () => 1);
     }
 
     // Зв'язність: продовження того, що сталося нещодавно, важить значно більше
@@ -283,10 +316,17 @@ export class Run {
       const recent = last !== undefined && refs.includes(last);
       const chained = refs.some((id) => (this.state.seenCards[id] ?? 0) > 0);
       const mult = recent ? 6 : chained ? 2.5 : 1;
-      return (base * mult) / (1 + seen);
+      // Повтор знецінюється квадратично: третя «сумка» за забіг — вже відчутна нудьга.
+      return (base * mult) / (1 + seen) ** 2;
     });
+    return this.pickWeighted(pool, (_c, i) => weights[i]!);
+  }
+
+  /** Ваговий вибір одного елемента; завжди споживає рівно одне число з RNG. */
+  private pickWeighted(pool: Card[], weightOf: (c: Card, i: number) => number): Card {
+    const weights = pool.map((c, i) => Math.max(0, weightOf(c, i)));
     const total = weights.reduce((a, b) => a + b, 0);
-    let r = this.rng.float() * total;
+    let r = this.rng.float() * (total > 0 ? total : 1);
     for (let i = 0; i < pool.length; i += 1) {
       r -= weights[i]!;
       if (r <= 0) return pool[i]!;
@@ -309,30 +349,25 @@ export class Run {
     const eligible = all.filter((e) =>
       meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day),
     );
-    // Фінал за замовчуванням — для своєї причини. Якщо такого немає,
-    // беремо споріднені, і лише потім будь-який доступний.
-    const byKind = eligible.filter((e) => {
-      // Поранення від власних рішень: спершу accident, quiet — лише як запас.
-      if (reason === 'wounds') return e.kind === 'accident';
-      // Випадкова смерть: якщо в грі був вибір, що бив по здоров'ю, — це поранення,
-      // інакше — «не наша» випадковість.
-      if (reason === 'accident' && e.kind === 'accident') {
-        return e.id === 'ending.wounds'
-          ? hurtByOwnChoice(s)
-          : true;
-      }
-      if (reason === 'hardend') return e.kind === 'system';
-      if (reason === 'accident') return e.kind === 'accident';
-      if (reason === 'exhausted') return e.kind === 'quiet' || e.kind === 'system';
-      return true;
+    const r = reason as EndReason;
+
+    // Причина визначає, які фінали взагалі можливі. Раніше «доля» могла дати лише
+    // accident-фінали, і п'ять із дев'яти кінцівок були недосяжні до 60-го дня.
+    const byReason = eligible.filter((e) => {
+      if (e.id === 'ending.wounds' && r === 'accident' && !hurtByOwnChoice(s)) return false;
+      return endingReasons(e).includes(r);
     });
-    const pool = byKind.length > 0 ? byKind : eligible;
+    const pool = byReason.length > 0 ? byReason : eligible;
     if (pool.length === 0) return undefined;
-    const total = pool.reduce((a, e) => a + (e.weight ?? 1), 0);
-    let r = this.rng.float() * total;
+
+    // «Заслужені» фінали (прапорці, високі показники) важать більше за загальні:
+    // шлях гравця має відбиватися на тому, як він помирає.
+    const weightOf = (e: Ending): number => (e.weight ?? 1) * (isEarned(e) ? 2 : 1);
+    const total = pool.reduce((a, e) => a + weightOf(e), 0);
+    let roll = this.rng.float() * total;
     for (const e of pool) {
-      r -= e.weight ?? 1;
-      if (r <= 0) return e;
+      roll -= weightOf(e);
+      if (roll <= 0) return e;
     }
     return pool[pool.length - 1];
   }
@@ -352,6 +387,7 @@ export class Run {
       skills: { ...s.skills },
       flags: { ...s.flags },
       seenCards: { ...s.seenCards },
+      recent: s.recent ? [...s.recent] : undefined,
       journal: s.journal.map((j) => ({ ...j })),
       lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : undefined,
       pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : undefined,
@@ -372,6 +408,30 @@ export class Run {
     if (s.status === 'running' && s.decisions > 500) errors.push('run too long');
     return errors;
   }
+}
+
+/** Причини завершення, за яких фінал можливий (явні `reasons` або за видом). */
+function endingReasons(e: Ending): EndReason[] {
+  if (e.reasons) return e.reasons;
+  switch (e.kind) {
+    case 'accident':
+      return ['accident', 'wounds'];
+    case 'sacrifice':
+    case 'quiet':
+      return ['accident', 'hardend', 'exhausted'];
+    case 'system':
+      return ['accident', 'hardend', 'exhausted'];
+    default:
+      return ['accident', 'hardend'];
+  }
+}
+
+/** Фінал «заслужений», якщо його умови спираються на вчинки (прапорці) чи високі показники. */
+function isEarned(e: Ending): boolean {
+  const r = e.requires;
+  if (!r) return false;
+  if ((r.flagTrue ?? []).length > 0) return true;
+  return Object.values(r.statAtLeast ?? {}).some((v) => (v ?? 0) >= 6);
 }
 
 /**

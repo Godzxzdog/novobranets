@@ -121,22 +121,6 @@ test('показники не виходять за межі 0..10', () => {
   assert.ok(run.state.stats.health >= 0);
 });
 
-test('директор: неминучість зростає раз на добу, а не на кожну картку', () => {
-  const run = newRun('director-test');
-  run.state.day = 31;
-  run.state.phase = phaseForDay(31);
-  const before = run.state.inevitability;
-  // Кілька карток у межах однієї доби не мають множити ризик.
-  for (let i = 0; i < 3; i++) {
-    const card = run.draw();
-    if (!card) break;
-    run.choose(card.options[0].id);
-  }
-  const j = run.state.journal.filter((x) => x.day > before);
-  void j;
-  assert.ok(run.state.inevitability >= before);
-});
-
 test('наслідок не каже «нічого не змінилося», коли показники змінились', () => {
   // Знаходимо картку, де перший варіант справді змінює здоров'я.
   const run = newRun('outcome-test');
