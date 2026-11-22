@@ -343,9 +343,19 @@ export class Run {
     return this.config.content.endings.find((e) => e.id === id);
   }
 
-  /** Знімок для збереження/тестів. */
+  /** Знімок для збереження/тестів: справжня копія, без спільних посилань. */
   snapshot(): RunState {
-    return JSON.parse(JSON.stringify(this.state)) as RunState;
+    const s = this.state;
+    return {
+      ...s,
+      stats: { ...s.stats },
+      skills: { ...s.skills },
+      flags: { ...s.flags },
+      seenCards: { ...s.seenCards },
+      journal: s.journal.map((j) => ({ ...j })),
+      lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : undefined,
+      pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : undefined,
+    };
   }
 
   /** Перевірка цілісності стану (для автотестів). */
