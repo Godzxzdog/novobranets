@@ -33,15 +33,30 @@
   header .day { color: var(--ink); }
 
   .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 12px 0; }
-  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
   .stat .bar {
     width: 100%; height: 26px; background: #22221a; border-radius: 2px;
-    position: relative; overflow: hidden;
+    position: relative; overflow: hidden; transition: box-shadow .3s;
   }
-  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .25s; }
+  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .3s ease; }
   .stat .label { font-family: ui-monospace, monospace; font-size: 9px; color: var(--dim); letter-spacing: .04em; }
   .stat .val { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ink); }
   .stat.pair .fill { background: var(--good); }
+  .stat .delta {
+    position: absolute; top: -14px; left: 0; right: 0; text-align: center;
+    font-family: ui-monospace, monospace; font-size: 11px; font-weight: 600;
+    animation: floatUp 1.6s ease-out forwards; pointer-events: none;
+  }
+  .stat.up .delta { color: var(--good); }
+  .stat.down .delta { color: var(--warn); }
+  .stat.up .fill { box-shadow: 0 0 0 1px rgba(126,155,98,.75); }
+  .stat.down .fill { box-shadow: 0 0 0 1px rgba(201,86,63,.75); }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(4px); }
+    15% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
 
   main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px 0; }
   .card {
@@ -51,6 +66,7 @@
     animation: in .22s ease-out;
   }
   @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card.leaving, main.leaving { opacity: 0; transform: translateY(-8px); transition: opacity .16s, transform .16s; }
   .card .kind {
     position: absolute; font-family: ui-monospace, monospace; font-size: 9px;
     color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
@@ -67,9 +83,41 @@
   button.opt:active { transform: scale(.995); }
   button.opt.locked { color: #555244; border-style: dashed; cursor: not-allowed; }
   button.opt .hint { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  button.opt.chosen {
+    background: #2c3220; border-color: var(--good); color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--good);
+  }
+  button.opt.chosen::before { content: '➜ '; color: var(--good); }
+  button.opt.faded { opacity: .28; transition: opacity .2s; }
+
+  .reaction {
+    margin-top: 14px; padding: 14px 14px 12px; border: 1px solid var(--line);
+    border-left: 2px solid var(--good); border-radius: 3px; background: #191911;
+    animation: in .2s ease-out;
+  }
+  .reaction .r-choice {
+    font-family: ui-monospace, monospace; font-size: 11px; color: var(--good);
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .reaction .r-line { font-size: 15px; line-height: 1.5; font-style: italic; color: var(--ink); }
+  .reaction .r-changes {
+    margin-top: 9px; font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--dim); line-height: 1.6;
+  }
+  button.r-next {
+    margin-top: 12px; width: 100%; background: transparent; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 3px; padding: 11px;
+    font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button.r-next:hover { background: #22220f; border-color: #4a4634; }
 
   .log { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); padding: 8px 0 4px; }
   .log div { opacity: .55; padding: 2px 0; }
+  .log div:first-child { opacity: .9; color: #b0ab94; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 
   .ending { padding: 26px 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; }
   .ending h1 { font-size: 24px; margin: 0 0 14px; font-weight: normal; }
@@ -1288,6 +1336,20 @@ var STAT_LABELS = {
   understanding: "\u0420\u043E\u0437",
   bonds: "\u0417\u0432'\u044F\u0437"
 };
+var STAT_NAMES = {
+  health: "\u0417\u0434\u043E\u0440\u043E\u0432\u2019\u044F",
+  energy: "\u0411\u0430\u0434\u044C\u043E\u0440\u0456\u0441\u0442\u044C",
+  supplies: "\u0417\u0430\u043F\u0430\u0441\u0438",
+  trust: "\u0414\u043E\u0432\u0456\u0440\u0430",
+  understanding: "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F",
+  bonds: "\u0417\u0432\u2019\u044F\u0437\u043A\u0438"
+};
+var SKILL_NAMES = {
+  survival: "\u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F",
+  system: "\u0421\u0438\u0441\u0442\u0435\u043C\u0430",
+  people: "\u041B\u044E\u0434\u0438",
+  drill: "\u041C\u0443\u0448\u0442\u0440\u0430"
+};
 var KIND_LABELS = {
   event: "\u043F\u043E\u0434\u0456\u044F",
   routine: "\u043F\u043E\u0431\u0443\u0442",
@@ -1303,18 +1365,26 @@ var run = new Run({
   seed: newSeed(),
   content: { cards: TEST_CARDS, endings: TEST_ENDINGS }
 });
+var lastChoice = null;
+var reactionOpen = false;
 function newSeed() {
   return Math.random().toString(36).slice(2, 10);
 }
-function renderStats() {
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+function renderStats(highlight = {}) {
   const s = run.state.stats;
   elStats.innerHTML = Object.keys(STAT_LABELS).map((k) => {
     const v = s[k];
     const pct = v / 10 * 100;
     const pair = k === "trust" || k === "understanding" ? " pair" : "";
-    return `<div class="stat${pair}">
+    const d = highlight[k] ?? 0;
+    const cls = d > 0 ? " up" : d < 0 ? " down" : "";
+    const delta = d === 0 ? "" : `<span class="delta">${d > 0 ? "+" : ""}${d}</span>`;
+    return `<div class="stat${pair}${cls}" title="${STAT_NAMES[k]}: ${v}/10">
       <div class="bar"><div class="fill" style="height:${pct}%"></div></div>
-      <div class="label">${STAT_LABELS[k]}</div>
+      <div class="label">${STAT_LABELS[k]}</div>${delta}
     </div>`;
   }).join("");
 }
@@ -1322,8 +1392,10 @@ function renderLog() {
   const last = run.state.journal.slice(-3).reverse();
   elLog.innerHTML = last.map((j) => `<div>\u0434${j.day} \xB7 ${escapeHtml(j.text)}</div>`).join("");
 }
-function escapeHtml(t) {
-  return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function fadeOut(node, done) {
+  if (!node) return done();
+  node.classList.add("leaving");
+  setTimeout(done, 160);
 }
 function render() {
   elDay.textContent = `\u0414\u0435\u043D\u044C ${run.state.day} \xB7 \u0444\u0430\u0437\u0430 ${run.state.phase}`;
@@ -1334,7 +1406,7 @@ function render() {
   if (!card) return renderEnding();
   const available = new Set(run.availableOptions().map((o) => o.id));
   elMain.innerHTML = `
-    <div class="card" style="position:relative">
+    <div class="card">
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ""}</span>
       <div>${escapeHtml(card.text)}</div>
     </div>
@@ -1345,11 +1417,88 @@ function render() {
     </div>
   `;
   elMain.querySelectorAll("button.opt[data-opt]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (run.choose(btn.dataset.opt)) render();
+    btn.addEventListener("click", () => onChoose(card, btn));
+  });
+}
+function onChoose(card, btn) {
+  if (reactionOpen) return;
+  reactionOpen = true;
+  const option = card.options.find((o) => o.id === btn.dataset.opt);
+  if (!option) {
+    reactionOpen = false;
+    return;
+  }
+  const before = { ...run.state.stats, ...run.state.skills };
+  if (!run.choose(option.id)) {
+    reactionOpen = false;
+    return;
+  }
+  const after = { ...run.state.stats, ...run.state.skills };
+  btn.classList.add("chosen");
+  elMain.querySelectorAll("button.opt").forEach((b) => {
+    if (b !== btn) b.classList.add("faded");
+    b.classList.add("locked");
+    b.setAttribute("disabled", "");
+  });
+  const reaction = buildReaction(option, before, after);
+  renderStats(reaction.statDelta);
+  renderLog();
+  const box = document.createElement("div");
+  box.className = "reaction";
+  box.innerHTML = `
+    <div class="r-choice">\u279C ${escapeHtml(option.text)}</div>
+    <div class="r-line">${escapeHtml(reaction.line)}</div>
+    ${reaction.changes.length ? `<div class="r-changes">${reaction.changes.join(" \xB7 ")}</div>` : ""}
+    <button class="r-next" id="next">\u0414\u0430\u043B\u0456</button>
+  `;
+  elMain.appendChild(box);
+  const next = document.getElementById("next");
+  next.addEventListener("click", () => {
+    reactionOpen = false;
+    fadeOut(elMain.querySelector(".card"), () => {
+      lastChoice = null;
+      render();
     });
   });
 }
+function buildReaction(option, before, after) {
+  const statDelta = {};
+  const changes = [];
+  for (const k of Object.keys(STAT_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) {
+      statDelta[k] = d;
+      changes.push(`${STAT_NAMES[k]} ${d > 0 ? "+" : ""}${d}`);
+    }
+  }
+  for (const k of Object.keys(SKILL_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) changes.push(`${SKILL_NAMES[k]} +${d}`);
+  }
+  let line = option.effects?.journal;
+  if (!line) line = pickNeutralLine(option.id, changes);
+  return { line, changes, statDelta };
+}
+function pickNeutralLine(id, changes) {
+  const pool = changes.length ? NEUTRAL.with : NEUTRAL.none;
+  let h = 0;
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) % 997;
+  return pool[h % pool.length];
+}
+var NEUTRAL = {
+  none: [
+    "\u0422\u0438 \u043E\u0431\u0440\u0430\u0432. \u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E\u0441\u044F \u2014 \u0456\u043D\u043E\u0434\u0456 \u0446\u0435 \u043D\u0430\u0439\u043A\u0440\u0430\u0449\u0435, \u0449\u043E \u0441\u0442\u0430\u043B\u043E\u0441\u044F \u0437\u0430 \u0434\u0435\u043D\u044C.",
+    "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0432\u0456\u0434\u0431\u0443\u043B\u043E\u0441\u044F. \u0414\u0435\u043D\u044C \u043F\u0456\u0448\u043E\u0432 \u0434\u0430\u043B\u0456, \u044F\u043A \u043F\u0456\u0448\u043E\u0432 \u0431\u0438 \u0439 \u0431\u0435\u0437 \u0442\u0435\u0431\u0435.",
+    "\u0420\u0456\u0448\u0435\u043D\u043D\u044F \u0431\u0435\u0437 \u043D\u0430\u0441\u043B\u0456\u0434\u043A\u0456\u0432. \u041F\u043E\u043A\u0438 \u0449\u043E."
+  ],
+  with: [
+    "\u0412\u0438\u0431\u0456\u0440 \u043C\u0430\u0454 \u0446\u0456\u043D\u0443. \u0412\u043E\u043D\u0430 \u0441\u043F\u0438\u0441\u0430\u043D\u0430 \u0437 \u0442\u0435\u0431\u0435, \u0430 \u043D\u0435 \u0437 \u043A\u043E\u0433\u043E\u0441\u044C \u0456\u043D\u0448\u043E\u0433\u043E.",
+    "\u0429\u043E\u0441\u044C \u0437\u043C\u0456\u043D\u0438\u043B\u043E\u0441\u044F. \u041D\u0435 \u0437\u0430\u0432\u0436\u0434\u0438 \u0432 \u0442\u043E\u0439 \u0431\u0456\u043A, \u0443 \u044F\u043A\u0438\u0439 \u0442\u0438 \u0434\u0443\u043C\u0430\u0432.",
+    "\u0422\u0438 \u0432\u0438\u0440\u0456\u0448\u0438\u0432. \u041D\u0430\u0441\u043B\u0456\u0434\u043A\u0438 \u0432\u0438\u0440\u0456\u0448\u0443\u0432\u0430\u0442\u0438\u043C\u0443\u0442\u044C \u0437\u0430 \u0442\u0435\u0431\u0435 \u0434\u0430\u043B\u0456.",
+    "\u0426\u0435 \u044F\u043A\u043E\u0441\u044C \u0432\u0456\u0434\u0433\u0443\u043A\u043D\u0435\u0442\u044C\u0441\u044F. \u041D\u0435 \u0437\u0430\u0440\u0430\u0437, \u0442\u043E \u043F\u0456\u0437\u043D\u0456\u0448\u0435.",
+    "\u0412\u0456\u0439\u0441\u044C\u043A\u043E \u043D\u0435 \u043F\u0438\u0442\u0430\u0454 \u0437\u0433\u043E\u0434\u043E\u043C \u2014 \u0432\u0456\u0439\u0441\u044C\u043A\u043E \u0432\u0436\u0435 \u0432\u0441\u0435 \u0437\u0430\u043F\u0438\u0441\u0430\u043B\u043E."
+  ]
+};
 function renderEnding() {
   const e = run.ending();
   const st = run.state;

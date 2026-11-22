@@ -33,15 +33,30 @@
   header .day { color: var(--ink); }
 
   .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 12px 0; }
-  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
   .stat .bar {
     width: 100%; height: 26px; background: #22221a; border-radius: 2px;
-    position: relative; overflow: hidden;
+    position: relative; overflow: hidden; transition: box-shadow .3s;
   }
-  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .25s; }
+  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .3s ease; }
   .stat .label { font-family: ui-monospace, monospace; font-size: 9px; color: var(--dim); letter-spacing: .04em; }
   .stat .val { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ink); }
   .stat.pair .fill { background: var(--good); }
+  .stat .delta {
+    position: absolute; top: -14px; left: 0; right: 0; text-align: center;
+    font-family: ui-monospace, monospace; font-size: 11px; font-weight: 600;
+    animation: floatUp 1.6s ease-out forwards; pointer-events: none;
+  }
+  .stat.up .delta { color: var(--good); }
+  .stat.down .delta { color: var(--warn); }
+  .stat.up .fill { box-shadow: 0 0 0 1px rgba(126,155,98,.75); }
+  .stat.down .fill { box-shadow: 0 0 0 1px rgba(201,86,63,.75); }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(4px); }
+    15% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
 
   main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px 0; }
   .card {
@@ -51,6 +66,7 @@
     animation: in .22s ease-out;
   }
   @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card.leaving, main.leaving { opacity: 0; transform: translateY(-8px); transition: opacity .16s, transform .16s; }
   .card .kind {
     position: absolute; font-family: ui-monospace, monospace; font-size: 9px;
     color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
@@ -67,9 +83,41 @@
   button.opt:active { transform: scale(.995); }
   button.opt.locked { color: #555244; border-style: dashed; cursor: not-allowed; }
   button.opt .hint { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  button.opt.chosen {
+    background: #2c3220; border-color: var(--good); color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--good);
+  }
+  button.opt.chosen::before { content: '➜ '; color: var(--good); }
+  button.opt.faded { opacity: .28; transition: opacity .2s; }
+
+  .reaction {
+    margin-top: 14px; padding: 14px 14px 12px; border: 1px solid var(--line);
+    border-left: 2px solid var(--good); border-radius: 3px; background: #191911;
+    animation: in .2s ease-out;
+  }
+  .reaction .r-choice {
+    font-family: ui-monospace, monospace; font-size: 11px; color: var(--good);
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .reaction .r-line { font-size: 15px; line-height: 1.5; font-style: italic; color: var(--ink); }
+  .reaction .r-changes {
+    margin-top: 9px; font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--dim); line-height: 1.6;
+  }
+  button.r-next {
+    margin-top: 12px; width: 100%; background: transparent; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 3px; padding: 11px;
+    font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button.r-next:hover { background: #22220f; border-color: #4a4634; }
 
   .log { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); padding: 8px 0 4px; }
   .log div { opacity: .55; padding: 2px 0; }
+  .log div:first-child { opacity: .9; color: #b0ab94; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 
   .ending { padding: 26px 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; }
   .ending h1 { font-size: 24px; margin: 0 0 14px; font-weight: normal; }

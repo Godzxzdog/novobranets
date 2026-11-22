@@ -9,6 +9,20 @@ const STAT_LABELS = {
   understanding: 'Роз',
   bonds: "Зв'яз",
 };
+const STAT_NAMES = {
+  health: 'Здоров’я',
+  energy: 'Бадьорість',
+  supplies: 'Запаси',
+  trust: 'Довіра',
+  understanding: 'Розуміння',
+  bonds: 'Зв’язки',
+};
+const SKILL_NAMES = {
+  survival: 'Виживання',
+  system: 'Система',
+  people: 'Люди',
+  drill: 'Муштра',
+};
 const KIND_LABELS = {
   event: 'подія', routine: 'побут', person: 'людина', system: 'система', final: 'фінал',
 };
@@ -23,19 +37,31 @@ let run = new Run({
   content: { cards: TEST_CARDS, endings: TEST_ENDINGS },
 });
 
+// Останній вибір: для «реакції на вибір» і підсвітки у щоденнику.
+let lastChoice = null;
+// true, поки показуємо реакцію — кнопки заблоковані.
+let reactionOpen = false;
+
 function newSeed() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function renderStats() {
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderStats(highlight = {}) {
   const s = run.state.stats;
   elStats.innerHTML = Object.keys(STAT_LABELS).map((k) => {
     const v = s[k];
     const pct = (v / 10) * 100;
     const pair = k === 'trust' || k === 'understanding' ? ' pair' : '';
-    return `<div class="stat${pair}">
+    const d = highlight[k] ?? 0;
+    const cls = d > 0 ? ' up' : d < 0 ? ' down' : '';
+    const delta = d === 0 ? '' : `<span class="delta">${d > 0 ? '+' : ''}${d}</span>`;
+    return `<div class="stat${pair}${cls}" title="${STAT_NAMES[k]}: ${v}/10">
       <div class="bar"><div class="fill" style="height:${pct}%"></div></div>
-      <div class="label">${STAT_LABELS[k]}</div>
+      <div class="label">${STAT_LABELS[k]}</div>${delta}
     </div>`;
   }).join('');
 }
@@ -45,8 +71,10 @@ function renderLog() {
   elLog.innerHTML = last.map((j) => `<div>д${j.day} · ${escapeHtml(j.text)}</div>`).join('');
 }
 
-function escapeHtml(t) {
-  return String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fadeOut(node, done) {
+  if (!node) return done();
+  node.classList.add('leaving');
+  setTimeout(done, 160);
 }
 
 function render() {
@@ -62,7 +90,7 @@ function render() {
   const available = new Set(run.availableOptions().map((o) => o.id));
 
   elMain.innerHTML = `
-    <div class="card" style="position:relative">
+    <div class="card">
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
       <div>${escapeHtml(card.text)}</div>
     </div>
@@ -75,11 +103,95 @@ function render() {
   `;
 
   elMain.querySelectorAll('button.opt[data-opt]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (run.choose(btn.dataset.opt)) render();
+    btn.addEventListener('click', () => onChoose(card, btn));
+  });
+}
+
+/** Вибір картки: підсвітка натиснутого, решта гасне, далі реакція. */
+function onChoose(card, btn) {
+  if (reactionOpen) return;
+  reactionOpen = true;
+
+  const option = card.options.find((o) => o.id === btn.dataset.opt);
+  if (!option) { reactionOpen = false; return; }
+
+  const before = { ...run.state.stats, ...run.state.skills };
+  if (!run.choose(option.id)) { reactionOpen = false; return; }
+  const after = { ...run.state.stats, ...run.state.skills };
+
+  btn.classList.add('chosen');
+  elMain.querySelectorAll('button.opt').forEach((b) => {
+    if (b !== btn) b.classList.add('faded');
+    b.classList.add('locked');
+    b.setAttribute('disabled', '');
+  });
+
+  const reaction = buildReaction(option, before, after);
+  renderStats(reaction.statDelta);
+  renderLog();
+
+  const box = document.createElement('div');
+  box.className = 'reaction';
+  box.innerHTML = `
+    <div class="r-choice">➜ ${escapeHtml(option.text)}</div>
+    <div class="r-line">${escapeHtml(reaction.line)}</div>
+    ${reaction.changes.length ? `<div class="r-changes">${reaction.changes.join(' · ')}</div>` : ''}
+    <button class="r-next" id="next">Далі</button>
+  `;
+  elMain.appendChild(box);
+
+  const next = document.getElementById('next');
+  next.addEventListener('click', () => {
+    reactionOpen = false;
+    fadeOut(elMain.querySelector('.card'), () => {
+      lastChoice = null;
+      render();
     });
   });
 }
+
+function buildReaction(option, before, after) {
+  const statDelta = {};
+  const changes = [];
+  for (const k of Object.keys(STAT_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) {
+      statDelta[k] = d;
+      changes.push(`${STAT_NAMES[k]} ${d > 0 ? '+' : ''}${d}`);
+    }
+  }
+  for (const k of Object.keys(SKILL_NAMES)) {
+    const d = after[k] - before[k];
+    if (d !== 0) changes.push(`${SKILL_NAMES[k]} +${d}`);
+  }
+
+  // Голос двигуна: пріоритет — те, що гравець сам написав/заклав у контент.
+  let line = option.effects?.journal;
+  if (!line) line = pickNeutralLine(option.id, changes);
+  return { line, changes, statDelta };
+}
+
+function pickNeutralLine(id, changes) {
+  const pool = changes.length ? NEUTRAL.with : NEUTRAL.none;
+  let h = 0;
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) % 997;
+  return pool[h % pool.length];
+}
+
+const NEUTRAL = {
+  none: [
+    'Ти обрав. Нічого не змінилося — іноді це найкраще, що сталося за день.',
+    'Нічого не відбулося. День пішов далі, як пішов би й без тебе.',
+    'Рішення без наслідків. Поки що.',
+  ],
+  with: [
+    'Вибір має ціну. Вона списана з тебе, а не з когось іншого.',
+    'Щось змінилося. Не завжди в той бік, у який ти думав.',
+    'Ти вирішив. Наслідки вирішуватимуть за тебе далі.',
+    'Це якось відгукнеться. Не зараз, то пізніше.',
+    'Військо не питає згодом — військо вже все записало.',
+  ],
+};
 
 function renderEnding() {
   const e = run.ending();
