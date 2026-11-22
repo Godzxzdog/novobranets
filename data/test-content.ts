@@ -368,6 +368,212 @@ export const TEST_CARDS: Card[] = [
     ],
   },
 
+  // ─────────── ЦІНА ДОВІРИ: не тілом, а часом і совістю ───────────
+  {
+    id: 'trust.office_hours',
+    follows: ['call.toilet', 'phase2.bus'],
+    lead: 'Той, хто веде папері.',
+    kind: 'system',
+    phase: [2, 3],
+    text: 'Писар просить посидіти з паперами, поки він «відійде». Не наказ — прохання. За роботу обіцяє «записати, що ти старанний».',
+    options: [
+      {
+        id: 'sit',
+        text: 'Посидіти й переписати все рівним почерком',
+        effects: { stats: { trust: 2, energy: -2, understanding: -1, supplies: 1 } },
+        outcome: {
+          text: 'Ти переписав тридцять чотири аркуші. Почерк вийшов рівний, рука — ні. Тебе внесли в один список, де всі «старанні».',
+          voice: '«Ти зрозумілий. З тобою легко».',
+        },
+      },
+      {
+        id: 'refuse',
+        text: 'Сказати, що це не твоя робота',
+        effects: { stats: { trust: -2, energy: 2, bonds: 1 } },
+        outcome: {
+          text: 'Він не сперечався. Просто більше не просив — і в списках «старанних» тебе немає.',
+        },
+      },
+      {
+        id: 'ask_what',
+        text: 'Запитати, що саме ти переписуєш',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: 1, understanding: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти подивився в бланк і зрозумів, куди йдуть ці папери. Одне прізвище там було твоє.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'trust.report_small',
+    follows: ['phase2.hazing', 'trust.office_hours'],
+    lead: 'Дрібниця, за яку просять.',
+    kind: 'system',
+    phase: [2, 3],
+    text: 'Сержант питає між іншим: «Хто вчора курив у бліндажі?» Він уже знає. Йому потрібно, щоб хтось сказав уголос.',
+    options: [
+      {
+        id: 'name',
+        text: 'Назвати ім’я',
+        effects: { stats: { trust: 2, bonds: -2, understanding: -1 }, flags: { small_report: true } },
+        outcome: {
+          text: 'Ти назвав ім’я, і сержант кивнув так, ніби ти подав йому ручку. Той хлопець до ранку знав, хто це сказав.',
+          voice: 'Це була дрібниця. Дрібниці запам’ятовують довше.',
+        },
+      },
+      {
+        id: 'dont_know',
+        text: 'Сказати, що не бачив',
+        effects: { stats: { trust: -1, bonds: 1, energy: -1 } },
+        outcome: {
+          text: 'Він дивився на тебе довше, ніж треба. Нічого не сказав, але запам’ятав.',
+        },
+      },
+      {
+        id: 'own',
+        text: 'Сказати, що це був ти',
+        effects: { stats: { trust: -2, bonds: 3, health: -1 }, flags: { took_blame: true } },
+        outcome: {
+          text: 'Ти взяв це на себе. Покарання відбув нарядом. Хлопці мовчали, але сідали ближче.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'trust.parade',
+    follows: ['phase2.commander_orders', 'trust.office_hours'],
+    lead: 'Церемонія, якої ніхто не хотів.',
+    kind: 'system',
+    phase: [2, 3],
+    text: 'Приїжджає начальство. Треба стояти рівно, слухати промову про спадкоємність і плескати в потрібний момент.',
+    options: [
+      {
+        id: 'stand_smart',
+        text: 'Стояти рівно, плескати вчасно',
+        effects: { stats: { trust: 2, energy: -1, understanding: -1 } },
+        outcome: {
+          text: 'Ти простояв годину й плескав у потрібний момент. Начальство тебе не помітило, але ротний помітив.',
+        },
+      },
+      {
+        id: 'stand_tired',
+        text: 'Стояти, але без старанності',
+        effects: { stats: { trust: -1, energy: 1, bonds: 1 } },
+        outcome: {
+          text: 'Ти стояв, як усі, але без зайвого. Ротний зробив зауваження не тобі.',
+        },
+      },
+      {
+        id: 'ask_why',
+        text: 'Спитати вголос, навіщо це в полі',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: -3, understanding: 2, bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Питання прозвучало голосно. Відповіді не було. Троє потім сказали «дякую», один — що ти дурень.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'trust.duty_shift',
+    follows: ['phase2.split', 'trust.parade'],
+    lead: 'Той, хто міняє наряди на папірці.',
+    kind: 'person',
+    phase: [3, 4],
+    text: 'Прапорщик тримає графік нарядів. Каже: «Хто перший приходить з папером — той не стоїть у наряді».',
+    options: [
+      {
+        id: 'take_shift',
+        text: 'Узяти зайвий наряд за нього',
+        effects: { stats: { trust: 2, energy: -2, health: -1, supplies: 1 } },
+        outcome: {
+          text: 'Ти вистояв ніч за нього, а він записав твоє прізвище зверху списку «надійних».',
+        },
+      },
+      {
+        id: 'trade_paper',
+        text: 'Запропонувати вести папери замість наряду',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: 2, understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Він погодився швидко. Ти сидів над списками й бачив, кого в наряд ставлять двічі.',
+          voice: 'Ти знав графік, а графік — це трохи влади.',
+        },
+      },
+      {
+        id: 'refuse_shift',
+        text: 'Відмовитись і стояти у своєму наряді',
+        effects: { stats: { trust: -1, bonds: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти відстояв своє. У списку «надійних» тебе немає, і це, виявилось, не так уже й важливо.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'trust.silence',
+    follows: ['phase3.coward', 'trust.duty_shift'],
+    lead: 'Розмова, яку хочуть почути від тебе.',
+    kind: 'system',
+    phase: [3, 4],
+    text: 'При всіх питають, чи були вчора «розмови». Розмови були. Ті, хто говорив, дивляться на тебе.',
+    options: [
+      {
+        id: 'confirm',
+        text: 'Підтвердити, що розмови були',
+        effects: { stats: { trust: 2, bonds: -2, understanding: -1 } },
+        outcome: {
+          text: 'Ти підтвердив. Розмову «взяли до уваги». Двоє перестали говорити при тобі.',
+        },
+      },
+      {
+        id: 'quiet',
+        text: 'Сказати, що не чув нічого',
+        effects: { stats: { trust: -1, bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти сказав, що не чув. Ті, хто говорив, подивилися на тебе інакше.',
+        },
+      },
+      {
+        id: 'vague',
+        text: 'Сказати щось невизначене, щоб зійшло',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: 1, understanding: 1, energy: -1 }, flags: { learnt_vague: true } },
+        outcome: {
+          text: 'Ти сказав так, що почули «так», але нічого не підтвердив. Навчився говорити, як бланк.',
+          voice: 'Це вміння потім знадобиться частіше, ніж хочеться.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'trust.uniform',
+    follows: ['trust.parade', 'call.toilet'],
+    lead: 'Дрібниця, яку бачать усі.',
+    kind: 'routine',
+    phase: [2, 3],
+    text: 'Ротний зупиняє тебе на плацу: «Бляха не по статуту». Бляха по статуту, але він уже вирішив.',
+    options: [
+      {
+        id: 'apologise',
+        text: 'Вибачитись і виправити',
+        effects: { stats: { trust: 2, energy: -1, understanding: -1 } },
+        outcome: {
+          text: 'Ти вибачився за те, чого не робив. Він записав тебе в «адекватних». Це коштувало двох хвилин приниження.',
+        },
+      },
+      {
+        id: 'explain',
+        text: 'Спокійно пояснити, що все по статуту',
+        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } },
+        outcome: {
+          text: 'Ти мав рацію, і це було найгірше, що могло статись. Він не любив тих, хто має рацію.',
+        },
+      },
+    ],
+  },
+
   // ─────────────────────────── ФАЗА 2: навчання, перший колектив ───────────────────────────
   {
     id: 'phase2.bus',

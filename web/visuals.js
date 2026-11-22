@@ -123,3 +123,96 @@ export function chartCaption(history) {
   if (last.trust >= last.understanding) return 'Довіра так і лишилась вищою за розуміння: ти дійшов до кінця, не розвіявши мряку.';
   return 'Розуміння й довіра йшли поруч, але розходились не в твою користь.';
 }
+
+// ─────────────── Візуалізації на картці ───────────────
+
+const CH = {
+  event: { accent: '#e0b04a', glow: 'rgba(224,176,74,.16)' },
+  routine: { accent: '#8d8977', glow: 'rgba(141,137,119,.12)' },
+  person: { accent: '#a8728f', glow: 'rgba(168,114,143,.16)' },
+  system: { accent: '#c9563f', glow: 'rgba(201,86,63,.14)' },
+  final: { accent: '#e6e2d4', glow: 'rgba(230,226,212,.14)' },
+};
+
+/** Стабільне число з рядка — щоб випадкова на вигляд алея була однакова для тієї самої картки. */
+function seedOf(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+/**
+ * Лінія горизонту для картки: силуети того, що навколо — дерева, стовпи, дахи.
+ * Детерміновано від id картки й типу: та сама сцена має той самий краєвид.
+ */
+export function cardScenerySvg(cardId, kind, day = 1) {
+  const r = seedOf(cardId);
+  const c = CH[kind] ?? CH.event;
+  const W = 600, H = 86, BASE = H - 10;
+  const shapes = [];
+  const count = 9 + Math.floor(r * 6);
+  for (let i = 0; i < count; i += 1) {
+    const t = (i + 0.5) / count;
+    const jitter = seedOf(cardId + ':' + i);
+    const x = t * W + (jitter - 0.5) * 26;
+    const tall = 10 + jitter * 30;
+    const wide = 3 + jitter * 7;
+    if (jitter > 0.62) {
+      // дерево: стовп і кілька гілок
+      shapes.push(`<path d="M${x.toFixed(1)},${BASE} L${x.toFixed(1)},${(BASE - tall).toFixed(1)}" stroke="${c.accent}" stroke-width="1.1" opacity=".5"/>`);
+      for (let b = 0; b < 3; b += 1) {
+        const hh = BASE - tall * (0.45 + b * 0.18);
+        const dir = b % 2 ? 1 : -1;
+        shapes.push(`<path d="M${x.toFixed(1)},${hh.toFixed(1)} l${(dir * (wide + 3)).toFixed(1)},${(-4 - b).toFixed(1)}" stroke="${c.accent}" stroke-width=".9" opacity=".38"/>`);
+      }
+    } else if (jitter > 0.34) {
+      // стовп або щогла
+      shapes.push(`<rect x="${(x - wide / 6).toFixed(1)}" y="${(BASE - tall * 0.9).toFixed(1)}" width="${(wide / 3).toFixed(1)}" height="${(tall * 0.9).toFixed(1)}" fill="${c.accent}" opacity=".32"/>`);
+    } else {
+      // низька хата або брила
+      const h = 6 + jitter * 12;
+      shapes.push(`<path d="M${(x - wide).toFixed(1)},${BASE} L${(x - wide).toFixed(1)},${(BASE - h).toFixed(1)} L${x.toFixed(1)},${(BASE - h - 4).toFixed(1)} L${(x + wide).toFixed(1)},${(BASE - h).toFixed(1)} L${(x + wide).toFixed(1)},${BASE} Z" fill="${c.accent}" opacity=".26"/>`);
+    }
+  }
+  const ground = `<path d="M0,${BASE} L${W},${BASE}" stroke="${c.accent}" stroke-width="1" opacity=".45"/>`;
+  // Розриви: чим довше триває забіг, тим більше видно «того, що не наше».
+  const stars = [];
+  const n = 6 + Math.floor(seedOf(cardId + 'stars') * 8);
+  for (let i = 0; i < n; i += 1) {
+    const s = seedOf(cardId + 's' + i);
+    stars.push(`<circle cx="${(s * W).toFixed(1)}" cy="${(6 + s * 24).toFixed(1)}" r="${(s * 1.1 + 0.3).toFixed(2)}" fill="#e6e2d4" opacity="${(0.10 + s * 0.18).toFixed(2)}"/>`);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" aria-hidden="true" class="scenery" style="display:block">
+<defs><radialGradient id="glow-${esc(kind)}" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="${c.glow}"/><stop offset="1" stop-color="transparent"/></radialGradient></defs>
+<rect width="${W}" height="${H}" fill="url(#glow-${esc(kind)})"/>
+${stars.join('')}
+${shapes.join('')}
+${ground}
+</svg>`;
+}
+
+/**
+ * Туман навколо вибраного варіанта: що робить цей вибір із показниками.
+ * Показує напрямок, не числа: «стане холодніше», «будеш ближче до людей».
+ */
+export function optionWeatherSvg(cardId, optionId, stats) {
+  const s = stats ?? {};
+  const W = 120, H = 18;
+  const bars = [];
+  const keys = ['health', 'energy', 'supplies', 'trust', 'understanding', 'bonds'];
+  const colors = {
+    health: '#c9563f', energy: '#6f8fa8', supplies: '#8d8977',
+    trust: '#e0b04a', understanding: '#7e9b62', bonds: '#a8728f',
+  };
+  keys.forEach((k, i) => {
+    const v = s[k] ?? 0;
+    const x = 4 + i * 19;
+    const h = Math.min(12, Math.abs(v) * 3.4 + 1.5);
+    const y = v >= 0 ? H - 4 - h : H - 4;
+    bars.push(`<rect x="${x}" y="${y.toFixed(1)}" width="12" height="${h.toFixed(1)}" rx="1" fill="${colors[k]}" opacity="${v === 0 ? 0.18 : 0.75}"><title>${esc(STAT_NAMES[k])} ${v > 0 ? '+' : ''}${v}</title></rect>`);
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" class="weather" data-card="${esc(cardId)}" data-opt="${esc(optionId)}">${bars.join('')}</svg>`;
+}

@@ -2,7 +2,7 @@ import { Run } from '../src/run.ts';
 import { TEST_CARDS, TEST_ENDINGS } from '../data/test-content.ts';
 import { approach, atmosphereFor } from './atmosphere.js';
 import { Mist } from './mist.js';
-import { chartCaption, routeStripSvg, statsChartSvg } from './visuals.js';
+import { cardScenerySvg, chartCaption, optionWeatherSvg, routeStripSvg, statsChartSvg } from './visuals.js';
 
 const STAT_LABELS = {
   health: 'Здор',
@@ -188,14 +188,16 @@ function render() {
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
       ${lead ? `<div class="lead">${isContinuation ? '↳ ' : ''}${escapeHtml(lead)}</div>` : ''}
       ${echoes.map((l) => `<div class="echo">${escapeHtml(l)}</div>`).join('')}
+      <div class="scenery-wrap">${cardScenerySvg(card.id, card.kind, run.state.day)}</div>
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">
       ${card.options.map((o) => {
         const tag = ghostPick && ghostPick.optionId === o.id ? '<span class="ghost-tag">↺ минулого разу ти обрав це</span>' : '';
+        const weather = optionWeatherSvg(card.id, o.id, o.effects?.stats);
         return available.has(o.id)
-          ? `<button class="opt${tag ? ' ghost' : ''}" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}${tag}</button>`
-          : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
+          ? `<button class="opt${tag ? ' ghost' : ''}" data-opt="${escapeHtml(o.id)}"><span class="opt-text">${escapeHtml(o.text)}</span>${weather}${tag}</button>`
+          : `<button class="opt locked" disabled><span class="opt-text">${escapeHtml(o.text)}</span>${weather}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
       }).join('')}
     </div>
   `;
