@@ -95,6 +95,11 @@
   button.opt.chosen::before { content: '➜ '; color: var(--good); }
   button.opt.faded { opacity: .28; transition: opacity .2s; }
 
+  button.opt.ghost { border-left: 3px solid #6f6b58; }
+  button.opt .ghost-tag { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  .branches { margin: 14px 0; }
+  .branch { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; margin-bottom: 8px; border-left: 2px solid #e0b04a; font-size: 13px; }
+  .branch .arrow { font-family: ui-monospace, monospace; font-size: 10px; color: var(--dim); }
   .echo {
     margin: 0 0 12px; padding: 8px 0 8px 10px;
     border-left: 2px solid #4a4a38; font-size: 14px; font-style: italic;
@@ -156,7 +161,43 @@
   .log div { opacity: .55; padding: 2px 0; }
   .log div:first-child { opacity: .9; color: #b0ab94; }
 
+
+  /* ---- Мряка: шари позаду контенту + легка пелена поверх + темні краї ---- */
+  #mist { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .fog { position: fixed; inset: -25%; pointer-events: none; z-index: 0; opacity: .3; transition: opacity 2.4s ease; will-change: transform; }
+  .fog1 {
+    background:
+      radial-gradient(ellipse 55% 40% at 30% 40%, rgba(150,156,138,.55), transparent 70%),
+      radial-gradient(ellipse 50% 35% at 78% 72%, rgba(130,138,124,.5), transparent 70%);
+    animation: drift1 70s ease-in-out infinite alternate;
+  }
+  .fog2 {
+    background:
+      radial-gradient(ellipse 60% 30% at 62% 24%, rgba(160,165,150,.45), transparent 70%),
+      radial-gradient(ellipse 45% 40% at 18% 82%, rgba(120,128,116,.45), transparent 70%);
+    animation: drift2 95s ease-in-out infinite alternate;
+  }
+  @keyframes drift1 { from { transform: translate3d(-4%, 0, 0); } to { transform: translate3d(5%, 3%, 0); } }
+  @keyframes drift2 { from { transform: translate3d(5%, 2%, 0); } to { transform: translate3d(-5%, -3%, 0); } }
+  .haze { position: fixed; inset: 0; pointer-events: none; z-index: 3; background: #98a08a; opacity: 0; transition: opacity 2.4s ease; }
+  .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(ellipse at center, transparent 42%, #000 125%); opacity: 0; transition: opacity 2.8s ease; }
+  header.wrap, .wrap, main.wrap, .foot { position: relative; z-index: 2; }
+  button.tog {
+    font: inherit; font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    background: transparent; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 3px 8px; cursor: pointer; margin-left: 10px;
+  }
+  button.tog[aria-pressed="false"] { opacity: .5; text-decoration: line-through; }
+  .hdr-right { display: flex; align-items: baseline; gap: 4px; }
+  #route { padding: 8px 0 0; }
+  .mood { font-family: ui-monospace, monospace; font-size: 10px; color: #6f6b58; text-align: center; padding: 2px 0 0; letter-spacing: .03em; min-height: 14px; }
+  .chart { margin: 16px 0 6px; padding: 12px 10px 6px; border: 1px solid var(--line); border-radius: 4px; background: #191911; }
+  .chart .cap { font-size: 13px; line-height: 1.5; color: #b0ab94; padding: 4px 4px 8px; font-style: italic; }
+  .chart h3 { margin: 0 0 6px 4px; font: 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: normal; }
+  body.nomist #mist, body.nomist .fog, body.nomist .haze { display: none; }
+
   @media (prefers-reduced-motion: reduce) {
+    #mist { display: none; }
+    .fog { animation: none !important; }
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
 
@@ -176,10 +217,18 @@
 </head>
 <body>
 
+<canvas id="mist" aria-hidden="true"></canvas>
+<div class="fog fog1" id="fog1" aria-hidden="true"></div>
+<div class="fog fog2" id="fog2" aria-hidden="true"></div>
+<div class="haze" id="haze" aria-hidden="true"></div>
+<div class="vignette" id="vignette" aria-hidden="true"></div>
+
 <header class="wrap">
   <span>Новобранець</span>
-  <span class="day" id="day">День 1</span>
+  <span class="hdr-right"><span class="day" id="day">День 1</span><button class="tog" id="mistToggle" aria-pressed="true" title="Мряка й дощ">мряка</button></span>
 </header>
+
+<div class="wrap"><div id="route"></div><div class="mood" id="mood"></div></div>
 
 <div class="wrap"><div class="stats" id="stats"></div></div>
 
@@ -270,6 +319,41 @@ function applyEffect(effect, stats, skills, flags, range = STAT_RANGE) {
   }
   return { stats: clampStats(nextStats, range), skills: nextSkills, flags: nextFlags };
 }
+var STAT_NAMES = {
+  health: "\u0417\u0434\u043E\u0440\u043E\u0432\u2019\u044F",
+  energy: "\u0411\u0430\u0434\u044C\u043E\u0440\u0456\u0441\u0442\u044C",
+  supplies: "\u0417\u0430\u043F\u0430\u0441\u0438",
+  trust: "\u0414\u043E\u0432\u0456\u0440\u0430",
+  understanding: "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F",
+  bonds: "\u0417\u0432\u2019\u044F\u0437\u043A\u0438"
+};
+var SKILL_NAMES = {
+  survival: "\u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F",
+  system: "\u0421\u0438\u0441\u0442\u0435\u043C\u0430",
+  people: "\u041B\u044E\u0434\u0438",
+  drill: "\u041C\u0443\u0448\u0442\u0440\u0430"
+};
+function describeRequirement(cond) {
+  if (!cond) return "";
+  const parts = [];
+  for (const [k, v] of Object.entries(cond.statAtLeast ?? {})) {
+    parts.push(`${STAT_NAMES[k]} \u2265 ${v}`);
+  }
+  for (const [k, v] of Object.entries(cond.statAtMost ?? {})) {
+    parts.push(`${STAT_NAMES[k]} \u2264 ${v}`);
+  }
+  for (const [k, v] of Object.entries(cond.skillAtLeast ?? {})) {
+    parts.push(`\u043D\u0430\u0432\u0438\u0447\u043A\u0430 \xAB${SKILL_NAMES[k]}\xBB \u2265 ${v}`);
+  }
+  if (cond.anySkillAtLeast?.length) {
+    parts.push(cond.anySkillAtLeast.map((c) => `\xAB${SKILL_NAMES[c.key]}\xBB \u2265 ${c.level}`).join(" \u0430\u0431\u043E "));
+  }
+  if ((cond.flagTrue ?? []).length > 0) parts.push("\u043F\u043E\u0442\u0440\u0456\u0431\u0435\u043D \u0432\u0447\u0438\u043D\u043E\u043A, \u044F\u043A\u043E\u0433\u043E \u0442\u0438 \u0449\u0435 \u043D\u0435 \u0437\u0440\u043E\u0431\u0438\u0432");
+  if ((cond.flagFalse ?? []).length > 0) parts.push("\u0448\u043B\u044F\u0445 \u0437\u0430\u043A\u0440\u0438\u0442\u043E \u0442\u0432\u043E\u0457\u043C \u043F\u043E\u043F\u0435\u0440\u0435\u0434\u043D\u0456\u043C \u0432\u0438\u0431\u043E\u0440\u043E\u043C");
+  if (cond.dayAtLeast !== void 0) parts.push(`\u043D\u0435 \u0440\u0430\u043D\u0456\u0448\u0435 \u0434\u043D\u044F ${cond.dayAtLeast}`);
+  if (cond.dayAtMost !== void 0) parts.push(`\u043D\u0435 \u043F\u0456\u0437\u043D\u0456\u0448\u0435 \u0434\u043D\u044F ${cond.dayAtMost}`);
+  return parts.length ? `\u043F\u043E\u0442\u0440\u0456\u0431\u043D\u043E: ${parts.join(", ")}` : "";
+}
 
 // src/rng.ts
 function nextRandom(state) {
@@ -308,6 +392,7 @@ function createRng(seed) {
 }
 
 // src/run.ts
+var RECENT_WINDOW = 4;
 var PHASE_BY_DAY = [
   { until: 3, phase: 1 },
   { until: 12, phase: 2 },
@@ -380,6 +465,10 @@ var Run = class {
       (o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day)
     );
   }
+  /** Підказка для заблокованого варіанта: авторська або зібрана з умови. */
+  lockedHint(option) {
+    return option.lockedHint ?? (describeRequirement(option.requires) || "\u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E");
+  }
   /**
    * Підтягнути наступну картку. Викликати, коли pending === undefined.
    * Повертає картку або завершує забіг, якщо подій більше немає.
@@ -392,15 +481,79 @@ var Run = class {
       this.endWith("hardend");
       return null;
     }
-    const pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    const queued = this.takeQueued();
+    if (queued) {
+      return this.present(queued);
+    }
+    let pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    let guard = 0;
+    while (pool.length === 0 && s.status === "running" && guard < 80) {
+      guard += 1;
+      if (!this.hasFutureContent()) {
+        this.endWith("exhausted");
+        return null;
+      }
+      this.rollDay();
+      if (s.status === "ended") return null;
+      const again = this.takeQueued();
+      if (again) return this.present(again);
+      pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    }
     if (pool.length === 0) {
       this.endWith("exhausted");
       return null;
     }
-    const card = this.weightedPick(pool);
+    const recent = s.recent ?? [];
+    const fresh = pool.filter(
+      (c) => !recent.includes(c.id) || s.lastCardId !== void 0 && (c.after ?? []).includes(s.lastCardId)
+    );
+    return this.present(this.weightedPick(fresh.length > 0 ? fresh : pool));
+  }
+  /** Показати картку: фіксує pending, лічильник бачених і вікно недавніх. */
+  present(card) {
+    const s = this.state;
     s.pending = { cardId: card.id, options: card.options.map((o) => o.id) };
     s.seenCards[card.id] = (s.seenCards[card.id] ?? 0) + 1;
+    s.recent = [...s.recent ?? [], card.id].slice(-RECENT_WINDOW);
     return card;
+  }
+  /**
+   * Дістати з черги першу подію, чий час настав і яка ще має сенс.
+   * Недійсні (вже бачені, з невиконаними requires) тихо викидаються.
+   */
+  takeQueued() {
+    const s = this.state;
+    const q = s.queue ?? [];
+    if (q.length === 0) return null;
+    const keep = [];
+    let found = null;
+    for (const item of q) {
+      const card = this.cardsById.get(item.cardId);
+      if (!card) continue;
+      const repeat = !(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0;
+      if (repeat) continue;
+      if (found || item.dueDay > s.day) {
+        keep.push(item);
+        continue;
+      }
+      const ok = meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day) && card.options.some((o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day));
+      if (ok) {
+        found = card;
+        const fromDay = [...s.journal].reverse().find((j) => j.cardId === item.from)?.day ?? s.day;
+        s.tree = [...s.tree ?? [], { from: item.from, fromOption: item.fromOption, to: card.id, fromDay, day: s.day }];
+      }
+    }
+    s.queue = keep;
+    return found;
+  }
+  /** Чи лишилось у грі що показати: непоказані картки цієї чи пізніших фаз або заплановані події. */
+  hasFutureContent() {
+    const s = this.state;
+    if ((s.queue ?? []).length > 0) return true;
+    return this.config.content.cards.some((c) => {
+      if (!(this.config.allowRepeats ?? false) && (s.seenCards[c.id] ?? 0) > 0) return false;
+      return c.phase.some((p) => p >= s.phase);
+    });
   }
   /** Обрати варіант за id. Повертає true, якщо вибір прийнято. */
   choose(optionId) {
@@ -434,22 +587,62 @@ var Run = class {
       optionId: option.id,
       cardId: card.id
     };
+    this.enqueueNext(option, card.id);
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
+    s.history = [...s.history ?? [], { day: s.day, decision: s.decisions, stats: { ...s.stats } }];
     s.pending = void 0;
     s.lastCardId = card.id;
     if (s.stats.health <= 0) {
-      this.endWith("wounds");
-      return true;
+      const reprieve = this.config.reprieve ?? true;
+      if (reprieve && !s.flags.carried_out) {
+        s.flags = { ...s.flags, carried_out: true };
+        s.stats = {
+          ...s.stats,
+          health: 2,
+          energy: Math.min(s.stats.energy, 2)
+        };
+        s.lastOutcome = {
+          text: s.lastOutcome?.text ?? "",
+          voice: "\u0422\u0435\u0431\u0435 \u0432\u0438\u0442\u044F\u0433\u043B\u0438. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u043E\u044F\u0441\u043D\u0438\u0432, \u0447\u043E\u043C\u0443 \u0441\u0430\u043C\u0435 \u0442\u0435\u0431\u0435. \u0422\u0438 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432, \u0447\u0438\u0457 \u0440\u0443\u043A\u0438 \u0446\u0435 \u0431\u0443\u043B\u0438.",
+          optionId: option.id,
+          cardId: card.id
+        };
+        s.journal.push({ day: s.day, cardId: card.id, optionId: "__carried_out", text: "\u0422\u0435\u0431\u0435 \u0432\u0438\u043D\u0435\u0441\u043B\u0438 \u0437 \u043F\u043E\u0437\u0438\u0446\u0456\u0457." });
+      } else {
+        this.endWith("wounds");
+        return true;
+      }
     }
     this.advanceTime();
     return true;
+  }
+  /** Вибір планує наслідки: гілка дерева подій. Бачені картки в чергу не потрапляють. */
+  enqueueNext(option, fromCard) {
+    const s = this.state;
+    if (!option.next) return;
+    const list = Array.isArray(option.next) ? option.next : [option.next];
+    const queue = [...s.queue ?? []];
+    for (const n of list) {
+      const cardId = typeof n === "string" ? n : n.card;
+      const inDays = typeof n === "string" ? 0 : n.inDays ?? 0;
+      if (!this.cardsById.has(cardId)) continue;
+      if (queue.some((q) => q.cardId === cardId)) continue;
+      queue.push({ cardId, dueDay: s.day + inDays, from: fromCard, fromOption: option.id });
+    }
+    queue.sort((a, b) => a.dueDay - b.dueDay);
+    s.queue = queue;
   }
   advanceTime() {
     const s = this.state;
     const doneToday = s.journal.filter((j) => j.day === s.day).length;
     const target = this.targetCardsForDay(s.day);
     if (doneToday < target) return;
+    this.rollDay();
+  }
+  /** Переходить на наступну добу: фаза, втома, неминучість, жорсткий кінець, кубик долі. */
+  rollDay() {
+    const s = this.state;
     s.day += 1;
     s.phase = phaseForDay(s.day);
     s.stats = {
@@ -465,7 +658,7 @@ var Run = class {
       return;
     }
     if (s.day > this.director.safeUntilDay) {
-      let chance = this.fatalChance();
+      const chance = this.fatalChance();
       if (this.rng.chance(chance)) {
         this.endWith("accident");
       }
@@ -490,9 +683,9 @@ var Run = class {
   isEligible(card) {
     const s = this.state;
     if (!card.phase.includes(s.phase)) return false;
+    if (!(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
-    if (card.echo && !this.echoLines(card).length) return false;
     const any = card.options.some(
       (o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day)
     );
@@ -510,7 +703,7 @@ var Run = class {
     const last = this.state.lastCardId;
     if (last) {
       const next = pool.filter((c) => (c.after ?? []).includes(last));
-      if (next.length > 0) return this.pickWeighted(next);
+      if (next.length > 0) return this.pickWeighted(next, () => 1);
     }
     const weights = pool.map((c) => {
       const base = c.weight ?? 1;
@@ -519,10 +712,15 @@ var Run = class {
       const recent = last !== void 0 && refs.includes(last);
       const chained = refs.some((id) => (this.state.seenCards[id] ?? 0) > 0);
       const mult = recent ? 6 : chained ? 2.5 : 1;
-      return base * mult / (1 + seen);
+      return base * mult / (1 + seen) ** 2;
     });
+    return this.pickWeighted(pool, (_c, i) => weights[i]);
+  }
+  /** Ваговий вибір одного елемента; завжди споживає рівно одне число з RNG. */
+  pickWeighted(pool, weightOf) {
+    const weights = pool.map((c, i) => Math.max(0, weightOf(c, i)));
     const total = weights.reduce((a, b) => a + b, 0);
-    let r = this.rng.float() * total;
+    let r = this.rng.float() * (total > 0 ? total : 1);
     for (let i = 0; i < pool.length; i += 1) {
       r -= weights[i];
       if (r <= 0) return pool[i];
@@ -543,23 +741,19 @@ var Run = class {
     const eligible = all.filter(
       (e) => meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day)
     );
-    const byKind = eligible.filter((e) => {
-      if (reason === "wounds") return e.kind === "accident";
-      if (reason === "accident" && e.kind === "accident") {
-        return e.id === "ending.wounds" ? hurtByOwnChoice(s) : true;
-      }
-      if (reason === "hardend") return e.kind === "system";
-      if (reason === "accident") return e.kind === "accident";
-      if (reason === "exhausted") return e.kind === "quiet" || e.kind === "system";
-      return true;
+    const r = reason;
+    const byReason = eligible.filter((e) => {
+      if (e.id === "ending.wounds" && r === "accident" && !hurtByOwnChoice(s)) return false;
+      return endingReasons(e).includes(r);
     });
-    const pool = byKind.length > 0 ? byKind : eligible;
+    const pool = byReason.length > 0 ? byReason : eligible;
     if (pool.length === 0) return void 0;
-    const total = pool.reduce((a, e) => a + (e.weight ?? 1), 0);
-    let r = this.rng.float() * total;
+    const weightOf = (e) => (e.weight ?? 1) * (isEarned(e) ? 2 : 1);
+    const total = pool.reduce((a, e) => a + weightOf(e), 0);
+    let roll = this.rng.float() * total;
     for (const e of pool) {
-      r -= e.weight ?? 1;
-      if (r <= 0) return e;
+      roll -= weightOf(e);
+      if (roll <= 0) return e;
     }
     return pool[pool.length - 1];
   }
@@ -577,6 +771,10 @@ var Run = class {
       skills: { ...s.skills },
       flags: { ...s.flags },
       seenCards: { ...s.seenCards },
+      recent: s.recent ? [...s.recent] : void 0,
+      queue: s.queue ? s.queue.map((q) => ({ ...q })) : void 0,
+      tree: s.tree ? s.tree.map((t) => ({ ...t })) : void 0,
+      history: s.history ? s.history.map((h) => ({ ...h, stats: { ...h.stats } })) : void 0,
       journal: s.journal.map((j) => ({ ...j })),
       lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : void 0,
       pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : void 0
@@ -597,6 +795,26 @@ var Run = class {
     return errors;
   }
 };
+function endingReasons(e) {
+  if (e.reasons) return e.reasons;
+  switch (e.kind) {
+    case "accident":
+      return ["accident", "wounds"];
+    case "sacrifice":
+    case "quiet":
+      return ["accident", "hardend", "exhausted"];
+    case "system":
+      return ["accident", "hardend", "exhausted"];
+    default:
+      return ["accident", "hardend"];
+  }
+}
+function isEarned(e) {
+  const r = e.requires;
+  if (!r) return false;
+  if ((r.flagTrue ?? []).length > 0) return true;
+  return Object.values(r.statAtLeast ?? {}).some((v) => (v ?? 0) >= 6);
+}
 function hurtByOwnChoice(state) {
   return (state.recentHurt ?? 0) > 0;
 }
@@ -624,6 +842,7 @@ var TEST_CARDS = [
   // ─────────────────────────── ФАЗА 1: дім, повістка, військкомат ───────────────────────────
   {
     id: "call.paper",
+    weight: 20,
     kind: "event",
     phase: [1],
     once: true,
@@ -650,7 +869,7 @@ var TEST_CARDS = [
       {
         id: "ask_friend",
         text: "\u0417\u0430\u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0443\u0432\u0430\u0442\u0438 \u0434\u0440\u0443\u0433\u043E\u0432\u0456, \u044F\u043A\u0438\u0439 \u0443\u0436\u0435 \u0432\u0456\u0434\u0441\u043B\u0443\u0436\u0438\u0432",
-        requires: { skillAtLeast: { people: 1 } },
+        // Корінь навички «Люди»: без цього варіанта 12 умов гри недосяжні (було циркулярно).
         effects: { stats: { understanding: 2, bonds: 1 }, skills: { people: 1 }, journal: "\u0414\u0440\u0443\u0433 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0432, \u044F\u043A \u0446\u0435 \u043D\u0430\u0441\u043F\u0440\u0430\u0432\u0434\u0456." },
         outcome: {
           text: "\u0414\u0440\u0443\u0433 \u0433\u043E\u0432\u043E\u0440\u0438\u0432 \u0441\u043E\u0440\u043E\u043A \u0445\u0432\u0438\u043B\u0438\u043D \u0456 \u0436\u043E\u0434\u043D\u043E\u0433\u043E \u0440\u0430\u0437\u0443 \u043D\u0435 \u0441\u043A\u0430\u0437\u0430\u0432 \xAB\u043D\u0435 \u0431\u0456\u0439\u0441\u044F\xBB. \u0426\u0435 \u0431\u0443\u043B\u043E \u043D\u0430\u0439\u0447\u0435\u0441\u043D\u0456\u0448\u0435, \u0449\u043E \u0442\u0438 \u0447\u0443\u0432 \u0437\u0430 \u0442\u0438\u0436\u0434\u0435\u043D\u044C.",
@@ -686,11 +905,12 @@ var TEST_CARDS = [
       },
       {
         id: "leave",
+        next: { card: "call.tried_to_leave_after", inDays: 14 },
         text: "\u0421\u043F\u0440\u043E\u0431\u0443\u0432\u0430\u0442\u0438 \u0432\u0438\u0439\u0442\u0438 \u0437 \u0447\u0435\u0440\u0433\u0438 \u0439 \u043F\u0456\u0442\u0438 \u0434\u043E\u0434\u043E\u043C\u0443",
         effects: { stats: { health: -2, trust: -1, supplies: -1 }, flags: { tried_to_leave: true } },
         outcome: {
           text: "\u0422\u0438 \u0437\u0440\u043E\u0431\u0438\u0432 \u0442\u0440\u0438 \u043A\u0440\u043E\u043A\u0438 \u043D\u0430\u0437\u0430\u0434 \u0456 \u043D\u0430 \u0447\u0435\u0442\u0432\u0435\u0440\u0442\u043E\u043C\u0443 \u0442\u0435\u0431\u0435 \u043F\u043E\u0432\u0435\u0440\u043D\u0443\u043B\u0438 \u0437\u0430 \u043B\u0456\u043A\u043E\u0442\u044C. \u0416\u043E\u0434\u043D\u0438\u0445 \u043A\u0440\u0438\u043A\u0456\u0432 \u2014 \u0442\u0456\u043B\u044C\u043A\u0438 \xAB\u043A\u0443\u0434\u0438\xBB.",
-          voice: "\u041F\u0456\u0441\u043B\u044F \u0446\u044C\u043E\u0433\u043E \u0432 \u044F\u043A\u043E\u043C\u0443\u0441\u044C \u0431\u043B\u0430\u043D\u043A\u0443 \u0437\\'\u044F\u0432\u0438\u0432\u0441\u044F \u043E\u0434\u0438\u043D \u0440\u044F\u0434\u043E\u043A, \u044F\u043A\u0438\u0439 \u0442\u0438 \u043F\u043E\u0431\u0430\u0447\u0438\u0448 \u0447\u0435\u0440\u0435\u0437 \u0440\u0456\u043A."
+          voice: "\u041F\u0456\u0441\u043B\u044F \u0446\u044C\u043E\u0433\u043E \u0432 \u044F\u043A\u043E\u043C\u0443\u0441\u044C \u0431\u043B\u0430\u043D\u043A\u0443 \u0437\u2019\u044F\u0432\u0438\u0432\u0441\u044F \u043E\u0434\u0438\u043D \u0440\u044F\u0434\u043E\u043A, \u044F\u043A\u0438\u0439 \u0442\u0438 \u043F\u043E\u0431\u0430\u0447\u0438\u0448 \u0447\u0435\u0440\u0435\u0437 \u0440\u0456\u043A."
         }
       }
     ]
@@ -709,7 +929,7 @@ var TEST_CARDS = [
         effects: { stats: { health: 1, trust: -1 }, flags: { knee_noted: true } },
         outcome: {
           text: "\u041B\u0456\u043A\u0430\u0440 \u0437\u0430\u043F\u0438\u0441\u0430\u0432 \xAB\u0441\u043A\u0430\u0440\u0433\u0438 \u043D\u0430 \u043A\u043E\u043B\u0456\u043D\u043E\xBB \u0439 \u043F\u043E\u0434\u0438\u0432\u0438\u0432\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u0432\u043F\u0435\u0440\u0448\u0435 \u0437\u0430 \u0432\u0435\u0441\u044C \u043E\u0433\u043B\u044F\u0434. \u041D\u0435 \u0437\u0456 \u0441\u043F\u0456\u0432\u0447\u0443\u0442\u0442\u044F\u043C \u2014 \u0437 \u0456\u043D\u0442\u0435\u0440\u0435\u0441\u043E\u043C.",
-          voice: "\u0423 \u0431\u043B\u0430\u043D\u043A\u0443 \u0437\\'\u044F\u0432\u0438\u0432\u0441\u044F \u0440\u044F\u0434\u043E\u043A, \u044F\u043A\u043E\u0433\u043E \u0442\u0430\u043C \u043C\u043E\u0433\u043B\u043E \u043D\u0435 \u0431\u0443\u0442\u0438."
+          voice: "\u0423 \u0431\u043B\u0430\u043D\u043A\u0443 \u0437\u2019\u044F\u0432\u0438\u0432\u0441\u044F \u0440\u044F\u0434\u043E\u043A, \u044F\u043A\u043E\u0433\u043E \u0442\u0430\u043C \u043C\u043E\u0433\u043B\u043E \u043D\u0435 \u0431\u0443\u0442\u0438."
         }
       },
       {
@@ -727,7 +947,7 @@ var TEST_CARDS = [
         effects: { stats: { trust: -2, energy: 1 }, skills: { drill: 1 } },
         outcome: {
           text: "\u041B\u0456\u043A\u0430\u0440 \u043D\u0435 \u0443\u0441\u043C\u0456\u0445\u043D\u0443\u0432\u0441\u044F, \u0430\u043B\u0435 \u0439 \u043D\u0435 \u0437\u0430\u043F\u0438\u0441\u0430\u0432. \u0425\u0442\u043E\u0441\u044C \u0437\u0430 \u0441\u043F\u0438\u043D\u043E\u044E \u043F\u0438\u0440\u0441\u043D\u0443\u0432.",
-          voice: "\u0416\u0430\u0440\u0442 \u0441\u043F\u0440\u0430\u0446\u044E\u0432\u0430\u0432 \u0440\u0456\u0432\u043D\u043E \u043D\u0430\u0441\u0442\u0456\u043B\u044C\u043A\u0438, \u0449\u043E\u0431 \u0442\u0435\u0431\u0435 \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u043B\u0438."
+          voice: "\u0416\u0430\u0440\u0442 \u0441\u043F\u0440\u0430\u0446\u044E\u0432\u0430\u0432 \u0440\u0456\u0432\u043D\u043E \u043D\u0430\u0441\u0442\u0456\u043B\u044C\u043A\u0438, \u0449\u043E\u0431 \u0442\u0435\u0431\u0435 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u043B\u0438."
         }
       }
     ]
@@ -784,7 +1004,7 @@ var TEST_CARDS = [
         text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u043A\u0438\u0432\u0430\u0442\u0438",
         effects: { stats: { understanding: 1, energy: 1 } },
         outcome: {
-          text: "\u0414\u044F\u0434\u044C\u043A\u043E \u0413\u0440\u0438\u0448\u0430 \u0433\u043E\u0432\u043E\u0440\u0438\u0432 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D. \u0422\u0438 \u043A\u0438\u0432\u0430\u0432. \u0417 \u0443\u0441\u044C\u043E\u0433\u043E \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u0432 \xAB\u043D\u0435 \u0432\u0438\u0441\u043E\u0432\u0443\u0439\u0441\u044F\xBB \u2014 \u0456 \u0442\u0435, \u0449\u043E \u0432\u0456\u043D \u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0442\u0440\u0438\u0447\u0456."
+          text: "\u0414\u044F\u0434\u044C\u043A\u043E \u0413\u0440\u0438\u0448\u0430 \u0433\u043E\u0432\u043E\u0440\u0438\u0432 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D. \u0422\u0438 \u043A\u0438\u0432\u0430\u0432. \u0417 \u0443\u0441\u044C\u043E\u0433\u043E \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432 \xAB\u043D\u0435 \u0432\u0438\u0441\u043E\u0432\u0443\u0439\u0441\u044F\xBB \u2014 \u0456 \u0442\u0435, \u0449\u043E \u0432\u0456\u043D \u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0442\u0440\u0438\u0447\u0456."
         }
       },
       {
@@ -820,18 +1040,29 @@ var TEST_CARDS = [
       {
         id: "prove",
         text: "\u0414\u043E\u0432\u043E\u0434\u0438\u0442\u0438, \u0449\u043E \u0446\u0435 \u0434\u0430\u0432\u043D\u043E \u0439 \u043D\u0435 \u0442\u0430\u043A",
-        effects: { stats: { trust: -1, energy: -2, understanding: 1 }, flags: { proved_himself: true } }
+        effects: { stats: { trust: -1, energy: -2, understanding: 1 }, flags: { proved_himself: true } },
+        outcome: {
+          text: "\u0422\u0438 \u043F\u043E\u044F\u0441\u043D\u044E\u0432\u0430\u0432 \u0434\u043E\u0432\u0433\u043E \u0439 \u0441\u043F\u043E\u043A\u0456\u0439\u043D\u043E, \u0456 \u043D\u0430 \u043A\u043E\u0436\u043D\u0435 \xAB\u0434\u0430\u0432\u043D\u043E\xBB \u0432\u0456\u043D \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u0430\u0432 \xAB\u0443 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0456 \u0442\u0430\u043A\xBB. \u0412\u0456\u0434\u043F\u0443\u0441\u0442\u043A\u0443 \u043D\u0435 \u0434\u0430\u043B\u0438, \u043F\u0440\u0438\u043C\u0456\u0442\u043A\u0443 \u043B\u0438\u0448\u0438\u043B\u0438.",
+          voice: "\u041F\u0430\u043F\u0456\u0440 \u043D\u0435 \u0432\u043C\u0456\u0454 \u043F\u0440\u043E\u0431\u0430\u0447\u0430\u0442\u0438 \u2014 \u0432\u0456\u043D \u043F\u0440\u043E\u0441\u0442\u043E \u043D\u0435 \u043F\u0435\u0440\u0435\u0447\u0438\u0442\u0443\u0454\u0442\u044C\u0441\u044F."
+        }
       },
       {
         id: "swallow",
         text: "\u041F\u0440\u043E\u043A\u043E\u0432\u0442\u043D\u0443\u0442\u0438 \u0439 \u043F\u0456\u0442\u0438",
-        effects: { stats: { understanding: 2, bonds: 1, trust: 1 } }
+        effects: { stats: { understanding: 2, bonds: 1, trust: 1 } },
+        outcome: {
+          text: "\u0422\u0438 \u043A\u0438\u0432\u043D\u0443\u0432 \u0456 \u0440\u043E\u0437\u043F\u0438\u0441\u0430\u0432\u0441\u044F \u0442\u0430\u043C, \u0434\u0435 \u043F\u043E\u043A\u0430\u0437\u0430\u043B\u0438. \u041F\u0440\u0438\u043C\u0456\u0442\u043A\u0430 \u043B\u0438\u0448\u0438\u043B\u0430\u0441\u044C, \u0442\u0456\u043B\u044C\u043A\u0438 \u0442\u0435\u043F\u0435\u0440 \u0442\u0438 \u0437\u043D\u0430\u0432, \u0449\u043E \u0432\u043E\u043D\u0430 \u0442\u0430\u043C \u0454."
+        }
       },
       {
         id: "find_who",
         text: "\u0421\u043F\u0438\u0442\u0430\u0442\u0438, \u0445\u0442\u043E \u0441\u0430\u043C\u0435 \u0446\u0435 \u043D\u0430\u043F\u0438\u0441\u0430\u0432",
         requires: { skillAtLeast: { system: 1 } },
-        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_pisets: true } }
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_pisets: true } },
+        outcome: {
+          text: "\u041F\u0440\u0456\u0437\u0432\u0438\u0449\u0435 \u0442\u043E\u0431\u0456 \u043D\u0430\u0437\u0432\u0430\u0432 \u0442\u043E\u0439, \u0445\u0442\u043E \u0441\u0430\u043C \u043F\u0440\u043E \u0446\u0435 \u0448\u043A\u043E\u0434\u0443\u0432\u0430\u0432. \u0426\u0435 \u0431\u0443\u0432 \u043D\u0435 \u043A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u0456 \u043D\u0435 \u043F\u043E\u043B\u0456\u0442\u0440\u0443\u043A \u2014 \u043B\u044E\u0434\u0438\u043D\u0430 \u0437 \u0434\u0440\u0456\u0431\u043D\u0438\u043C \u043F\u043E\u0447\u0435\u0440\u043A\u043E\u043C \u0456 \u0432\u0442\u043E\u043C\u043B\u0435\u043D\u0438\u043C\u0438 \u043E\u0447\u0438\u043C\u0430.",
+          voice: "\u0417\u043B\u043E \u0440\u0456\u0434\u043A\u043E \u043C\u0430\u0454 \u043E\u0431\u043B\u0438\u0447\u0447\u044F. \u0427\u0430\u0441\u0442\u0456\u0448\u0435 \u2014 \u043F\u043E\u0447\u0435\u0440\u043A."
+        }
       }
     ]
   },
@@ -954,7 +1185,7 @@ var TEST_CARDS = [
         text: "\u0416\u0430\u0440\u0442\u0443\u0432\u0430\u0442\u0438 \u0437 \u0446\u044C\u043E\u0433\u043E",
         effects: { stats: { bonds: 2, energy: -1 } },
         outcome: {
-          text: "\u0416\u0430\u0440\u0442 \u0437\u0430\u0439\u0448\u043E\u0432. \u0425\u0442\u043E\u0441\u044C \u0437\u0430\u0441\u043C\u0456\u044F\u0432\u0441\u044F, \u0445\u0442\u043E\u0441\u044C \u0443\u043F\u0435\u0440\u0448\u0435 \u043F\u043E\u0434\u0438\u0432\u0438\u0432\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u044F\u043A \u043D\u0430 \u0441\u0432\u043E\u0433\u043E. \u0414\u0432\u0435\u0440\u0456 \u0442\u0430\u043A \u0456 \u043D\u0435 \u0437\\'\u044F\u0432\u0438\u043B\u0438\u0441\u044C."
+          text: "\u0416\u0430\u0440\u0442 \u0437\u0430\u0439\u0448\u043E\u0432. \u0425\u0442\u043E\u0441\u044C \u0437\u0430\u0441\u043C\u0456\u044F\u0432\u0441\u044F, \u0445\u0442\u043E\u0441\u044C \u0443\u043F\u0435\u0440\u0448\u0435 \u043F\u043E\u0434\u0438\u0432\u0438\u0432\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u044F\u043A \u043D\u0430 \u0441\u0432\u043E\u0433\u043E. \u0414\u0432\u0435\u0440\u0456 \u0442\u0430\u043A \u0456 \u043D\u0435 \u0437\u2019\u044F\u0432\u0438\u043B\u0438\u0441\u044C."
         }
       },
       {
@@ -989,7 +1220,7 @@ var TEST_CARDS = [
         text: "\u0414\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u0443 \u0432\u0456\u043A\u043D\u043E \u0439 \u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0438",
         effects: { stats: { understanding: 2, energy: -1 }, journal: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0432\u0456\u0441\u0456\u043C \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0456\u0432." },
         outcome: {
-          text: "\u0422\u0438 \u043D\u0430\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0432\u0456\u0441\u0456\u043C \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0456\u0432 \u0456 \u0437\u0431\u0438\u0432\u0441\u044F \u043D\u0430 \u0434\u0435\u0432\\'\u044F\u0442\u043E\u043C\u0443. \u0417\u0430 \u0432\u0456\u043A\u043D\u043E\u043C \u0431\u0443\u043B\u0430 \u0432\u0436\u0435 \u043D\u0435 \u043A\u0440\u0430\u0457\u043D\u0430, \u0430 \u0441\u043C\u0443\u0433\u0430.",
+          text: "\u0422\u0438 \u043D\u0430\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0432\u0456\u0441\u0456\u043C \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0456\u0432 \u0456 \u0437\u0431\u0438\u0432\u0441\u044F \u043D\u0430 \u0434\u0435\u0432\u2019\u044F\u0442\u043E\u043C\u0443. \u0417\u0430 \u0432\u0456\u043A\u043D\u043E\u043C \u0431\u0443\u043B\u0430 \u0432\u0436\u0435 \u043D\u0435 \u043A\u0440\u0430\u0457\u043D\u0430, \u0430 \u0441\u043C\u0443\u0433\u0430.",
           voice: "\u0412\u043E\u0434\u0456\u0439 \u0437\u0430 \u0448\u0456\u0441\u0442\u044C \u0433\u043E\u0434\u0438\u043D \u0441\u043A\u0430\u0437\u0430\u0432 \u043E\u0434\u043D\u0435 \u0441\u043B\u043E\u0432\u043E: \xAB\u041F\u0440\u0438\u0457\u0445\u0430\u043B\u0438\xBB."
         }
       },
@@ -998,7 +1229,7 @@ var TEST_CARDS = [
         text: "\u0420\u043E\u0437\u0434\u0430\u0442\u0438 \u0442\u0435, \u0449\u043E \u0432\u0437\u044F\u0432 \u0456\u0437 \u0434\u043E\u043C\u0443",
         effects: { stats: { bonds: 3, supplies: -2 } },
         outcome: {
-          text: "\u0414\u043E\u043C\u0430\u0448\u043D\u0454 \u0440\u043E\u0437\u0456\u0439\u0448\u043B\u043E\u0441\u044F \u0437\u0430 \u043F\\'\u044F\u0442\u043D\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D. \u0425\u0442\u043E\u0441\u044C \u0441\u043A\u0430\u0437\u0430\u0432 \xAB\u0434\u044F\u043A\u0443\u044E\xBB \u0442\u0456\u043B\u044C\u043A\u0438 \u0442\u043E\u0431\u0456, \u0456 \u0442\u043E \u043F\u043E\u0448\u0435\u043F\u043A\u0438."
+          text: "\u0414\u043E\u043C\u0430\u0448\u043D\u0454 \u0440\u043E\u0437\u0456\u0439\u0448\u043B\u043E\u0441\u044F \u0437\u0430 \u043F\u2019\u044F\u0442\u043D\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D. \u0425\u0442\u043E\u0441\u044C \u0441\u043A\u0430\u0437\u0430\u0432 \xAB\u0434\u044F\u043A\u0443\u044E\xBB \u0442\u0456\u043B\u044C\u043A\u0438 \u0442\u043E\u0431\u0456, \u0456 \u0442\u043E \u043F\u043E\u0448\u0435\u043F\u043A\u0438."
         }
       },
       {
@@ -1026,8 +1257,8 @@ var TEST_CARDS = [
         text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0432 \u0431\u043B\u043E\u043A\u043D\u043E\u0442 \u0456 \u043F\u0435\u0440\u0435\u043F\u0438\u0442\u0430\u0442\u0438 \u0434\u0432\u0456\u0447\u0456",
         effects: { skills: { survival: 1 }, stats: { understanding: 1, energy: -1 }, flags: { knows_okop: true } },
         outcome: {
-          text: "\u0422\u0438 \u0437\u0430\u043F\u0438\u0441\u0430\u0432 \u0443 \u0431\u043B\u043E\u043A\u043D\u043E\u0442 \u0434\u0435\u0432\\'\u044F\u0442\u044C \u043F\u0443\u043D\u043A\u0442\u0456\u0432 \u0456 \u043F\u0435\u0440\u0435\u043F\u0438\u0442\u0430\u0432 \u0434\u0432\u0456\u0447\u0456. \u0422\u043E\u043B\u0456\u043A \u043F\u043E\u0434\u0438\u0432\u0438\u0432\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u0437 \u043F\u043E\u0432\u0430\u0433\u043E\u044E, \u044F\u043A\u0443 \u043D\u0435 \u043F\u0440\u0438\u0445\u043E\u0432\u0443\u0432\u0430\u0432.",
-          voice: "\xAB\u0417\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u0439: \u043E\u043A\u043E\u043F \u043A\u043E\u043F\u0430\u044E\u0442\u044C \u043D\u0435 \u0434\u043B\u044F \u0442\u043E\u0433\u043E, \u0449\u043E\u0431 \u0441\u0438\u0434\u0456\u0442\u0438, \u0430 \u0434\u043B\u044F \u0442\u043E\u0433\u043E, \u0449\u043E\u0431 \u043D\u0435 \u0431\u0456\u0433\u0442\u0438\xBB."
+          text: "\u0422\u0438 \u0437\u0430\u043F\u0438\u0441\u0430\u0432 \u0443 \u0431\u043B\u043E\u043A\u043D\u043E\u0442 \u0434\u0435\u0432\u2019\u044F\u0442\u044C \u043F\u0443\u043D\u043A\u0442\u0456\u0432 \u0456 \u043F\u0435\u0440\u0435\u043F\u0438\u0442\u0430\u0432 \u0434\u0432\u0456\u0447\u0456. \u0422\u043E\u043B\u0456\u043A \u043F\u043E\u0434\u0438\u0432\u0438\u0432\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u0437 \u043F\u043E\u0432\u0430\u0433\u043E\u044E, \u044F\u043A\u0443 \u043D\u0435 \u043F\u0440\u0438\u0445\u043E\u0432\u0443\u0432\u0430\u0432.",
+          voice: "\xAB\u0417\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0439: \u043E\u043A\u043E\u043F \u043A\u043E\u043F\u0430\u044E\u0442\u044C \u043D\u0435 \u0434\u043B\u044F \u0442\u043E\u0433\u043E, \u0449\u043E\u0431 \u0441\u0438\u0434\u0456\u0442\u0438, \u0430 \u0434\u043B\u044F \u0442\u043E\u0433\u043E, \u0449\u043E\u0431 \u043D\u0435 \u0431\u0456\u0433\u0442\u0438\xBB."
         }
       },
       {
@@ -1041,12 +1272,13 @@ var TEST_CARDS = [
       },
       {
         id: "ask_why",
+        next: { card: "phase4.tolko_dies", inDays: 12 },
         text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u0437 \u0442\u0438\u0445, \u043A\u043E\u0433\u043E \u0432\u0456\u043D \u0443\u0447\u0438\u0432, \u0449\u0435 \u0436\u0438\u0432\u0456",
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { tolko_honest: true } },
         outcome: {
-          text: "\u0422\u043E\u043B\u0456\u043A \u0434\u043E\u0432\u0433\u043E \u043C\u043E\u0432\u0447\u0430\u0432, \u043F\u043E\u0442\u0456\u043C \u043D\u0430\u0437\u0432\u0430\u0432 \u043F\\'\u044F\u0442\u044C \u0456\u043C\u0435\u043D \u0456 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0449\u0435 \u0434\u0432\u043E\u0454 \u2014 \xAB\u043D\u0435 \u0440\u0430\u0445\u0443\u044E\u0442\u044C\u0441\u044F\xBB. \u0411\u0456\u043B\u044C\u0448\u0435 \u0432\u0456\u043D \u043F\u0440\u043E \u0446\u0435 \u043D\u0435 \u0433\u043E\u0432\u043E\u0440\u0438\u0432.",
-          voice: "\xAB\u042F \u0457\u0445 \u0443\u0441\u0456\u0445 \u043F\u0430\u043C\\'\u044F\u0442\u0430\u044E. \u0426\u0435 \u0456 \u0454 \u043C\u043E\u044F \u0440\u043E\u0431\u043E\u0442\u0430\xBB."
+          text: "\u0422\u043E\u043B\u0456\u043A \u0434\u043E\u0432\u0433\u043E \u043C\u043E\u0432\u0447\u0430\u0432, \u043F\u043E\u0442\u0456\u043C \u043D\u0430\u0437\u0432\u0430\u0432 \u043F\u2019\u044F\u0442\u044C \u0456\u043C\u0435\u043D \u0456 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0449\u0435 \u0434\u0432\u043E\u0454 \u2014 \xAB\u043D\u0435 \u0440\u0430\u0445\u0443\u044E\u0442\u044C\u0441\u044F\xBB. \u0411\u0456\u043B\u044C\u0448\u0435 \u0432\u0456\u043D \u043F\u0440\u043E \u0446\u0435 \u043D\u0435 \u0433\u043E\u0432\u043E\u0440\u0438\u0432.",
+          voice: "\xAB\u042F \u0457\u0445 \u0443\u0441\u0456\u0445 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u044E. \u0426\u0435 \u0456 \u0454 \u043C\u043E\u044F \u0440\u043E\u0431\u043E\u0442\u0430\xBB."
         }
       }
     ]
@@ -1080,7 +1312,7 @@ var TEST_CARDS = [
         text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0441\u0432\u043E\u044E \u043F\u043E\u0440\u0446\u0456\u044E \u0445\u043B\u043E\u043F\u0446\u0435\u0432\u0456 \u0437 \u0441\u0443\u0441\u0456\u0434\u043D\u044C\u043E\u0433\u043E \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F",
         effects: { stats: { bonds: 2, energy: -1, health: -1, supplies: -1 } },
         outcome: {
-          text: "\u0425\u043B\u043E\u043F\u0435\u0446\u044C \u0437 \u0441\u0443\u0441\u0456\u0434\u043D\u044C\u043E\u0433\u043E \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u0437\\'\u0457\u0432 \u043E\u0431\u0438\u0434\u0432\u0456 \u043F\u043E\u0440\u0446\u0456\u0457 \u0439 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0442\u0438 \xAB\u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u0438\u0439\xBB. \u0422\u0438 \u0431\u0443\u0432 \u0433\u043E\u043B\u043E\u0434\u043D\u0438\u0439 \u0434\u043E \u0432\u0435\u0447\u043E\u0440\u0430."
+          text: "\u0425\u043B\u043E\u043F\u0435\u0446\u044C \u0437 \u0441\u0443\u0441\u0456\u0434\u043D\u044C\u043E\u0433\u043E \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u0437\u2019\u0457\u0432 \u043E\u0431\u0438\u0434\u0432\u0456 \u043F\u043E\u0440\u0446\u0456\u0457 \u0439 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0442\u0438 \xAB\u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u0438\u0439\xBB. \u0422\u0438 \u0431\u0443\u0432 \u0433\u043E\u043B\u043E\u0434\u043D\u0438\u0439 \u0434\u043E \u0432\u0435\u0447\u043E\u0440\u0430."
         }
       }
     ]
@@ -1098,7 +1330,7 @@ var TEST_CARDS = [
         text: "\xAB\u0423\u0441\u0435 \u0434\u043E\u0431\u0440\u0435, \u043C\u0430\u043C\u043E\xBB",
         effects: { stats: { bonds: 1, understanding: 1, energy: -1 }, journal: "\u0417\u0431\u0440\u0435\u0445\u0430\u0432 \u043C\u0430\u043C\u0456." },
         outcome: {
-          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435, \u0456 \u0449\u0435 \u043F\\'\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u043E\u043F\u0438\u0441\u0443\u0432\u0430\u0432 \u043F\u043E\u0433\u043E\u0434\u0443. \u041C\u0430\u043C\u0430 \u043F\u043E\u0432\u0456\u0440\u0438\u043B\u0430 \u2014 \u0430\u0431\u043E \u0437\u0440\u043E\u0431\u0438\u043B\u0430 \u0432\u0438\u0433\u043B\u044F\u0434.",
+          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435, \u0456 \u0449\u0435 \u043F\u2019\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u043E\u043F\u0438\u0441\u0443\u0432\u0430\u0432 \u043F\u043E\u0433\u043E\u0434\u0443. \u041C\u0430\u043C\u0430 \u043F\u043E\u0432\u0456\u0440\u0438\u043B\u0430 \u2014 \u0430\u0431\u043E \u0437\u0440\u043E\u0431\u0438\u043B\u0430 \u0432\u0438\u0433\u043B\u044F\u0434.",
           voice: "\u0412\u043E\u043D\u0430 \u043F\u043E\u0434\u0437\u0432\u043E\u043D\u0438\u0442\u044C \u0437\u043D\u043E\u0432\u0443 \u0447\u0435\u0440\u0435\u0437 \u0434\u0432\u0430 \u0434\u043D\u0456 \u0439 \u0437\u0430\u043F\u0438\u0442\u0430\u0454 \u0442\u0435 \u0441\u0430\u043C\u0435."
         }
       },
@@ -1132,6 +1364,7 @@ var TEST_CARDS = [
     options: [
       {
         id: "volunteer",
+        next: { card: "line.assault_after", inDays: 5 },
         text: "\u0412\u0438\u0439\u0434\u0438 \u043F\u0435\u0440\u0448\u0438\u043C, \u043F\u043E\u043A\u0438 \u043D\u0435 \u043E\u0431\u0440\u0430\u043B\u0438",
         effects: { stats: { health: -2, trust: 2, bonds: 1 }, flags: { assault: true }, journal: "\u041F\u0456\u0448\u043E\u0432 \u0443 \u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443 \u0434\u043E\u0431\u0440\u043E\u0432\u0456\u043B\u044C\u043D\u043E." },
         outcome: {
@@ -1497,7 +1730,7 @@ var TEST_CARDS = [
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { supplies: 2, health: -1, energy: -2 }, skills: { survival: 1 } },
         outcome: {
-          text: "\u041A\u0430\u043B\u044E\u0436\u0430 \u0431\u0443\u043B\u0430 \u043A\u0430\u043B\u044E\u0436\u0435\u044E. \u0422\u0438 \u043A\u0438\u043F\\'\u044F\u0442\u0438\u0432 \u0457\u0457 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u0456 \u043F\u0438\u0432, \u043D\u0435 \u0434\u0438\u0432\u043B\u044F\u0447\u0438\u0441\u044C.",
+          text: "\u041A\u0430\u043B\u044E\u0436\u0430 \u0431\u0443\u043B\u0430 \u043A\u0430\u043B\u044E\u0436\u0435\u044E. \u0422\u0438 \u043A\u0438\u043F\u2019\u044F\u0442\u0438\u0432 \u0457\u0457 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u0456 \u043F\u0438\u0432, \u043D\u0435 \u0434\u0438\u0432\u043B\u044F\u0447\u0438\u0441\u044C.",
           voice: "\u0421\u043C\u0430\u043A \u043D\u0435 \u043F\u0438\u0442\u0430\u044E\u0442\u044C, \u043A\u043E\u043B\u0438 \u0441\u043F\u0440\u0430\u0432\u0430 \u0439\u0434\u0435 \u043F\u0440\u043E \u043A\u043E\u0432\u0442\u043E\u043A."
         }
       },
@@ -1525,7 +1758,7 @@ var TEST_CARDS = [
         text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441, \u0449\u043E \u0432\u0456\u043D \u0437\u0430\u0433\u0438\u043D\u0443\u0432",
         effects: { stats: { understanding: 2, bonds: 1, energy: -2 }, flags: { said_he_died: true } },
         outcome: {
-          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0432\u0433\u043E\u043B\u043E\u0441, \u0456 \u0432\u0441\u0456 \u0437\u0430\u043C\u043E\u0432\u043A\u043B\u0438. \u0425\u0442\u043E\u0441\u044C \u0434\u043E\u043F\u0438\u0441\u0430\u0432 \u0439\u043E\u0433\u043E \u0456\u043C\\'\u044F \u043D\u0430 \u0434\u043E\u0448\u0446\u0456 \u0432 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456."
+          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0432\u0433\u043E\u043B\u043E\u0441, \u0456 \u0432\u0441\u0456 \u0437\u0430\u043C\u043E\u0432\u043A\u043B\u0438. \u0425\u0442\u043E\u0441\u044C \u0434\u043E\u043F\u0438\u0441\u0430\u0432 \u0439\u043E\u0433\u043E \u0456\u043C\u2019\u044F \u043D\u0430 \u0434\u043E\u0448\u0446\u0456 \u0432 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456."
         }
       },
       {
@@ -1538,6 +1771,7 @@ var TEST_CARDS = [
       },
       {
         id: "letter",
+        next: { card: "phase3.letter_followup", inDays: 10 },
         text: "\u041F\u043E\u0447\u0430\u0442\u0438 \u043F\u0438\u0441\u0430\u0442\u0438 \u043B\u0438\u0441\u0442 \u0439\u043E\u0433\u043E \u043C\u0430\u043C\u0456",
         effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } },
         outcome: {
@@ -1560,17 +1794,27 @@ var TEST_CARDS = [
       {
         id: "finish",
         text: "\u0414\u043E\u043F\u0438\u0441\u0430\u0442\u0438 \u0439 \u0432\u0456\u0434\u0434\u0430\u0442\u0438",
-        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { letter_sent: true }, journal: "\u0414\u043E\u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442." }
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { letter_sent: true }, journal: "\u0414\u043E\u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442." },
+        outcome: {
+          text: "\u0422\u0438 \u0434\u043E\u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442 \u043F\u0440\u0438 \u043B\u0456\u0445\u0442\u0430\u0440\u0438\u043A\u0443 \u2014 \u0431\u0435\u0437 \xAB\u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435\xBB. \u0412\u0456\u0434\u0434\u0430\u0432 \u0442\u043E\u043C\u0443, \u0445\u0442\u043E \u0457\u0445\u0430\u0432 \u0443 \u0442\u0438\u043B, \u0456 \u043D\u0435 \u0441\u0442\u0430\u0432 \u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044C, \u044F\u043A \u0432\u0456\u043D \u0439\u043E\u0433\u043E \u0445\u043E\u0432\u0430\u0454."
+        }
       },
       {
         id: "burn",
         text: "\u0421\u043F\u0430\u043B\u0438\u0442\u0438",
-        effects: { stats: { understanding: 1, bonds: -2, health: -1 } }
+        effects: { stats: { understanding: 1, bonds: -2, health: -1 } },
+        outcome: {
+          text: "\u041F\u0430\u043F\u0456\u0440 \u0437\u0433\u043E\u0440\u0456\u0432 \u0448\u0432\u0438\u0434\u0448\u0435, \u043D\u0456\u0436 \u0442\u0438 \u0439\u043E\u0433\u043E \u043F\u0438\u0441\u0430\u0432. \u041F\u043E\u043F\u0456\u043B \u0442\u0438 \u0440\u043E\u0437\u0442\u0435\u0440 \u0443 \u043F\u0430\u043B\u044C\u0446\u044F\u0445, \u0449\u043E\u0431 \u0432\u0456\u043D \u043D\u0456 \u043F\u0440\u043E \u0449\u043E \u043D\u0435 \u043D\u0430\u0433\u0430\u0434\u0443\u0432\u0430\u0432.",
+          voice: "\u0421\u043B\u043E\u0432\u0430 \u0437\u0433\u043E\u0440\u0456\u043B\u0438. \u0422\u0435, \u0449\u043E \u0437\u0430 \u043D\u0438\u043C\u0438, \u043B\u0438\u0448\u0438\u043B\u043E\u0441\u044C."
+        }
       },
       {
         id: "keep",
         text: "\u041D\u043E\u0441\u0438\u0442\u0438 \u0434\u0430\u043B\u0456, \u043F\u043E\u043A\u0438 \u0449\u043E \u0454 \u043A\u043E\u043B\u0438",
-        effects: { stats: { energy: -1, understanding: 1 } }
+        effects: { stats: { energy: -1, understanding: 1 } },
+        outcome: {
+          text: "\u041B\u0438\u0441\u0442 \u043B\u0438\u0448\u0438\u0432\u0441\u044F \u0432 \u043D\u0430\u0433\u0440\u0443\u0434\u043D\u0456\u0439 \u043A\u0438\u0448\u0435\u043D\u0456. \u0422\u0438 \u0437\u0432\u0438\u043A \u0434\u043E \u0439\u043E\u0433\u043E \u043A\u0443\u0442\u0430: \u0432\u0456\u043D \u043D\u0430\u0433\u0430\u0434\u0443\u0432\u0430\u0432, \u0449\u043E \u043A\u043E\u043B\u0438\u0441\u044C \u0431\u0443\u043B\u043E \u043A\u043E\u043C\u0443 \u043F\u0438\u0441\u0430\u0442\u0438."
+        }
       }
     ]
   },
@@ -1595,7 +1839,7 @@ var TEST_CARDS = [
         text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u0444\u043E\u0442\u043E",
         effects: { stats: { understanding: 2, energy: -1 }, flags: { counted_photo: true } },
         outcome: {
-          text: "\u0422\u0438 \u043F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0448\u0456\u0441\u0442\u044C \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u0444\u043E\u0442\u043E. \u0427\u0435\u0440\u0435\u0437 \u043C\u0456\u0441\u044F\u0446\u044C \u0441\u0435\u0440\u0435\u0434 \u043D\u0438\u0445 \u0431\u0443\u043B\u043E \u0432\u0436\u0435 \u0434\u0435\u0432\\'\u044F\u0442\u043D\u0430\u0434\u0446\u044F\u0442\u044C."
+          text: "\u0422\u0438 \u043F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0448\u0456\u0441\u0442\u044C \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u0444\u043E\u0442\u043E. \u0427\u0435\u0440\u0435\u0437 \u043C\u0456\u0441\u044F\u0446\u044C \u0441\u0435\u0440\u0435\u0434 \u043D\u0438\u0445 \u0431\u0443\u043B\u043E \u0432\u0436\u0435 \u0434\u0435\u0432\u2019\u044F\u0442\u043D\u0430\u0434\u0446\u044F\u0442\u044C."
         }
       },
       {
@@ -1744,6 +1988,7 @@ var TEST_CARDS = [
       },
       {
         id: "write_back",
+        next: { card: "line.volunteers_thanks", inDays: 7 },
         text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0430\u0434\u0440\u0435\u0441\u0443 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432, \u0449\u043E\u0431 \u043F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438",
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
         outcome: {
@@ -1762,6 +2007,7 @@ var TEST_CARDS = [
     options: [
       {
         id: "agree",
+        next: { card: "phase4.informer_after", inDays: 6 },
         text: "\u041F\u043E\u0433\u043E\u0434\u0438\u0442\u0438\u0441\u044C \u2014 \u0446\u0435 \u043F\u0440\u0438\u043A\u0440\u0438\u0442\u0442\u044F",
         effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } },
         outcome: {
@@ -1778,6 +2024,7 @@ var TEST_CARDS = [
       },
       {
         id: "pretend",
+        next: { card: "line.fake_informer", inDays: 6 },
         text: "\u041F\u043E\u0433\u043E\u0434\u0438\u0442\u0438\u0441\u044C \u0456 \u043D\u0435 \u0440\u043E\u0431\u0438\u0442\u0438 \u043D\u0456\u0447\u043E\u0433\u043E",
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } },
@@ -1850,6 +2097,7 @@ var TEST_CARDS = [
       },
       {
         id: "send",
+        next: { card: "phase5.photo_found", inDays: 8 },
         text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438, \u0449\u043E\u0431 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043B\u0438 \u043C\u0430\u043C\u0456",
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
         outcome: {
@@ -1916,7 +2164,7 @@ var TEST_CARDS = [
         text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u043E\u0432\u0456, \u0449\u043E \u0446\u0435 \u0448\u043A\u043E\u0434\u0438\u0442\u044C",
         effects: { stats: { trust: -2, bonds: 1, understanding: 1 } },
         outcome: {
-          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0446\u0435 \u0448\u043A\u043E\u0434\u0438\u0442\u044C. \u0421\u0435\u0440\u0436\u0430\u043D\u0442 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0432: \xAB\u0426\u0435 \u0456 \u0454 \u0441\u043B\u0443\u0436\u0431\u0430\xBB. \u0425\u0442\u043E\u0441\u044C \u0456\u0437 \u0445\u043B\u043E\u043F\u0446\u0456\u0432 \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u0432, \u0445\u0442\u043E\u0441\u044C \u2014 \u043D\u0456."
+          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0446\u0435 \u0448\u043A\u043E\u0434\u0438\u0442\u044C. \u0421\u0435\u0440\u0436\u0430\u043D\u0442 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0432: \xAB\u0426\u0435 \u0456 \u0454 \u0441\u043B\u0443\u0436\u0431\u0430\xBB. \u0425\u0442\u043E\u0441\u044C \u0456\u0437 \u0445\u043B\u043E\u043F\u0446\u0456\u0432 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432, \u0445\u0442\u043E\u0441\u044C \u2014 \u043D\u0456."
         }
       },
       {
@@ -1960,7 +2208,7 @@ var TEST_CARDS = [
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 2, health: -1 }, flags: { knows_triage: true } },
         outcome: {
-          text: "\u041E\u043B\u044F \u043F\u043E\u0434\u0438\u0432\u0438\u043B\u0430\u0441\u044C \u043D\u0430 \u0442\u0435\u0431\u0435 \u0442\u0430\u043A, \u043D\u0456\u0431\u0438 \u0442\u0438 \u043D\u0430\u0440\u0435\u0448\u0442\u0456 \u0441\u043A\u0430\u0437\u0430\u0432 \u0449\u043E\u0441\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0435, \u0456 \u043D\u0430\u0437\u0432\u0430\u043B\u0430 \u0456\u043C\\'\u044F."
+          text: "\u041E\u043B\u044F \u043F\u043E\u0434\u0438\u0432\u0438\u043B\u0430\u0441\u044C \u043D\u0430 \u0442\u0435\u0431\u0435 \u0442\u0430\u043A, \u043D\u0456\u0431\u0438 \u0442\u0438 \u043D\u0430\u0440\u0435\u0448\u0442\u0456 \u0441\u043A\u0430\u0437\u0430\u0432 \u0449\u043E\u0441\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0435, \u0456 \u043D\u0430\u0437\u0432\u0430\u043B\u0430 \u0456\u043C\u2019\u044F."
         }
       }
     ]
@@ -2114,6 +2362,7 @@ var TEST_CARDS = [
       },
       {
         id: "ask_plan",
+        next: { card: "line.known_plan", inDays: 3 },
         text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0443 \u0447\u043E\u043C\u0443 \u043F\u043B\u0430\u043D \u043F\u043E\u043B\u044F\u0433\u0430\u0454 \u043D\u0430\u0441\u043F\u0440\u0430\u0432\u0434\u0456",
         requires: { skillAtLeast: { system: 2 } },
         effects: { stats: { understanding: 3, bonds: 1 }, flags: { knows_plan: true } },
@@ -2145,7 +2394,7 @@ var TEST_CARDS = [
         text: "\u041C\u043E\u0432\u0447\u0430\u0442\u0438",
         effects: { stats: { understanding: 1, trust: -1, energy: -1 } },
         outcome: {
-          text: "\u0422\u0438 \u043C\u043E\u0432\u0447\u0430\u0432, \u0456 \u0446\u0435 \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u043B\u0438 \u0431\u0456\u043B\u044C\u0448\u0435, \u043D\u0456\u0436 \u0431\u0443\u0434\u044C-\u044F\u043A\u0456 \u0441\u043B\u043E\u0432\u0430."
+          text: "\u0422\u0438 \u043C\u043E\u0432\u0447\u0430\u0432, \u0456 \u0446\u0435 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u043B\u0438 \u0431\u0456\u043B\u044C\u0448\u0435, \u043D\u0456\u0436 \u0431\u0443\u0434\u044C-\u044F\u043A\u0456 \u0441\u043B\u043E\u0432\u0430."
         }
       },
       {
@@ -2290,7 +2539,7 @@ var TEST_CARDS = [
         text: "\u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438 \u0437\u0430\u0440\u0430\u0437, \u043F\u043E\u043A\u0438 \u0454 \u0437\u0432'\u044F\u0437\u043E\u043A",
         effects: { stats: { bonds: 3, energy: -2 } },
         outcome: {
-          text: "\u0422\u0438 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0432, \u043F\u043E\u043A\u0438 \u0431\u0443\u0432 \u0437\u0432\\'\u044F\u0437\u043E\u043A. \u041F\u0438\u0441\u0430\u0432 \u043A\u043E\u0440\u043E\u0442\u043A\u043E, \u0437\u0430\u043A\u0440\u0435\u0441\u043B\u0438\u0432 \u0442\u0440\u0438 \u0440\u0430\u0437\u0438."
+          text: "\u0422\u0438 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0432, \u043F\u043E\u043A\u0438 \u0431\u0443\u0432 \u0437\u0432\u2019\u044F\u0437\u043E\u043A. \u041F\u0438\u0441\u0430\u0432 \u043A\u043E\u0440\u043E\u0442\u043A\u043E, \u0437\u0430\u043A\u0440\u0435\u0441\u043B\u0438\u0432 \u0442\u0440\u0438 \u0440\u0430\u0437\u0438."
         }
       },
       {
@@ -2298,7 +2547,7 @@ var TEST_CARDS = [
         text: "\u0412\u0456\u0434\u043A\u043B\u0430\u0441\u0442\u0438 \u2014 \u0437\u0430\u0440\u0430\u0437 \u043D\u0435 \u0434\u043E \u0446\u044C\u043E\u0433\u043E",
         effects: { stats: { energy: 1, bonds: -2, understanding: -1 } },
         outcome: {
-          text: "\u0422\u0438 \u0432\u0456\u0434\u043A\u043B\u0430\u0432, \u0456 \u0437\u0432\\'\u044F\u0437\u043E\u043A \u0437\u043D\u0438\u043A \u0434\u043E \u0432\u0435\u0447\u043E\u0440\u0430. \u041F\u043E\u0442\u0456\u043C \u0442\u0438 \u0437\u0430\u0431\u0443\u0432, \u0430 \u043F\u043E\u0442\u0456\u043C \u0431\u0443\u043B\u043E \u0441\u043E\u0440\u043E\u043C\u043D\u043E \u0437\u0433\u0430\u0434\u0430\u0442\u0438."
+          text: "\u0422\u0438 \u0432\u0456\u0434\u043A\u043B\u0430\u0432, \u0456 \u0437\u0432\u2019\u044F\u0437\u043E\u043A \u0437\u043D\u0438\u043A \u0434\u043E \u0432\u0435\u0447\u043E\u0440\u0430. \u041F\u043E\u0442\u0456\u043C \u0442\u0438 \u0437\u0430\u0431\u0443\u0432, \u0430 \u043F\u043E\u0442\u0456\u043C \u0431\u0443\u043B\u043E \u0441\u043E\u0440\u043E\u043C\u043D\u043E \u0437\u0433\u0430\u0434\u0430\u0442\u0438."
         }
       },
       {
@@ -2383,7 +2632,7 @@ var TEST_CARDS = [
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 2, energy: 1, trust: -1 } },
         outcome: {
-          text: "\u0412\u0438 \u0434\u043E\u043C\u043E\u0432\u0438\u043B\u0438\u0441\u044C: \u0432\u0456\u043D \u043F\u0435\u0440\u0448\u0438\u0439, \u0442\u0438 \u0434\u0440\u0443\u0433\u0438\u0439. \u0412\u0456\u043D \u0440\u043E\u0437\u0431\u0443\u0434\u0438\u0432 \u0442\u0435\u0431\u0435 \u043D\u0430 \u043F\\'\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u043F\u0456\u0437\u043D\u0456\u0448\u0435, \u043D\u0456\u0436 \u043E\u0431\u0456\u0446\u044F\u0432."
+          text: "\u0412\u0438 \u0434\u043E\u043C\u043E\u0432\u0438\u043B\u0438\u0441\u044C: \u0432\u0456\u043D \u043F\u0435\u0440\u0448\u0438\u0439, \u0442\u0438 \u0434\u0440\u0443\u0433\u0438\u0439. \u0412\u0456\u043D \u0440\u043E\u0437\u0431\u0443\u0434\u0438\u0432 \u0442\u0435\u0431\u0435 \u043D\u0430 \u043F\u2019\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D \u043F\u0456\u0437\u043D\u0456\u0448\u0435, \u043D\u0456\u0436 \u043E\u0431\u0456\u0446\u044F\u0432."
         }
       }
     ]
@@ -2498,7 +2747,7 @@ var TEST_CARDS = [
         text: "\u0417\u0430\u043A\u0440\u0438\u0442\u0438\u0441\u044C",
         effects: { stats: { energy: -1, bonds: -2, understanding: 1 } },
         outcome: {
-          text: "\u0422\u0438 \u0437\u0430\u043A\u0440\u0438\u0432\u0441\u044F. \u041D\u0430\u0441\u0442\u0443\u043F\u043D\u043E\u0433\u043E \u0440\u0430\u043D\u043A\u0443 \u0442\u0438 \u043D\u0435 \u043F\u0430\u043C\\'\u044F\u0442\u0430\u0432, \u0449\u043E \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u0430\u0432 \u043D\u0430 \u043F\u0438\u0442\u0430\u043D\u043D\u044F."
+          text: "\u0422\u0438 \u0437\u0430\u043A\u0440\u0438\u0432\u0441\u044F. \u041D\u0430\u0441\u0442\u0443\u043F\u043D\u043E\u0433\u043E \u0440\u0430\u043D\u043A\u0443 \u0442\u0438 \u043D\u0435 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432, \u0449\u043E \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u0430\u0432 \u043D\u0430 \u043F\u0438\u0442\u0430\u043D\u043D\u044F."
         }
       }
     ]
@@ -2509,6 +2758,7 @@ var TEST_CARDS = [
     follows: ["phase4.cold", "phase4.wound", "phase4.night_watch"],
     lead: "\u041D\u0430\u043A\u0430\u0437, \u044F\u043A\u0438\u0439 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u043E\u044F\u0441\u043D\u0438\u0432.",
     echo: [
+      { flag: "carried_out", line: "\u0422\u0438 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0454\u0448, \u044F\u043A \u0442\u0435\u0431\u0435 \u043D\u0435\u0441\u043B\u0438. \u0422\u043E\u043C\u0443 \u043D\u0430\u043A\u0430\u0437 \xAB\u0442\u0440\u0438\u043C\u0430\u0442\u0438\xBB \u0447\u0438\u0442\u0430\u0454\u0442\u044C\u0441\u044F \u043F\u043E\u0432\u0456\u043B\u044C\u043D\u0456\u0448\u0435." },
       { flag: "wounded_stayed", line: "\u041D\u043E\u0433\u0430, \u044F\u043A\u0443 \u0442\u0438 \u043D\u0435 \u0432\u0456\u0434\u0434\u0430\u0432 \u0443 \u0442\u0438\u043B, \u0442\u044F\u0433\u043D\u0435 \u043F\u0440\u0438 \u043A\u043E\u0436\u043D\u043E\u043C\u0443 \u043A\u0440\u043E\u0446\u0456." },
       { flag: "held_post", line: "\u0422\u0438 \u0432\u0436\u0435 \u0442\u0440\u0438\u043C\u0430\u0432 \u0446\u044E \u043F\u043E\u0437\u0438\u0446\u0456\u044E. \u0422\u0440\u0438\u043C\u0430\u0442\u0438 \u0432\u0434\u0440\u0443\u0433\u0435 \u043B\u0435\u0433\u0448\u0435 \u2014 \u0430\u0431\u043E \u0433\u0456\u0440\u0448\u0435." },
       { flag: "assault", line: "\u0422\u0438 \u0441\u0430\u043C \u043F\u0456\u0448\u043E\u0432 \u0443 \u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443. \u0422\u0435\u043F\u0435\u0440 \u0446\u0435 \u0432\u0456\u0434\u0447\u0443\u0432\u0430\u0454\u0442\u044C\u0441\u044F \u044F\u043A \u043D\u0430\u0441\u043B\u0456\u0434\u043E\u043A, \u0430 \u043D\u0435 \u044F\u043A \u0432\u0438\u043F\u0430\u0434\u043E\u043A." }
@@ -2548,6 +2798,7 @@ var TEST_CARDS = [
     id: "phase5.epitaph",
     follows: ["phase5.lastpost", "phase4.desert"],
     lead: "\u0420\u043E\u0437\u043C\u043E\u0432\u0430, \u044F\u043A\u0443 \u0432\u0441\u0456 \u0443\u043D\u0438\u043A\u0430\u043B\u0438.",
+    echo: [{ flag: "carried_out", line: "\u0422\u0435\u0431\u0435 \u0432\u0436\u0435 \u0440\u0430\u0437 \u0432\u0438\u043D\u043E\u0441\u0438\u043B\u0438. \u041F\u0438\u0442\u0430\u043D\u043D\u044F \xAB\u0449\u043E \u043F\u0440\u043E \u043D\u0430\u0441 \u0441\u043A\u0430\u0436\u0443\u0442\u044C\xBB \u0442\u0435\u043F\u0435\u0440 \u0437\u0432\u0443\u0447\u0438\u0442\u044C \u0456\u043D\u0430\u043A\u0448\u0435." }],
     kind: "event",
     phase: [4, 5],
     once: true,
@@ -2762,6 +3013,7 @@ var TEST_CARDS = [
       },
       {
         id: "other",
+        next: { card: "line.kept_promise", inDays: 3 },
         text: "\u041F\u043E\u043E\u0431\u0456\u0446\u044F\u0442\u0438 \u0441\u043A\u0430\u0437\u0430\u0442\u0438 \u0456\u043D\u0448\u0435 \u2014 \u0442\u0435, \u0449\u043E \u0431\u0443\u0434\u0435 \u043F\u0440\u0430\u0432\u0434\u043E\u044E",
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } },
@@ -2787,7 +3039,7 @@ var TEST_CARDS = [
         text: "\u0417'\u0457\u0441\u0442\u0438 \u0441\u0432\u043E\u044E \u0447\u0430\u0441\u0442\u0438\u043D\u0443",
         effects: { stats: { health: 1, energy: 1, supplies: -1 } },
         outcome: {
-          text: "\u0422\u0438 \u0437\\'\u0457\u0432 \u0441\u0432\u043E\u044E \u0447\u0430\u0441\u0442\u0438\u043D\u0443 \u0439 \u0434\u043E\u0432\u0433\u043E \u0441\u0438\u0434\u0456\u0432 \u0456\u0437 \u043F\u043E\u0440\u043E\u0436\u043D\u044C\u043E\u044E \u043C\u0438\u0441\u043A\u043E\u044E."
+          text: "\u0422\u0438 \u0437\u2019\u0457\u0432 \u0441\u0432\u043E\u044E \u0447\u0430\u0441\u0442\u0438\u043D\u0443 \u0439 \u0434\u043E\u0432\u0433\u043E \u0441\u0438\u0434\u0456\u0432 \u0456\u0437 \u043F\u043E\u0440\u043E\u0436\u043D\u044C\u043E\u044E \u043C\u0438\u0441\u043A\u043E\u044E."
         }
       },
       {
@@ -2834,7 +3086,7 @@ var TEST_CARDS = [
         text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435",
         effects: { stats: { bonds: 1, understanding: -1, energy: 1 } },
         outcome: {
-          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435. \u0412\u043E\u043D\u0430 \u043F\u043E\u0432\u0456\u0440\u0438\u043B\u0430, \u0456 \u0442\u0438 \u043D\u0430\u0434\u043E\u0432\u0433\u043E \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u0432 \u0457\u0457 \u0433\u043E\u043B\u043E\u0441."
+          text: "\u0422\u0438 \u0441\u043A\u0430\u0437\u0430\u0432, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435. \u0412\u043E\u043D\u0430 \u043F\u043E\u0432\u0456\u0440\u0438\u043B\u0430, \u0456 \u0442\u0438 \u043D\u0430\u0434\u043E\u0432\u0433\u043E \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432 \u0457\u0457 \u0433\u043E\u043B\u043E\u0441."
         }
       },
       {
@@ -2980,6 +3232,7 @@ var TEST_CARDS = [
     options: [
       {
         id: "names",
+        next: { card: "line.named_photo", inDays: 4 },
         text: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0432\u0441\u0456 \u0456\u043C\u0435\u043D\u0430, \u0432\u043A\u043B\u044E\u0447\u043D\u043E \u0437 \u0442\u0438\u043C\u0438, \u043A\u043E\u0433\u043E \u0432\u0436\u0435 \u043D\u0435\u043C\u0430\u0454",
         effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } },
         outcome: {
@@ -3022,7 +3275,7 @@ var TEST_CARDS = [
         text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0439 \u0437\u0430\u043F\u0430\u043C'\u044F\u0442\u0430\u0442\u0438",
         effects: { stats: { understanding: 3, energy: -2 }, flags: { knows_seven: true } },
         outcome: {
-          text: "\u0422\u0438 \u043F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0456 \u0437\u0430\u043F\u0430\u043C\\'\u044F\u0442\u0430\u0432. \u0426\u0438\u0444\u0440\u0430 \u043B\u0438\u0448\u0438\u043B\u0430\u0441\u044C \u0456\u0437 \u0442\u043E\u0431\u043E\u044E."
+          text: "\u0422\u0438 \u043F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0456 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432. \u0426\u0438\u0444\u0440\u0430 \u043B\u0438\u0448\u0438\u043B\u0430\u0441\u044C \u0456\u0437 \u0442\u043E\u0431\u043E\u044E."
         }
       },
       {
@@ -3188,7 +3441,7 @@ var TEST_CARDS = [
         text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
         effects: { stats: { bonds: 3, understanding: 1, energy: -1 } },
         outcome: {
-          text: "\u0422\u0438 \u043F\u043E\u043A\u0430\u0437\u0430\u0432 \u0445\u043B\u043E\u043F\u0446\u044F\u043C. \u0425\u0442\u043E\u0441\u044C \u0443\u043F\u0456\u0437\u043D\u0430\u0432 \u0456\u043C\\'\u044F."
+          text: "\u0422\u0438 \u043F\u043E\u043A\u0430\u0437\u0430\u0432 \u0445\u043B\u043E\u043F\u0446\u044F\u043C. \u0425\u0442\u043E\u0441\u044C \u0443\u043F\u0456\u0437\u043D\u0430\u0432 \u0456\u043C\u2019\u044F."
         }
       },
       {
@@ -3227,7 +3480,7 @@ var TEST_CARDS = [
         text: "\u0414\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0456\u043C'\u044F",
         effects: { stats: { bonds: 2, energy: 1 } },
         outcome: {
-          text: "\u0422\u0438 \u0434\u0430\u0432 \u0439\u043E\u043C\u0443 \u0456\u043C\\'\u044F. \u0427\u0435\u0440\u0435\u0437 \u0442\u0438\u0436\u0434\u0435\u043D\u044C \u0432\u0456\u043D \u0433\u0430\u0432\u043A\u0430\u0432 \u043D\u0430 \u0432\u0441\u0456\u0445, \u043A\u0440\u0456\u043C \u0442\u0435\u0431\u0435."
+          text: "\u0422\u0438 \u0434\u0430\u0432 \u0439\u043E\u043C\u0443 \u0456\u043C\u2019\u044F. \u0427\u0435\u0440\u0435\u0437 \u0442\u0438\u0436\u0434\u0435\u043D\u044C \u0432\u0456\u043D \u0433\u0430\u0432\u043A\u0430\u0432 \u043D\u0430 \u0432\u0441\u0456\u0445, \u043A\u0440\u0456\u043C \u0442\u0435\u0431\u0435."
         }
       },
       {
@@ -3293,7 +3546,7 @@ var TEST_CARDS = [
         text: "\u0412\u0438\u043F\u0438\u0442\u0438",
         effects: { stats: { energy: 2, bonds: 1 } },
         outcome: {
-          text: "\u0422\u0438 \u0432\u0438\u043F\u0438\u0432, \u0456 \u0441\u0442\u0430\u043B\u043E \u0442\u0435\u043F\u043B\u0456\u0448\u0435 \u043D\u0430 \u043F\\'\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D."
+          text: "\u0422\u0438 \u0432\u0438\u043F\u0438\u0432, \u0456 \u0441\u0442\u0430\u043B\u043E \u0442\u0435\u043F\u043B\u0456\u0448\u0435 \u043D\u0430 \u043F\u2019\u044F\u0442\u044C \u0445\u0432\u0438\u043B\u0438\u043D."
         }
       },
       {
@@ -3455,7 +3708,7 @@ var TEST_ENDINGS = [
     title: "\u041F\u043E\u0440\u0443\u0447 \u0456\u0437 \u0442\u0438\u043C, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432",
     epilogue: "\u0419\u043E\u0433\u043E \u0432\u0438\u043D\u0435\u0441\u043B\u0438 \u0437 \u043F\u043E\u0437\u0438\u0446\u0456\u0457, \u044F\u043A\u0443 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u043C\u0430\u0432 \u0442\u0440\u0438\u043C\u0430\u0442\u0438. \u0422\u043E\u0439, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432, \u043D\u0435 \u0437\u043D\u0430\u0432 \u0439\u043E\u0433\u043E \u043F\u0440\u0456\u0437\u0432\u0438\u0449\u0430, \u0430\u043B\u0435 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432 \u0439\u043E\u0433\u043E \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A.",
     defaultEpitaph: "\u0412\u0456\u0434\u0434\u0430\u0432 \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A. \u0411\u0456\u043B\u044C\u0448\u0435 \u043D\u0435 \u0437\u043C\u0435\u0440\u0437.",
-    weight: 3,
+    weight: 2,
     // Не лише великі зв'язки: ще й передчасний день, щоб не перекривати пізні фінали.
     requires: { statAtLeast: { bonds: 8 }, dayAtMost: 38 }
   },
@@ -3518,6 +3771,209 @@ var TEST_ENDINGS = [
   }
 ];
 
+// web/atmosphere.js
+var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+var PHASE_FOG = [0.16, 0.26, 0.38, 0.5, 0.6];
+var PHASE_RAIN = [0.18, 0.3, 0.45, 0.6, 0.75];
+function atmosphereFor(state, dir = {}) {
+  const safe = dir.safeUntilDay ?? 20;
+  const hard = dir.hardEndDay ?? 60;
+  const st = state.stats;
+  const p = clamp((state.phase ?? 1) - 1, 0, 4);
+  const clarity = clamp(st.understanding * 0.035, 0, 0.3);
+  const hardship = (10 - st.health) * 0.03 + (10 - st.energy) * 0.025 + (10 - st.supplies) * 0.012;
+  const fog = clamp(PHASE_FOG[p] + hardship - clarity, 0.06, 0.92);
+  const rain = clamp(PHASE_RAIN[p] + (10 - st.energy) * 0.02, 0.1, 0.95);
+  const dark = state.status === "ended" ? 0.9 : clamp((state.day - safe) / (hard - safe), 0, 1) * 0.75;
+  let label;
+  if (clarity >= 0.2 && fog < 0.4) label = "\u043C\u0440\u044F\u043A\u0430 \u0440\u0456\u0434\u0448\u0430\u0454: \u0442\u0438 \u043F\u043E\u0447\u0438\u043D\u0430\u0454\u0448 \u0431\u0430\u0447\u0438\u0442\u0438";
+  else if (fog > 0.7) label = "\u043C\u0440\u044F\u043A\u0430 \u0433\u0443\u0441\u0442\u0430: \u043C\u0430\u0439\u0436\u0435 \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0432\u0438\u0434\u043D\u043E";
+  else if (fog > 0.45) label = "\u043C\u0440\u044F\u043A\u0430 \u0441\u0442\u043E\u0457\u0442\u044C";
+  else label = "\u043C\u0440\u044F\u043A\u0430 \u043B\u0435\u0433\u043A\u0430";
+  return { fog, rain, dark, clarity, label };
+}
+function approach(current, target, k = 0.06) {
+  return Math.abs(target - current) < 2e-3 ? target : current + (target - current) * k;
+}
+
+// web/mist.js
+var Mist = class {
+  constructor(canvas) {
+    this.c = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.drops = [];
+    this.intensity = 0.3;
+    this.target = 0.3;
+    this.enabled = true;
+    this.raf = 0;
+    this.w = 0;
+    this.h = 0;
+    this.last = 0;
+    this.resize = this.resize.bind(this);
+    this.loop = this.loop.bind(this);
+    window.addEventListener("resize", this.resize);
+    document.addEventListener("visibilitychange", () => document.hidden ? this.stop() : this.start());
+    this.resize();
+  }
+  resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    this.w = window.innerWidth;
+    this.h = window.innerHeight;
+    this.c.width = Math.floor(this.w * dpr);
+    this.c.height = Math.floor(this.h * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setTarget(rain) {
+    this.target = rain;
+  }
+  setEnabled(on) {
+    this.enabled = on;
+    if (!on) {
+      this.stop();
+      this.ctx.clearRect(0, 0, this.w, this.h);
+    } else {
+      this.start();
+    }
+  }
+  start() {
+    if (this.raf || !this.enabled) return;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(this.loop);
+  }
+  stop() {
+    cancelAnimationFrame(this.raf);
+    this.raf = 0;
+  }
+  spawn(initial = false) {
+    return {
+      x: Math.random() * (this.w + 80) - 40,
+      y: initial ? Math.random() * this.h : -20,
+      len: 6 + Math.random() * 14,
+      v: 180 + Math.random() * 220,
+      a: 0.06 + Math.random() * 0.16
+    };
+  }
+  loop(now) {
+    const dt = Math.min(0.05, (now - this.last) / 1e3);
+    this.last = now;
+    this.intensity = approach(this.intensity, this.target, 0.03);
+    const want = Math.round(24 + this.intensity * 110);
+    while (this.drops.length < want) this.drops.push(this.spawn(true));
+    if (this.drops.length > want) this.drops.length = want;
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.w, this.h);
+    ctx.lineWidth = 1;
+    const wind = 0.28;
+    for (const d of this.drops) {
+      d.y += d.v * dt;
+      d.x -= d.v * dt * wind;
+      if (d.y > this.h + 20 || d.x < -60) Object.assign(d, this.spawn(false));
+      ctx.strokeStyle = `rgba(190,196,180,${d.a})`;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.len * wind, d.y - d.len);
+      ctx.stroke();
+    }
+    this.raf = requestAnimationFrame(this.loop);
+  }
+};
+
+// web/visuals.js
+var esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+var STAT_COLORS = {
+  trust: "#e0b04a",
+  understanding: "#7e9b62",
+  health: "#c9563f",
+  energy: "#6f8fa8",
+  supplies: "#8d8977",
+  bonds: "#a8728f"
+};
+var STAT_NAMES2 = {
+  trust: "\u0414\u043E\u0432\u0456\u0440\u0430",
+  understanding: "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F",
+  health: "\u0417\u0434\u043E\u0440\u043E\u0432\u2019\u044F",
+  energy: "\u0411\u0430\u0434\u044C\u043E\u0440\u0456\u0441\u0442\u044C",
+  supplies: "\u0417\u0430\u043F\u0430\u0441\u0438",
+  bonds: "\u0417\u0432\u2019\u044F\u0437\u043A\u0438"
+};
+function routeStripSvg(state, dir = {}) {
+  const safe = dir.safeUntilDay ?? 20;
+  const inev = dir.inevitabilityStartsDay ?? 30;
+  const hard = dir.hardEndDay ?? 60;
+  const W = 600, H = 52, L = 10, R = 10, Y = 34;
+  const x = (d) => L + (W - L - R) * Math.min(d, hard) / hard;
+  const day = Math.min(state.day, hard);
+  const arcs = [];
+  for (const t of state.tree ?? []) {
+    const a = x(t.fromDay), b = x(t.day), m = (a + b) / 2, h = 8 + Math.min(14, (b - a) / 8);
+    arcs.push(`<path d="M${a},${Y} Q${m},${Y - h * 2} ${b},${Y}" fill="none" stroke="#e0b04a" stroke-width="1.6" opacity=".9"/>`);
+  }
+  for (const q of state.queue ?? []) {
+    const from = [...state.journal ?? []].reverse().find((j) => j.cardId === q.from)?.day ?? day;
+    const a = x(from), b = x(Math.max(q.dueDay, from + 1)), m = (a + b) / 2, h = 8 + Math.min(14, (b - a) / 8);
+    arcs.push(`<path d="M${a},${Y} Q${m},${Y - h * 2} ${b},${Y}" fill="none" stroke="#8d8977" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"><title>\u043D\u0430\u0441\u043B\u0456\u0434\u043E\u043A, \u0449\u043E \u0434\u043E\u0437\u0440\u0456\u0432\u0430\u0454</title></path>`);
+  }
+  const ticks = [];
+  for (let d = 0; d <= hard; d += 10) {
+    ticks.push(`<line x1="${x(d)}" y1="${Y - 3}" x2="${x(d)}" y2="${Y + 3}" stroke="#55523f"/>`);
+    ticks.push(`<text x="${x(d)}" y="${H - 2}" font-size="11" fill="#6f6b58" text-anchor="middle">${d}</text>`);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="\u0428\u043B\u044F\u0445: \u0434\u0435\u043D\u044C ${day} \u0437 ${hard}" xmlns="http://www.w3.org/2000/svg" style="display:block">
+<defs><linearGradient id="fate" x1="0" x2="1"><stop offset="0" stop-color="#3a1f19" stop-opacity=".15"/><stop offset="1" stop-color="#c9563f" stop-opacity=".55"/></linearGradient></defs>
+<rect x="${x(0)}" y="${Y - 3}" width="${x(safe) - x(0)}" height="6" fill="#7e9b62" opacity=".22"><title>\u0431\u0435\u0437\u043F\u0435\u0447\u043D\u0456 \u0434\u043D\u0456</title></rect>
+<rect x="${x(safe)}" y="${Y - 3}" width="${x(inev) - x(safe)}" height="6" fill="#e0b04a" opacity=".2"><title>\u0434\u043E\u043B\u044F \u043F\u0440\u0438\u0441\u043B\u0443\u0445\u0430\u0454\u0442\u044C\u0441\u044F</title></rect>
+<rect x="${x(inev)}" y="${Y - 3}" width="${x(hard) - x(inev)}" height="6" fill="url(#fate)"><title>\u043D\u0435\u043C\u0438\u043D\u0443\u0447\u0456\u0441\u0442\u044C \u0440\u043E\u0441\u0442\u0435 \u0449\u043E\u0434\u043D\u044F</title></rect>
+${arcs.join("")}
+<line x1="${x(0)}" y1="${Y}" x2="${x(day)}" y2="${Y}" stroke="#e6e2d4" stroke-width="2"/>
+${ticks.join("")}
+<circle cx="${x(day)}" cy="${Y}" r="4.5" fill="#e6e2d4" stroke="#14140f" stroke-width="2"/>
+<text x="${x(hard)}" y="9" font-size="11" fill="#c9563f" text-anchor="end">\u043A\u0456\u043D\u0435\u0446\u044C</text>
+</svg>`;
+}
+function scissorsPoint(history) {
+  if (!history || history.length < 2) return null;
+  for (let i = 0; i < history.length; i += 1) {
+    const h = history[i].stats;
+    if (h.understanding > h.trust && history.slice(i).every((x) => x.stats.understanding >= x.stats.trust - 0)) {
+      return { index: i, decision: history[i].decision, day: history[i].day };
+    }
+  }
+  return null;
+}
+function statsChartSvg(history) {
+  if (!history || history.length < 2) return "";
+  const W = 600, H = 215, L = 28, R = 10, T = 12, B = 52;
+  const n = history.length;
+  const x = (i) => L + (W - L - R) * i / (n - 1);
+  const y = (v) => T + (H - T - B) * (10 - v) / 10;
+  const grid = [0, 5, 10].map((v) => `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" stroke="#33332a" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3}" font-size="13" fill="#6f6b58" text-anchor="end">${v}</text>`).join("");
+  const line = (key, width, opacity) => {
+    const pts = history.map((h, i) => `${x(i).toFixed(1)},${y(h.stats[key]).toFixed(1)}`).join(" ");
+    return `<polyline points="${pts}" fill="none" stroke="${STAT_COLORS[key]}" stroke-width="${width}" opacity="${opacity}" stroke-linejoin="round" stroke-linecap="round"><title>${esc(STAT_NAMES2[key])}</title></polyline>`;
+  };
+  const thin = ["health", "energy", "supplies", "bonds"].map((k) => line(k, 1.1, 0.55)).join("");
+  const bold = line("trust", 2.6, 1) + line("understanding", 2.6, 1);
+  const sc = scissorsPoint(history);
+  let mark = "";
+  if (sc) {
+    const cx = x(sc.index);
+    mark = `<line x1="${cx}" y1="${T}" x2="${cx}" y2="${H - B}" stroke="#7e9b62" stroke-dasharray="3 3" opacity=".7"/>
+<text x="${Math.min(cx + 5, W - 120)}" y="${T + 9}" font-size="13" fill="#7e9b62">\u0440\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F \u043E\u0431\u0456\u0433\u043D\u0430\u043B\u043E \u0434\u043E\u0432\u0456\u0440\u0443 \xB7 \u0434\u0435\u043D\u044C ${sc.day}</text>`;
+  }
+  const dayLabels = [0, Math.floor((n - 1) / 2), n - 1].map((i) => `<text x="${x(i)}" y="${H - 34}" font-size="13" fill="#6f6b58" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}">\u0434\u0435\u043D\u044C ${history[i].day}</text>`).join("");
+  const legend = ["trust", "understanding", "health", "energy", "supplies", "bonds"].map((k, i) => `<g transform="translate(${L + i % 3 * 190},${H - 18 + Math.floor(i / 3) * 16})"><rect width="8" height="3" y="-3" fill="${STAT_COLORS[k]}"/><text x="12" y="0" font-size="12" fill="#8d8977">${esc(STAT_NAMES2[k])}</text></g>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H + 12}" width="100%" role="img" aria-label="\u041F\u043E\u043A\u0430\u0437\u043D\u0438\u043A\u0438 \u0437\u0430 \u0447\u0430\u0441" xmlns="http://www.w3.org/2000/svg" style="display:block">
+${grid}${thin}${bold}${mark}${dayLabels}${legend}</svg>`;
+}
+function chartCaption(history) {
+  const sc = scissorsPoint(history);
+  if (!history || history.length < 2) return "";
+  const last = history[history.length - 1].stats;
+  if (sc) return `\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F \u043F\u0435\u0440\u0435\u0432\u0438\u0449\u0438\u043B\u043E \u0434\u043E\u0432\u0456\u0440\u0443 \u043D\u0430 \u0440\u0456\u0448\u0435\u043D\u043D\u0456 \u2116${sc.decision}. \u0412\u0456\u0434\u0442\u043E\u0434\u0456 \u0442\u0438 \u0431\u0430\u0447\u0438\u0432 \u0431\u0456\u043B\u044C\u0448\u0435, \u043D\u0456\u0436 \u0442\u043E\u0431\u0456 \u0434\u043E\u0437\u0432\u043E\u043B\u044F\u043B\u0438 \u0432\u0456\u0440\u0438\u0442\u0438.`;
+  if (last.trust >= last.understanding) return "\u0414\u043E\u0432\u0456\u0440\u0430 \u0442\u0430\u043A \u0456 \u043B\u0438\u0448\u0438\u043B\u0430\u0441\u044C \u0432\u0438\u0449\u043E\u044E \u0437\u0430 \u0440\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F: \u0442\u0438 \u0434\u0456\u0439\u0448\u043E\u0432 \u0434\u043E \u043A\u0456\u043D\u0446\u044F, \u043D\u0435 \u0440\u043E\u0437\u0432\u0456\u044F\u0432\u0448\u0438 \u043C\u0440\u044F\u043A\u0443.";
+  return "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F \u0439 \u0434\u043E\u0432\u0456\u0440\u0430 \u0439\u0448\u043B\u0438 \u043F\u043E\u0440\u0443\u0447, \u0430\u043B\u0435 \u0440\u043E\u0437\u0445\u043E\u0434\u0438\u043B\u0438\u0441\u044C \u043D\u0435 \u0432 \u0442\u0432\u043E\u044E \u043A\u043E\u0440\u0438\u0441\u0442\u044C.";
+}
+
 // web/app.js
 var STAT_LABELS = {
   health: "\u0417\u0434\u043E\u0440",
@@ -3527,7 +3983,7 @@ var STAT_LABELS = {
   understanding: "\u0420\u043E\u0437",
   bonds: "\u0417\u0432'\u044F\u0437"
 };
-var STAT_NAMES = {
+var STAT_NAMES3 = {
   health: "\u0417\u0434\u043E\u0440\u043E\u0432\u2019\u044F",
   energy: "\u0411\u0430\u0434\u044C\u043E\u0440\u0456\u0441\u0442\u044C",
   supplies: "\u0417\u0430\u043F\u0430\u0441\u0438",
@@ -3535,7 +3991,7 @@ var STAT_NAMES = {
   understanding: "\u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F",
   bonds: "\u0417\u0432\u2019\u044F\u0437\u043A\u0438"
 };
-var SKILL_NAMES = {
+var SKILL_NAMES2 = {
   survival: "\u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F",
   system: "\u0421\u0438\u0441\u0442\u0435\u043C\u0430",
   people: "\u041B\u044E\u0434\u0438",
@@ -3552,12 +4008,88 @@ var elDay = document.getElementById("day");
 var elStats = document.getElementById("stats");
 var elMain = document.getElementById("main");
 var elLog = document.getElementById("log");
+var elRoute = document.getElementById("route");
+var elMood = document.getElementById("mood");
+var elFog1 = document.getElementById("fog1");
+var elFog2 = document.getElementById("fog2");
+var elHaze = document.getElementById("haze");
+var elVig = document.getElementById("vignette");
+var elToggle = document.getElementById("mistToggle");
+var reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+var mistOn = true;
+try {
+  mistOn = localStorage.getItem("nov.mist") !== "off";
+} catch {
+}
+var mist = new Mist(document.getElementById("mist"));
+var atmo = { fog: 0.2, rain: 0.2, dark: 0, label: "" };
+function applyAtmosphere() {
+  atmo = atmosphereFor(run.state, run.director);
+  elFog1.style.opacity = String(atmo.fog * 0.95);
+  elFog2.style.opacity = String(atmo.fog * 0.75);
+  elHaze.style.opacity = String(atmo.fog * 0.1);
+  elVig.style.opacity = String(atmo.dark);
+  mist.setTarget(atmo.rain);
+  elMood.textContent = mistOn ? atmo.label : "";
+}
+function setMist(on) {
+  mistOn = on;
+  document.body.classList.toggle("nomist", !on);
+  elToggle.setAttribute("aria-pressed", String(on));
+  mist.setEnabled(on && !reduceMotion);
+  try {
+    localStorage.setItem("nov.mist", on ? "on" : "off");
+  } catch {
+  }
+  elMood.textContent = on ? atmo.label : "";
+}
+elToggle.addEventListener("click", () => setMist(!mistOn));
+function renderRoute() {
+  elRoute.innerHTML = routeStripSvg(run.state, run.director);
+}
 var run = new Run({
   seed: newSeed(),
   content: { cards: TEST_CARDS, endings: TEST_ENDINGS }
 });
 var lastChoice = null;
 var reactionOpen = false;
+var ghost = null;
+function pathOf(r) {
+  return r.state.journal.filter((j) => j.optionId !== "__carried_out").map((j) => ({ cardId: j.cardId, optionId: j.optionId, day: j.day }));
+}
+function ghostFor(card) {
+  const g = ghost?.[run.state.decisions];
+  return g && g.cardId === card.id ? g : null;
+}
+function chartHtml() {
+  const svg = statsChartSvg(run.state.history);
+  if (!svg) return "";
+  return `<div class="chart"><h3>\u0422\u0432\u0456\u0439 \u0448\u043B\u044F\u0445 \u0443 \u0446\u0438\u0444\u0440\u0430\u0445</h3>${svg}<div class="cap">${escapeHtml(chartCaption(run.state.history))}</div></div>`;
+}
+function branchesHtml() {
+  const tree = run.state.tree ?? [];
+  if (!tree.length) return "";
+  const byId = new Map(TEST_CARDS.map((c) => [c.id, c]));
+  const rows = tree.map((t) => {
+    const from = byId.get(t.from);
+    const opt = from?.options.find((o) => o.id === t.fromOption);
+    const to = byId.get(t.to);
+    return `<div class="branch"><span>\u0434${t.fromDay} \xB7 ${escapeHtml(opt?.text ?? t.fromOption)}</span><span class="arrow">\u2193 \u0447\u0435\u0440\u0435\u0437 ${t.day - t.fromDay} \u0434\u043D.</span><span>\u0434${t.day} \xB7 ${escapeHtml((to?.lead ?? to?.text ?? t.to).slice(0, 90))}</span></div>`;
+  }).join("");
+  return `<div class="branches"><div class="meta">\u0413\u0456\u043B\u043A\u0438 \u0442\u0432\u043E\u0433\u043E \u0448\u043B\u044F\u0445\u0443: ${tree.length}</div>${rows}</div>`;
+}
+function divergence() {
+  if (!ghost) return "";
+  const now = pathOf(run);
+  const n = Math.max(now.length, ghost.length);
+  for (let i = 0; i < n; i += 1) {
+    if (!now[i] || !ghost[i] || now[i].cardId !== ghost[i].cardId || now[i].optionId !== ghost[i].optionId) {
+      const day = (now[i] ?? ghost[i]).day;
+      return `\u0422\u0438 \u0440\u043E\u0437\u0456\u0439\u0448\u043E\u0432\u0441\u044F \u0437\u0456 \u0441\u0432\u043E\u0457\u043C \u043C\u0438\u043D\u0443\u043B\u0438\u043C \u0448\u043B\u044F\u0445\u043E\u043C \u043D\u0430 \u0440\u0456\u0448\u0435\u043D\u043D\u0456 \u2116${i + 1} (\u0434\u0435\u043D\u044C ${day}).`;
+    }
+  }
+  return "\u0422\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0432 \u0442\u043E\u0439 \u0441\u0430\u043C\u0438\u0439 \u0448\u043B\u044F\u0445 \u0434\u043E \u043A\u0456\u043D\u0446\u044F.";
+}
 function newSeed() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -3573,7 +4105,7 @@ function renderStats(highlight = {}) {
     const d = highlight[k] ?? 0;
     const cls = d > 0 ? " up" : d < 0 ? " down" : "";
     const delta = d === 0 ? "" : `<span class="delta">${d > 0 ? "+" : ""}${d}</span>`;
-    return `<div class="stat${pair}${cls}" title="${STAT_NAMES[k]}: ${v}/10">
+    return `<div class="stat${pair}${cls}" title="${STAT_NAMES3[k]}: ${v}/10">
       <div class="bar"><div class="fill" style="height:${pct}%"></div></div>
       <div class="label">${STAT_LABELS[k]}</div>${delta}
     </div>`;
@@ -3587,10 +4119,13 @@ function render() {
   elDay.textContent = `\u0414\u0435\u043D\u044C ${run.state.day} \xB7 \u0444\u0430\u0437\u0430 ${run.state.phase}`;
   renderStats();
   renderLog();
+  applyAtmosphere();
+  renderRoute();
   if (run.state.status === "ended") return renderEnding();
   const card = run.draw();
   if (!card) return renderEnding();
   const available = new Set(run.availableOptions().map((o) => o.id));
+  const ghostPick = ghostFor(card);
   const link = run.lastCard();
   const isContinuation = !!(link && card.id !== link.id && ((card.follows ?? []).includes(link.id) || (card.after ?? []).includes(link.id)));
   const lead = isContinuation ? card.lead ?? `\u041F\u0456\u0441\u043B\u044F: ${link.text.slice(0, 60)}\u2026` : null;
@@ -3603,9 +4138,10 @@ function render() {
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">
-      ${card.options.map(
-    (o) => available.has(o.id) ? `<button class="opt" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}</button>` : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(o.lockedHint ?? "\u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E")}</span></button>`
-  ).join("")}
+      ${card.options.map((o) => {
+    const tag = ghostPick && ghostPick.optionId === o.id ? '<span class="ghost-tag">\u21BA \u043C\u0438\u043D\u0443\u043B\u043E\u0433\u043E \u0440\u0430\u0437\u0443 \u0442\u0438 \u043E\u0431\u0440\u0430\u0432 \u0446\u0435</span>' : "";
+    return available.has(o.id) ? `<button class="opt${tag ? " ghost" : ""}" data-opt="${escapeHtml(o.id)}">${escapeHtml(o.text)}${tag}</button>` : `<button class="opt locked" disabled>${escapeHtml(o.text)}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
+  }).join("")}
     </div>
   `;
   elMain.querySelectorAll("button.opt[data-opt]").forEach((btn) => {
@@ -3621,6 +4157,7 @@ function onChoose(card, btn) {
     return;
   }
   const before = { ...run.state.stats, ...run.state.skills };
+  const fogBefore = atmosphereFor(run.state, run.director).fog;
   if (!run.choose(option.id)) {
     reactionOpen = false;
     return;
@@ -3633,6 +4170,10 @@ function onChoose(card, btn) {
     b.setAttribute("disabled", "");
   });
   const reaction = buildReaction(option, before, after);
+  applyAtmosphere();
+  renderRoute();
+  const dFog = atmo.fog - fogBefore;
+  if (mistOn && Math.abs(dFog) >= 0.04) reaction.changes.push(dFog > 0 ? "\u043C\u0440\u044F\u043A\u0430 \u0433\u0443\u0441\u0442\u0456\u0448\u0430\u0454" : "\u043C\u0440\u044F\u043A\u0430 \u0440\u043E\u0437\u0432\u0456\u044E\u0454\u0442\u044C\u0441\u044F");
   renderStats(reaction.statDelta);
   renderLog();
   const scene = run.state.lastOutcome ?? {};
@@ -3660,16 +4201,16 @@ function onChoose(card, btn) {
 function buildReaction(option, before, after) {
   const statDelta = {};
   const changes = [];
-  for (const k of Object.keys(STAT_NAMES)) {
+  for (const k of Object.keys(STAT_NAMES3)) {
     const d = after[k] - before[k];
     if (d !== 0) {
       statDelta[k] = d;
-      changes.push(`${STAT_NAMES[k]} ${d > 0 ? "+" : ""}${d}`);
+      changes.push(`${STAT_NAMES3[k]} ${d > 0 ? "+" : ""}${d}`);
     }
   }
-  for (const k of Object.keys(SKILL_NAMES)) {
+  for (const k of Object.keys(SKILL_NAMES2)) {
     const d = after[k] - before[k];
-    if (d !== 0) changes.push(`${SKILL_NAMES[k]} +${d}`);
+    if (d !== 0) changes.push(`${SKILL_NAMES2[k]} +${d}`);
   }
   let line = option.effects?.journal;
   if (!line) line = pickNeutralLine(option.id, changes);
@@ -3696,6 +4237,8 @@ var NEUTRAL = {
   ]
 };
 function renderEnding() {
+  applyAtmosphere();
+  renderRoute();
   const e = run.ending();
   const st = run.state;
   const title = e?.title ?? "\u041A\u0456\u043D\u0435\u0446\u044C";
@@ -3707,24 +4250,31 @@ function renderEnding() {
       <h1>${escapeHtml(title)}</h1>
       <p class="ep">${escapeHtml(epitaph)}</p>
       <p>${escapeHtml(epilogue)}</p>
+      ${chartHtml()}
+      ${branchesHtml()}
+      ${ghost ? `<div class="meta">${escapeHtml(divergence())}</div>` : ""}
       <div class="meta">
         \u0420\u043E\u0437\u0443\u043C\u0456\u043D\u043D\u044F ${st.stats.understanding}/10 \xB7 \u0417\u0432'\u044F\u0437\u043A\u0438 ${st.stats.bonds}/10 \xB7
         \u0412\u0438\u0436\u0438\u0432\u0430\u043D\u043D\u044F ${st.skills.survival} \xB7 \u0421\u0438\u0441\u0442\u0435\u043C\u0430 ${st.skills.system} \xB7
         \u041B\u044E\u0434\u0438 ${st.skills.people} \xB7 \u041C\u0443\u0448\u0442\u0440\u0430 ${st.skills.drill}
       </div>
       <button class="btn" id="again">\u041F\u0440\u043E\u0436\u0438\u0442\u0438 \u0449\u0435 \u0440\u0430\u0437</button>
-      <button class="btn second" id="same">\u0422\u043E\u0439 \u0441\u0430\u043C\u0438\u0439 \u0448\u043B\u044F\u0445 (seed ${escapeHtml(st.seed)})</button>
+      <button class="btn second" id="same">\u0422\u043E\u0439 \u0441\u0430\u043C\u0438\u0439 \u0441\u0432\u0456\u0442 \u2014 \u0456\u043D\u0448\u0456 \u0440\u0456\u0448\u0435\u043D\u043D\u044F (seed ${escapeHtml(st.seed)})</button>
     </div>
   `;
   document.getElementById("again").addEventListener("click", () => {
+    ghost = null;
     run = new Run({ seed: newSeed(), content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
     render();
   });
   document.getElementById("same").addEventListener("click", () => {
+    ghost = pathOf(run);
     run = new Run({ seed: st.seed, content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
     render();
   });
 }
+setMist(mistOn);
+mist.start();
 render();
 
 </script>
