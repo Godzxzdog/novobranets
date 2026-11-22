@@ -17,6 +17,13 @@ import {
 } from './types.ts';
 import { SKILL_KEYS, STAT_RANGE } from './types.ts';
 
+/** Скільки позицій треба, щоб героя вивезли в тил, а не в землю. */
+const TROUGH_FAVOR = 6;
+/** Шанс, що «зручного» таки вивезуть: база, крок за кожне очко понад поріг, стеля. */
+const TROUGH_CHANCE_BASE = 0.45;
+const TROUGH_CHANCE_STEP = 0.03;
+const TROUGH_CHANCE_MAX = 0.85;
+
 const RECENT_WINDOW = 4;
 
 const PHASE_BY_DAY: { until: number; phase: Phase }[] = [
@@ -76,6 +83,8 @@ export class Run {
       journal: [],
       inevitability: 0,
       decisions: 0,
+      favor: 0,
+      usedBoons: [],
     };
   }
 
@@ -238,6 +247,14 @@ export class Run {
     // Власні рішення, що били по здоров'ю, пам'ятаємо: вони змінюють фінал.
     if ((option.effects?.stats?.health ?? 0) < 0) {
       s.recentHurt = (s.recentHurt ?? 0) + 1;
+    }
+
+    // Позиції: довіра конвертується в те, що можна витратити.
+    // Кожне рішення з плюсом довіри додає очко; у КПП це ще не рятує життя,
+    // але набирається й показується як «рахунок».
+    const trustGain = option.effects?.stats?.trust ?? 0;
+    if (trustGain > 0) {
+      s.favor = (s.favor ?? 0) + trustGain;
     }
 
     // Сцена-наслідок: конкретний текст «що з цього вийшло», а не переказ вибору.
@@ -444,9 +461,36 @@ export class Run {
     );
     const r = reason as EndReason;
 
+    // Позиції на рахунку: якщо герой достатньо «зручний», доля забирає його
+    // в тил, а не в землю. Це і є та ціна, яку довіра нарешті купує.
+    const favor = s.favor ?? 0;
+    const troughEligible = eligible.filter((e) => e.trough);
+    // Позиції — не гарантія, а надія. Кожне очко понад поріг додає шанс,
+    // але стеля нижча за одиницю: частина «зручних» усе одно лишається в землі.
+    const troughChance =
+      favor < TROUGH_FAVOR
+        ? 0
+        : Math.min(TROUGH_CHANCE_MAX, TROUGH_CHANCE_BASE + (favor - TROUGH_FAVOR) * TROUGH_CHANCE_STEP);
+    const troughUnlocked =
+      troughChance > 0
+      && troughEligible.length > 0
+      && (r === 'accident' || r === 'wounds' || r === 'hardend')
+      && this.rng.chance(troughChance);
+    if (troughUnlocked) {
+      // Другий аргумент reduce обов'язковий: на масиві з одного елемента
+      // колбек не викликається, і без нього функція повертає цей елемент
+      // навіть коли до гілки не мали дійти.
+      return troughEligible.reduce<Ending>(
+        (best, e) => ((e.weight ?? 1) > (best.weight ?? 1) ? e : best),
+        troughEligible[0]!,
+      );
+    }
+
     // Причина визначає, які фінали взагалі можливі. Раніше «доля» могла дати лише
     // accident-фінали, і п'ять із дев'яти кінцівок були недосяжні до 60-го дня.
     const byReason = eligible.filter((e) => {
+      // Тиловий фінал доступний лише за рахунком, а не «просто так».
+      if (e.trough) return false;
       if (e.id === 'ending.wounds' && r === 'accident' && !hurtByOwnChoice(s)) return false;
       return endingReasons(e).includes(r);
     });

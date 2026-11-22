@@ -151,7 +151,7 @@ export interface CardEcho {
 export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
 
 /** Чому забіг завершується: від цього залежить, які фінали взагалі можливі. */
-export type EndReason = 'accident' | 'wounds' | 'hardend' | 'exhausted';
+export type EndReason = 'accident' | 'wounds' | 'hardend' | 'exhausted' | 'trough';
 
 /** Прапорці, які ставить сам двигун (а не картки): їх можна читати в умовах і echo. */
 export const ENGINE_FLAGS: readonly string[] = ['carried_out'] as const;
@@ -171,6 +171,11 @@ export interface Ending {
    * accident → усі, окрім hardend; sacrifice/quiet → accident, hardend; system → accident, hardend, exhausted.
    */
   reasons?: EndReason[];
+  /**
+   * Фінал «вивезли» — його відкриває не випадок, а позиції на рахунку.
+   * Якщо їх вистачає, доля забирає тебе в тил, а не в землю.
+   */
+  trough?: boolean;
 }
 
 /** «Директор долі»: параметри неминучості. */
@@ -259,4 +264,12 @@ export interface RunState {
   lastOutcome?: OutcomeScene & { optionId: string; cardId: string };
   /** Поточна картка, якщо є. */
   pending?: { cardId: string; options: string[] };
+  /**
+   * Позиції на рахунку героя: кожне «зручне» рішення додає трохи, і ці очки
+   * можна витратити на реальні послаблення — ротацію, медицину, переведення.
+   * Довіра як показник каже, що про тебе думають; позиції кажуть, що ти вже маєш.
+   */
+  favor?: number;
+  /** Використані позиції: щоб кожне послаблення бралось один раз. */
+  usedBoons?: string[];
 }

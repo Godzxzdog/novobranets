@@ -112,14 +112,65 @@ test('одна й та сама картка не повертається пр�
 });
 
 test('«доля» може дати не лише accident-фінали: шлях гравця впливає на кінець', () => {
+  // ВАЖЛИВО: тест має грати «чужим» стилем, що НЕ копить позиції, інакше
+  // тиловий фінал забирає всі забіги й тест перевіряє лише його.
   const kinds = new Set<string>();
   for (let i = 0; i < 600; i += 1) {
     const run = newRun(`kinds-${i}`);
-    playKeepingHealthy(run, 700);
+    let guard = 0;
+    while (run.state.status === 'running' && guard < 700) {
+      guard += 1;
+      const card = run.draw();
+      if (!card) break;
+      run.state.stats.health = 10;
+      run.state.stats.energy = 10;
+      run.state.stats.supplies = 10;
+      // Беремо варіант, що НЕ дає довіри — щоб не заробити позиції.
+      const opts = run.availableOptions();
+      const pick = opts.find((o) => (o.effects?.stats?.trust ?? 0) <= 0) ?? opts[0]!;
+      run.choose(pick.id);
+    }
     const e = run.ending();
     if (e) kinds.add(e.kind);
   }
   assert.ok(kinds.size >= 3, `досягнуті види фіналів: ${[...kinds].join(', ')}`);
+});
+
+test('позиції: «зручний» герой їде в тил, а не в землю', () => {
+  // Позиції дають шанс, а не гарантію: надвисокий рахунок має виводити в тил
+  // у більшості прогонів, але не в усіх.
+  let trough = 0;
+  const runs = 200;
+  for (let i = 0; i < runs; i += 1) {
+    const run = newRun(`trough-1-${i}`);
+    run.draw();
+    run.state.stats.health = 10;
+    run.state.favor = 30;
+    (run as unknown as { endWith: (r: string) => void }).endWith('accident');
+    if (run.state.endingId === 'ending.trough') trough += 1;
+  }
+  const share = trough / runs;
+  assert.ok(share > 0.5, `тил має домінувати при favor=30: ${share.toFixed(2)}`);
+  assert.ok(share < 1, `тил не має бути гарантією: ${share.toFixed(2)}`);
+});
+
+test('позиції: без рахунку тиловий фінал недосяжний', () => {
+  // Граємо довго, щоб фінал вибирався з повного пулу, і жодного разу не
+  // беремо варіант із плюсом довіри — позиції лишаються нульовими.
+  for (let i = 0; i < 60; i += 1) {
+    const run = newRun(`trough-2-${i}`);
+    let guard = 0;
+    while (run.state.status === 'running' && guard < 900) {
+      guard += 1;
+      const card = run.draw();
+      if (!card) break;
+      const opts = run.availableOptions();
+      const pick = opts.find((o) => (o.effects?.stats?.trust ?? 0) <= 0) ?? opts[0]!;
+      run.choose(pick.id);
+    }
+    assert.ok((run.state.favor ?? 0) < 6, `позиції без довіри: ${run.state.favor}`);
+    assert.notEqual(run.state.endingId, 'ending.trough');
+  }
 });
 
 test('картки з echo показуються й без слідів у минулому', () => {
