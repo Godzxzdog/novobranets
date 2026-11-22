@@ -1,9 +1,11 @@
-// Тестовий контент для прототипу: 30 карток, 3+3 фінали.
+// Контент MVP: 84 картки, 8 фіналів.
 // Тон: чорна іронія без пафосу; вигадані люди й частини; без рахунку вбитих.
+// Структура за ТЗ: 5 фаз, показники 0..10, навички 0..3, прапорці для наскрізних ліній.
 
 import type { Card, Ending } from '../src/types.ts';
 
 export const TEST_CARDS: Card[] = [
+  // ─────────────────────────── ФАЗА 1: дім, повістка, військкомат ───────────────────────────
   {
     id: 'call.paper',
     kind: 'event',
@@ -68,6 +70,162 @@ export const TEST_CARDS: Card[] = [
     ],
   },
   {
+    id: 'call.bag',
+    kind: 'routine',
+    phase: [1],
+    text: 'Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.',
+    options: [
+      { id: 'take', text: 'Взяти все й не сперечатися', effects: { stats: { supplies: 2, bonds: 1, energy: -1 } } },
+      {
+        id: 'leave_sweet',
+        text: 'Лишити шоколадку їй — на чай',
+        effects: { stats: { bonds: 2, supplies: -1 }, flags: { left_sweet: true } },
+      },
+      {
+        id: 'pack_smart',
+        text: 'Перепакувати сам: ліки, шнурки, сіль',
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { supplies: 3, energy: -1 }, skills: { survival: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'call.busstop',
+    kind: 'person',
+    phase: [1],
+    once: true,
+    character: 'Сусід дядько Гриша',
+    text: 'Дядько Гриша з третього поверху виходить на балкон і каже вниз те, що казав усім: «Я в Афгані був. Нічого не бійся, головне — не висовуйся».',
+    options: [
+      { id: 'listen', text: 'Слухати й кивати', effects: { stats: { understanding: 1, energy: 1 } } },
+      {
+        id: 'ask_what',
+        text: 'Запитати, що він має на увазі',
+        effects: { stats: { understanding: 2, bonds: 1 }, skills: { survival: 1 } },
+      },
+      {
+        id: 'walk',
+        text: 'Піти, не дослухавши',
+        effects: { stats: { energy: 1, trust: -1 } },
+      },
+    ],
+  },
+  {
+    // Відкривається в наступних фазах, якщо пробував піти з черги.
+    id: 'call.tried_to_leave_after',
+    kind: 'system',
+    phase: [3, 4],
+    once: true,
+    requires: { flagTrue: ['tried_to_leave'] },
+    text: 'У документах хтось дописав примітку: «схильний до ухилення». Ти бачиш це випадково, коли підписують відпустку — тобі відмовляють.',
+    options: [
+      {
+        id: 'prove',
+        text: 'Доводити, що це давно й не так',
+        effects: { stats: { trust: -1, energy: -2, understanding: 1 }, flags: { proved_himself: true } },
+      },
+      {
+        id: 'swallow',
+        text: 'Проковтнути й піти',
+        effects: { stats: { understanding: 2, bonds: 1, trust: 1 } },
+      },
+      {
+        id: 'find_who',
+        text: 'Спитати, хто саме це написав',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_pisets: true } },
+      },
+    ],
+  },
+  {
+    id: 'call.farewell',
+    kind: 'event',
+    phase: [1],
+    once: true,
+    text: 'Вечір перед від\'їздом. Мама вийшла на кухню й там стоїть. Ти чуєш, як вода з крана тече надто довго.',
+    options: [
+      { id: 'go', text: 'Піти на кухню й обійняти', effects: { stats: { bonds: 3, energy: -1 } } },
+      {
+        id: 'call_sister',
+        text: 'Зателефонувати сестрі, яка не приїхала',
+        effects: { stats: { bonds: 1, understanding: 1 } },
+      },
+      {
+        id: 'not_say',
+        text: 'Нічого не казати — так легше',
+        effects: { stats: { bonds: -2, energy: 1, understanding: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'call.queue_old',
+    kind: 'person',
+    phase: [1],
+    text: 'Перед тобою в черзі стоїть чоловік років п\'ятдесяти й тримає повістку двома руками, ніби вона може вирватись.',
+    options: [
+      {
+        id: 'ask_years',
+        text: 'Запитати, чи він уже служив',
+        effects: { stats: { understanding: 2, bonds: 1 } },
+      },
+      {
+        id: 'silence',
+        text: 'Нічого не питати',
+        effects: { stats: { energy: 1 } },
+      },
+      {
+        id: 'swap_place',
+        text: 'Пропустити його вперед',
+        effects: { stats: { bonds: 2, energy: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'call.street',
+    kind: 'event',
+    phase: [1],
+    text: 'Дорогою до військкомату повз проходять двоє з пакетами. Один каже другому: «Не наша війна». Той киває. Ніхто не дивиться на тебе.',
+    options: [
+      {
+        id: 'agree',
+        text: 'Подумати, що він має рацію',
+        effects: { stats: { understanding: 2, trust: -1, energy: -1 } },
+      },
+      {
+        id: 'angry',
+        text: 'Сказати щось у відповідь',
+        effects: { stats: { energy: -2, bonds: -1, trust: 1 } },
+      },
+      {
+        id: 'ignore',
+        text: 'Зробити вигляд, що не чув',
+        effects: { stats: { energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'call.toilet',
+    kind: 'routine',
+    phase: [1],
+    text: 'Туалет у військкоматі не має дверей. Інструктор каже: «Привикайте». Перші три дні це здається найбільшою проблемою.',
+    options: [
+      { id: 'joke', text: 'Жартувати з цього', effects: { stats: { bonds: 2, energy: -1 } } },
+      {
+        id: 'fix',
+        text: 'Знайти шматок брезенту й повісити',
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { bonds: 2, supplies: -1, trust: -1 }, flags: { fixed_toilet: true } },
+      },
+      {
+        id: 'endure',
+        text: 'Стиснути зуби й терпіти',
+        effects: { stats: { energy: -1, trust: 1 } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── ФАЗА 2: навчання, перший колектив ───────────────────────────
+  {
     id: 'phase2.bus',
     kind: 'event',
     phase: [2],
@@ -81,8 +239,8 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'share',
-        text: 'Роздати свої пиріжки сусідам',
-        effects: { stats: { supplies: -2, bonds: 2 } },
+        text: 'Роздати те, що взяв із дому',
+        effects: { stats: { bonds: 3, supplies: -2 } },
       },
       {
         id: 'sleep',
@@ -162,6 +320,7 @@ export const TEST_CARDS: Card[] = [
     id: 'phase2.split',
     kind: 'system',
     phase: [2, 3],
+    once: true,
     text: 'Прапорщик будує роту. Каже: «Хто хоче в штурмову — крок уперед». Ніхто не рухається. Він обирає сам.',
     options: [
       {
@@ -175,34 +334,213 @@ export const TEST_CARDS: Card[] = [
         effects: { stats: { trust: -2, understanding: 1, energy: -1 } },
       },
       {
-        id: 'ask_where',
-        text: 'Запитати, куди саме й на скільки',
+        id: 'ask',
+        text: 'Запитати, за яким принципом обирають',
         requires: { skillAtLeast: { system: 1 } },
-        effects: { stats: { trust: -1, understanding: 2 }, flags: { asked_orders: true } },
+        effects: { stats: { understanding: 2, trust: -1 }, flags: { knows_selection: true } },
       },
     ],
   },
   {
+    id: 'phase2.commander_orders',
+    kind: 'system',
+    phase: [2, 3],
+    text: 'Новий наказ: щоденна муштра на плацу, попри мороз. «Солдат має виглядати солдатом».',
+    options: [
+      {
+        id: 'attend',
+        text: 'Сумлінно ходити',
+        effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } },
+      },
+      {
+        id: 'skip',
+        text: 'Пропускати під приводом нарядів',
+        effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } },
+      },
+      {
+        id: 'pointless',
+        text: 'Запитати, навіщо це в окопі',
+        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.hazing',
+    kind: 'system',
+    phase: [2],
+    once: true,
+    text: '«Дідівщина» в новому вигляді: новачкам — прибирати, старшим — нічого. Один із сержантів називає це «традиціями».',
+    options: [
+      {
+        id: 'obey',
+        text: 'Прибирати без слів',
+        effects: { stats: { trust: 1, energy: -2 } },
+      },
+      {
+        id: 'stand',
+        text: 'Сказати, що це не традиція, а безлад',
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+      },
+      {
+        id: 'trade',
+        text: 'Домовитись: прибираю, але за харчі',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.weapon',
+    kind: 'routine',
+    phase: [2],
+    text: 'Тобі видають автомат. Він старий, важкий і, здається, пам\'ятає більше, ніж ти. Сержант каже: «Це твій найкращий друг».',
+    options: [
+      {
+        id: 'clean',
+        text: 'Розібрати, почистити, зібрати',
+        effects: { skills: { drill: 1, survival: 1 }, stats: { energy: -1, health: -1 } },
+      },
+      {
+        id: 'name',
+        text: 'Дати йому ім\'я, щоб не боятися',
+        effects: { stats: { energy: 1, bonds: 1, understanding: -1 } },
+      },
+      {
+        id: 'ask_clean',
+        text: 'Попросити сержанта показати, як правильно',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { skills: { drill: 1 }, stats: { trust: 1, energy: -1 }, flags: { knows_weapon: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.hole',
+    kind: 'event',
+    phase: [2],
+    text: 'Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.',
+    options: [
+      { id: 'dig', text: 'Копати до світанку', effects: { stats: { energy: -3, health: -1 }, skills: { survival: 1 } } },
+      {
+        id: 'mask',
+        text: 'Закопати трохи й замаскувати',
+        effects: { stats: { energy: -1, supplies: -1, understanding: 1 } },
+      },
+      {
+        id: 'help',
+        text: 'Копати разом із сусідом — повільніше, але вдвох',
+        effects: { stats: { bonds: 2, energy: -2 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.test_song',
+    kind: 'event',
+    phase: [2],
+    text: 'Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.',
+    options: [
+      { id: 'sing', text: 'Заспівати', effects: { stats: { trust: 2, bonds: -1, energy: -1 } } },
+      {
+        id: 'mumble',
+        text: 'Пробубоніти щось схоже',
+        effects: { stats: { trust: 1, understanding: -1 } },
+      },
+      {
+        id: 'silent',
+        text: 'Мовчати, як усі',
+        effects: { stats: { bonds: 2, trust: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.letters_home',
+    kind: 'routine',
+    phase: [2, 3],
+    text: 'Хлопці пишуть листи додому. Один питає, що писати, якщо насправді нічого доброго немає.',
+    options: [
+      {
+        id: 'teach',
+        text: 'Показати, як писати про дрібне',
+        effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { taught_letters: true } },
+      },
+      { id: 'honest', text: '«Пиши як є»', effects: { stats: { understanding: 2, bonds: -1 } } },
+      {
+        id: 'dont',
+        text: 'Сказати, що це не твоя справа',
+        effects: { stats: { energy: 1, bonds: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.socks',
+    kind: 'routine',
+    phase: [2, 3],
+    text: 'Прання. Сусід по намету миє шкарпетки в каску. Ти бачиш це й розумієш, що тепер каска — це назавжди два предмети.',
+    options: [
+      {
+        id: 'laugh',
+        text: 'Посміятися й повторити те саме',
+        effects: { stats: { bonds: 2, energy: 1, health: -1 } },
+      },
+      {
+        id: 'protocol',
+        text: 'Придумати, як прати нормально',
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { health: 1, supplies: -1, bonds: 1 }, flags: { knows_laundry: true } },
+      },
+      {
+        id: 'ignore',
+        text: 'Не звертати уваги',
+        effects: { stats: { health: -1, energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase2.first_fire',
+    kind: 'event',
+    phase: [2, 3],
+    once: true,
+    text: 'Перший обстріл. Усі лежать. Хтось читає молитву, яку не знає. Ти раптом рахуєш секунди між розривами.',
+    options: [
+      {
+        id: 'count',
+        text: 'Рахувати й запам\'ятовувати',
+        effects: { stats: { understanding: 2, energy: -2 }, skills: { survival: 1 }, flags: { counted_fire: true } },
+      },
+      {
+        id: 'calm',
+        text: 'Заспокоїти хлопця поруч',
+        effects: { stats: { bonds: 2, health: -1, energy: -1 } },
+      },
+      {
+        id: 'freeze',
+        text: 'Завмерти й не рухатись',
+        effects: { stats: { energy: -3, health: -1 } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── ФАЗА 3: окоп, вода, втрати ───────────────────────────
+  {
     id: 'phase3.trench',
     kind: 'event',
     phase: [3],
-    text: 'Твій окоп глибший за сусідський на лопату. Сусід каже, що тобі просто пощастило з місцем. Ти знаєш, скільки ночей його копав.',
+    text: 'Твій окоп заливає вода. Сусідній — теж. Ніхто не пропонує допомогти, але всі дивляться.',
     options: [
       {
         id: 'share_spot',
-        text: 'Запросити сусіда пересидіти обстріл разом',
+        text: 'Пустити сусіда на свою суху половину',
         effects: { stats: { bonds: 2, health: -1, energy: -1 }, flags: { shared_trench: true } },
       },
       {
         id: 'keep',
-        text: 'Нічого не казати',
-        effects: { stats: { health: 1, bonds: -1 } },
+        text: 'Залишити собі сухе',
+        effects: { stats: { health: 1, bonds: -1, trust: -1 } },
       },
       {
-        id: 'teach',
-        text: 'Показати, як правильно копати',
+        id: 'drain',
+        text: 'Разом прокопати водовідвід',
         requires: { skillAtLeast: { survival: 1 } },
-        effects: { stats: { bonds: 2, energy: -2 }, skills: { people: 1 } },
+        effects: { stats: { bonds: 2, health: 1, energy: -2 }, skills: { survival: 1 } },
       },
     ],
   },
@@ -210,23 +548,23 @@ export const TEST_CARDS: Card[] = [
     id: 'phase3.water',
     kind: 'routine',
     phase: [3, 4],
-    text: 'Вода в баклазі пахне металом. Усі п’ють. Ти згадуєш, що казав Толік про воду з відстійників.',
+    text: 'Вода в каністрі закінчується. Останній ковток — і треба йти через відкриту ділянку до колодязя.',
     options: [
       {
         id: 'drink',
-        text: 'Пити, бо хочеться',
-        effects: { stats: { health: -1, energy: 1 } },
+        text: 'Випити відразу',
+        effects: { stats: { health: 1, energy: 1, supplies: -1 } },
       },
       {
         id: 'boil',
-        text: 'Прокип’ятити на буржуйці',
+        text: 'Назбирати з калюжі й прокип\'ятити',
         requires: { skillAtLeast: { survival: 1 } },
-        effects: { stats: { health: 1, supplies: -1, energy: -1 } },
+        effects: { stats: { supplies: 2, health: -1, energy: -2 }, skills: { survival: 1 } },
       },
       {
         id: 'warn',
-        text: 'Попередити відділення',
-        effects: { stats: { bonds: 1, trust: -1, understanding: 1 } },
+        text: 'Сказати хлопцям, що води мало',
+        effects: { stats: { bonds: 2, energy: 1 } },
       },
     ],
   },
@@ -235,22 +573,48 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [3, 4],
     once: true,
-    text: 'Уночі «приліт» забирає сусідній бліндаж. Уранці на тому місці збирають речі. Хтось питає, чия це куртка. Ти впізнаєш куртку.',
+    text: 'Уранці хлопця з сусіднього відділення немає. Ніхто не знає, що казати. Хтось каже: «Я його бачив увечері». Ще хтось: «Я теж».',
     options: [
       {
         id: 'say',
-        text: 'Сказати, чия це',
-        effects: { stats: { bonds: 2, understanding: 1, energy: -2 }, journal: 'Сказав, чия була куртка.' },
+        text: 'Сказати вголос, що він загинув',
+        effects: { stats: { understanding: 2, bonds: 1, energy: -2 }, flags: { said_he_died: true } },
       },
       {
         id: 'silent',
-        text: 'Промовчати',
-        effects: { stats: { understanding: -1, energy: -1, bonds: -1 } },
+        text: 'Мовчати разом з усіма',
+        effects: { stats: { trust: 1, understanding: -1, bonds: 1 } },
       },
       {
         id: 'letter',
-        text: 'Запам’ятати ім’я, щоб потім написати рідним',
-        effects: { stats: { bonds: 1, understanding: 2 }, flags: { will_write_letter: true } },
+        text: 'Почати писати лист його мамі',
+        effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } },
+      },
+    ],
+  },
+  {
+    // Відкривається в наступних фазах, якщо почав писати.
+    id: 'phase3.letter_followup',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['will_write_letter'] },
+    text: 'Той лист досі не дописаний. Він лежить у нагрудній кишені й пахне твоїм потом, а не чужим життям.',
+    options: [
+      {
+        id: 'finish',
+        text: 'Дописати й віддати',
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { letter_sent: true }, journal: 'Дописав лист.' },
+      },
+      {
+        id: 'burn',
+        text: 'Спалити',
+        effects: { stats: { understanding: 1, bonds: -2, health: -1 } },
+      },
+      {
+        id: 'keep',
+        text: 'Носити далі, поки що є коли',
+        effects: { stats: { energy: -1, understanding: 1 } },
       },
     ],
   },
@@ -258,22 +622,22 @@ export const TEST_CARDS: Card[] = [
     id: 'phase3.propaganda',
     kind: 'system',
     phase: [3, 4],
-    text: 'У бліндажі по рації передають зведення. Цифри втрат «ворога» звучать так упевнено, що хочеться повірити. Хтось поруч тихо рахує на пальцях.',
+    text: 'Приїжджає «преса». Просить сфотографуватися з усмішкою. Хтось усміхається. Ти думаєш, кому потім покажуть це фото.',
     options: [
       {
         id: 'believe',
-        text: 'Повірити, хоч на хвилину',
+        text: 'Сказати, що це добре для морального духу',
         effects: { stats: { trust: 2, understanding: -2 } },
       },
       {
         id: 'count',
-        text: 'Порахувати разом із сусідом',
-        effects: { stats: { understanding: 2, trust: -1, bonds: 1 } },
+        text: 'Порахувати, скільки людей на фото',
+        effects: { stats: { understanding: 2, energy: -1 }, flags: { counted_photo: true } },
       },
       {
         id: 'turn_off',
-        text: 'Вимкнути рацію',
-        effects: { stats: { trust: -1, energy: 1 } },
+        text: 'Відвернутися в момент зйомки',
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
       },
     ],
   },
@@ -329,6 +693,7 @@ export const TEST_CARDS: Card[] = [
     id: 'phase3.bribe',
     kind: 'system',
     phase: [3, 4],
+    once: true,
     text: 'Тиловий прапорщик пропонує «вирішити питання» з переведенням у другий ешелон. Ціна — три тисячі й мовчання.',
     options: [
       {
@@ -350,6 +715,175 @@ export const TEST_CARDS: Card[] = [
       },
     ],
   },
+  {
+    id: 'phase3.food_ration',
+    kind: 'routine',
+    phase: [3, 4],
+    text: 'Пакунок від волонтерів. Три шоколадки, два носки й записка «Тримайтесь, хлопці». Носки однакові.',
+    options: [
+      {
+        id: 'split',
+        text: 'Розділити по-чесному',
+        effects: { stats: { supplies: 2, bonds: 2, energy: 1 } },
+      },
+      {
+        id: 'keep',
+        text: 'Забрати собі, бо ти гірше забезпечений',
+        effects: { stats: { supplies: 3, bonds: -2, trust: 1 } },
+      },
+      {
+        id: 'write_back',
+        text: 'Записати адресу волонтерів, щоб подякувати',
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase3.coward',
+    kind: 'system',
+    phase: [3, 4],
+    text: 'Командир відділення пропонує тобі стати його «очима»: доносити, хто що каже про накази. Обіцяє «прикриття».',
+    options: [
+      {
+        id: 'agree',
+        text: 'Погодитись — це прикриття',
+        effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } },
+      },
+      {
+        id: 'refuse',
+        text: 'Відмовитись прямо',
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+      },
+      {
+        id: 'pretend',
+        text: 'Погодитись і не робити нічого',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } },
+      },
+    ],
+  },
+  {
+    // Прапорець informer має наслідки.
+    id: 'phase4.informer_after',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['informer'] },
+    text: 'Хлопці перестали говорити при тобі. Помітив не відразу. Хтось перестав сідати поруч — теж не відразу.',
+    options: [
+      {
+        id: 'admit',
+        text: 'Сказати, що почав це й шкодує',
+        effects: { stats: { bonds: 2, trust: -2, understanding: 2, energy: -1 } },
+      },
+      {
+        id: 'double',
+        text: 'Доносити ще, щоб уже не було чого втрачати',
+        effects: { stats: { trust: 2, bonds: -3, understanding: -2 } },
+      },
+      {
+        id: 'silent',
+        text: 'Жити з цим мовчки',
+        effects: { stats: { energy: -2, bonds: -1, understanding: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase3.photo',
+    kind: 'routine',
+    phase: [3, 4],
+    text: 'Хтось приніс фотоапарат. Хлопці хочуть фото «на пам\'ять». Ти думаєш, кому це фото потім показувати.',
+    options: [
+      {
+        id: 'pose',
+        text: 'Позувати разом з усіма',
+        effects: { stats: { bonds: 2, energy: 1 } },
+      },
+      {
+        id: 'refuse',
+        text: 'Відмовитись',
+        effects: { stats: { understanding: 1, bonds: -1 } },
+      },
+      {
+        id: 'send',
+        text: 'Попросити, щоб надіслали мамі',
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase3.rot',
+    kind: 'event',
+    phase: [3, 4],
+    text: 'Взуття розмокло й уже не сохне. Ноги в кволі. Медсестра каже: «Поки не чорні — все добре».',
+    options: [
+      {
+        id: 'dry',
+        text: 'Висушити бодай шкарпетки над буржуйкою',
+        effects: { stats: { health: 1, energy: -1, supplies: -1 } },
+      },
+      {
+        id: 'swap',
+        text: 'Попросити в когось запасні',
+        effects: { stats: { health: 2, bonds: -1, supplies: -1 } },
+      },
+      {
+        id: 'endure',
+        text: 'Терпіти',
+        effects: { stats: { health: -2, energy: -1, trust: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase3.drill_hard',
+    kind: 'system',
+    phase: [3],
+    text: 'Раптовий «навчальний підйом» о третій ночі. Хтось засинає стоячи. Сержант кричить, що «це і є перевірка».',
+    options: [
+      {
+        id: 'stand',
+        text: 'Стояти й відпрацьовувати',
+        effects: { skills: { drill: 1 }, stats: { energy: -3, trust: 1 } },
+      },
+      {
+        id: 'tell',
+        text: 'Сказати сержантові, що це шкодить',
+        effects: { stats: { trust: -2, bonds: 1, understanding: 1 } },
+      },
+      {
+        id: 'fake',
+        text: 'Зробити вигляд, що виконуєш',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: 1, understanding: 1, energy: -1 }, flags: { learnt_fake: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase3.medicine',
+    kind: 'routine',
+    phase: [3, 4],
+    text: 'У медпункті лишилось три пігулки від болю. Оля каже: «Реальних претендентів — шестеро».',
+    options: [
+      {
+        id: 'own',
+        text: 'Взяти собі одну — у тебе ниє коліно',
+        effects: { stats: { health: 2, bonds: -2 } },
+      },
+      {
+        id: 'give',
+        text: 'Віддати тому, кому гірше',
+        effects: { stats: { bonds: 3, energy: -1 } },
+      },
+      {
+        id: 'ask_olia',
+        text: 'Спитати Олю, кому справді потрібно',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 2, health: -1 }, flags: { knows_triage: true } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── ФАЗА 4: холод, сумніви, люди ───────────────────────────
   {
     id: 'phase4.cold',
     kind: 'event',
@@ -398,6 +932,7 @@ export const TEST_CARDS: Card[] = [
     id: 'phase4.doubt',
     kind: 'event',
     phase: [4, 5],
+    once: true,
     text: 'Уночі, коли всі сплять, ти ловиш себе на думці: «А що, як нас тут узагалі немає причини тримати?» Потім згадуєш, що за цю думку ти вже комусь не довіряєш.',
     options: [
       {
@@ -448,7 +983,7 @@ export const TEST_CARDS: Card[] = [
     kind: 'event',
     phase: [4, 5],
     once: true,
-    text: 'Двоє з відділення пішли вночі. Уранці це називають «зрадою». Ти сам думав про це дев’ять ночей.',
+    text: 'Двоє з відділення пішли вночі. Уранці це називають «зрадою». Ти сам думав про це дев\'ять ночей.',
     options: [
       {
         id: 'condemn',
@@ -467,6 +1002,222 @@ export const TEST_CARDS: Card[] = [
       },
     ],
   },
+  {
+    id: 'phase4.gossip',
+    kind: 'person',
+    phase: [4, 5],
+    text: 'Тиловий писар розповідає, що «нагорі» вже все вирішено й нас залишили як приманку. Він каже це з гордістю.',
+    options: [
+      {
+        id: 'believe',
+        text: 'Повірити й розповісти хлопцям',
+        effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } },
+      },
+      {
+        id: 'dismiss',
+        text: 'Відмахнутися',
+        effects: { stats: { understanding: -1, energy: 1 } },
+      },
+      {
+        id: 'check',
+        text: 'Перевірити через знайомого в штабі',
+        requires: { skillAtLeast: { system: 2 } },
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.wound',
+    kind: 'event',
+    phase: [4, 5],
+    text: 'Уламок зайшов у стегно. Оля каже, що дійде й так. Каже це швидше собі.',
+    options: [
+      {
+        id: 'stay',
+        text: 'Лишитись на позиції',
+        effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } },
+      },
+      {
+        id: 'evac',
+        text: 'Дозволити відправити себе в тил',
+        effects: { stats: { health: 3, trust: -2, understanding: 1 } },
+      },
+      {
+        id: 'self_help',
+        text: 'Обробити сам, як учила Оля',
+        requires: { flagTrue: ['knows_jgut_count'] },
+        effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.quiet_evening',
+    kind: 'routine',
+    phase: [4, 5],
+    text: 'Тихий вечір. Хтось дістає гітару й грає пісню, яку всі знають, але не пам\'ятають, звідки.',
+    options: [
+      {
+        id: 'sing',
+        text: 'Підспівувати',
+        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } },
+      },
+      {
+        id: 'listen',
+        text: 'Слухати й дивитися на обличчя',
+        effects: { stats: { understanding: 2, energy: 1 } },
+      },
+      {
+        id: 'ask',
+        text: 'Запитати хлопця, де він це чув',
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.home_news',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    text: 'Сестра пише, що в місті закрили школу й перевели її клас у підвал. Просить «не переживати».',
+    options: [
+      {
+        id: 'reply',
+        text: 'Відповісти зараз, поки є зв\'язок',
+        effects: { stats: { bonds: 3, energy: -2 } },
+      },
+      {
+        id: 'later',
+        text: 'Відкласти — зараз не до цього',
+        effects: { stats: { energy: 1, bonds: -2, understanding: -1 } },
+      },
+      {
+        id: 'send_money',
+        text: 'Спробувати передати трохи грошей',
+        requires: { statAtLeast: { supplies: 3 } },
+        effects: { stats: { supplies: -3, bonds: 3, trust: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.replacement',
+    kind: 'person',
+    phase: [4, 5],
+    text: 'Прийшов «молодий» — двадцять років і впевненість, що він знає все. Дивиться на тебе, як на старика.',
+    options: [
+      {
+        id: 'teach',
+        text: 'Навчити того, що знаєш',
+        effects: { skills: { people: 1 }, stats: { bonds: 2, understanding: 1, energy: -1 } },
+      },
+      {
+        id: 'warn',
+        text: 'Попередити, що тут ніхто не знає всього',
+        effects: { stats: { understanding: 2, bonds: 1 } },
+      },
+      {
+        id: 'mock',
+        text: 'Посміятися з його впевненості',
+        effects: { stats: { bonds: -2, energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.night_watch',
+    kind: 'routine',
+    phase: [4, 5],
+    text: 'Твоя зміна на спостереженні. Мінус десять, ніч, тиша. Хочеться спати так, що боляче.',
+    options: [
+      {
+        id: 'stay_awake',
+        text: 'Стояти до кінця, хоч би що',
+        effects: { stats: { health: -2, energy: -2, trust: 2 }, flags: { held_watch: true } },
+      },
+      {
+        id: 'micro_sleep',
+        text: 'Дрімнути хвилин на десять',
+        effects: { stats: { energy: 2, trust: -1, health: -1 } },
+      },
+      {
+        id: 'share',
+        text: 'Домовитись із сусідом по черзі',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 2, energy: 1, trust: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.rumours',
+    kind: 'system',
+    phase: [4, 5],
+    text: 'Ходять чутки, що скоро «все закінчиться». Одні кажуть — добре, інші — що тоді нас точно не заберуть.',
+    options: [
+      {
+        id: 'hope',
+        text: 'Вірити в хороший варіант',
+        effects: { stats: { energy: 2, understanding: -1, trust: 1 } },
+      },
+      {
+        id: 'realistic',
+        text: 'Сказати хлопцям, що обидва варіанти погані по-своєму',
+        effects: { stats: { understanding: 2, bonds: 1, energy: -1 } },
+      },
+      {
+        id: 'silence',
+        text: 'Не втручатись',
+        effects: { stats: { energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.stolen',
+    kind: 'event',
+    phase: [4, 5],
+    text: 'У тебе зникли сухарі. Хтось їх узяв. Ти знаєш, хто — він не їв три дні.',
+    options: [
+      {
+        id: 'ask',
+        text: 'Поговорити з ним віч-на-віч',
+        effects: { stats: { understanding: 2, bonds: 1, supplies: -1 } },
+      },
+      {
+        id: 'public',
+        text: 'Сказати при всіх',
+        effects: { stats: { bonds: -3, trust: 1, supplies: 1 } },
+      },
+      {
+        id: 'pretend',
+        text: 'Зробити вигляд, що не помітив',
+        effects: { stats: { bonds: 2, supplies: -1, understanding: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase4.tolko_dies',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['tolko_honest'] },
+    text: 'Толіка більше немає. Саме його, того, хто вчив тебе сидіти в окопі. Ти сидиш правильно. І нікого це не врятувало.',
+    options: [
+      {
+        id: 'rage',
+        text: 'Сказати вголос, що це безглуздо',
+        effects: { stats: { understanding: 3, trust: -3, bonds: 1, energy: -2 } },
+      },
+      {
+        id: 'teach_others',
+        text: 'Передати його науку далі',
+        effects: { skills: { survival: 1, people: 1 }, stats: { bonds: 2, energy: -1 } },
+      },
+      {
+        id: 'shut',
+        text: 'Закритись',
+        effects: { stats: { energy: -1, bonds: -2, understanding: 1 } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── ФАЗА 5: тиша, останній пост, вітер ───────────────────────────
   {
     id: 'phase5.lastpost',
     kind: 'event',
@@ -512,76 +1263,6 @@ export const TEST_CARDS: Card[] = [
         id: 'nothing',
         text: '«Нічого. Не скажуть»',
         effects: { stats: { understanding: 1, energy: -1 } },
-      },
-    ],
-  },
-  {
-    id: 'phase2.commander_orders',
-    kind: 'system',
-    phase: [2, 3],
-    text: 'Новий наказ: щоденна муштра на плацу, попри мороз. «Солдат має виглядати солдатом».',
-    options: [
-      {
-        id: 'attend',
-        text: 'Сумлінно ходити',
-        effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } },
-      },
-      {
-        id: 'skip',
-        text: 'Пропускати під приводом нарядів',
-        effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } },
-      },
-      {
-        id: 'pointless',
-        text: 'Запитати, навіщо це в окопі',
-        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } },
-      },
-    ],
-  },
-  {
-    id: 'phase3.food_ration',
-    kind: 'routine',
-    phase: [3, 4],
-    text: 'Пакунок від волонтерів. Три шоколадки, два носки й записка «Тримайтесь, хлопці». Носки однакові.',
-    options: [
-      {
-        id: 'split',
-        text: 'Розділити по-чесному',
-        effects: { stats: { supplies: 2, bonds: 2, energy: 1 } },
-      },
-      {
-        id: 'keep',
-        text: 'Забрати собі, бо ти гірше забезпечений',
-        effects: { stats: { supplies: 3, bonds: -2, trust: 1 } },
-      },
-      {
-        id: 'write_back',
-        text: 'Записати адресу волонтерів, щоб подякувати',
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
-      },
-    ],
-  },
-  {
-    id: 'phase4.wound',
-    kind: 'event',
-    phase: [4, 5],
-    text: 'Уламок зайшов у стегно. Оля каже, що дійде й так. Каже це швидше собі.',
-    options: [
-      {
-        id: 'stay',
-        text: 'Лишитись на позиції',
-        effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } },
-      },
-      {
-        id: 'evac',
-        text: 'Дозволити відправити себе в тил',
-        effects: { stats: { health: 3, trust: -2, understanding: 1 } },
-      },
-      {
-        id: 'self_help',
-        text: 'Обробити сам, як учила Оля',
-        requires: { flagTrue: ['knows_jgut_count'] },
-        effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } },
       },
     ],
   },
@@ -633,103 +1314,10 @@ export const TEST_CARDS: Card[] = [
     ],
   },
   {
-    id: 'phase4.gossip',
-    kind: 'person',
-    phase: [4, 5],
-    text: 'Тиловий писар розповідає, що «нагорі» вже все вирішено й нас залишили як приманку. Він каже це з гордістю.',
-    options: [
-      {
-        id: 'believe',
-        text: 'Повірити й розповісти хлопцям',
-        effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } },
-      },
-      {
-        id: 'dismiss',
-        text: 'Відмахнутися',
-        effects: { stats: { understanding: -1, energy: 1 } },
-      },
-      {
-        id: 'check',
-        text: 'Перевірити через знайомого в штабі',
-        requires: { skillAtLeast: { system: 2 } },
-        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } },
-      },
-    ],
-  },
-  {
-    id: 'phase3.photo',
-    kind: 'routine',
-    phase: [3, 4],
-    text: 'Хтось приніс фотоапарат. Хлопці хочуть фото «на пам’ять». Ти думаєш, кому це фото потім показувати.',
-    options: [
-      {
-        id: 'pose',
-        text: 'Позувати разом з усіма',
-        effects: { stats: { bonds: 2, energy: 1 } },
-      },
-      {
-        id: 'refuse',
-        text: 'Відмовитись',
-        effects: { stats: { understanding: 1, bonds: -1 } },
-      },
-      {
-        id: 'send',
-        text: 'Попросити, щоб надіслали мамі',
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
-      },
-    ],
-  },
-  {
-    id: 'phase2.hazing',
-    kind: 'system',
-    phase: [2],
-    text: '«Дідівщина» в новому вигляді: новачкам — прибирати, старшим — нічого. Один із сержантів називає це «традиціями».',
-    options: [
-      {
-        id: 'obey',
-        text: 'Прибирати без слів',
-        effects: { stats: { trust: 1, energy: -2 } },
-      },
-      {
-        id: 'stand',
-        text: 'Сказати, що це не традиція, а безлад',
-        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
-      },
-      {
-        id: 'trade',
-        text: 'Домовитись: прибираю, але за харчі',
-        requires: { skillAtLeast: { people: 1 } },
-        effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } },
-      },
-    ],
-  },
-  {
-    id: 'phase4.quiet_evening',
-    kind: 'routine',
-    phase: [4, 5],
-    text: 'Тихий вечір. Хтось дістає гітару й грає пісню, яку всі знають, але не пам’ятають, звідки.',
-    options: [
-      {
-        id: 'sing',
-        text: 'Підспівувати',
-        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } },
-      },
-      {
-        id: 'listen',
-        text: 'Слухати й дивитися на обличчя',
-        effects: { stats: { understanding: 2, energy: 1 } },
-      },
-      {
-        id: 'ask',
-        text: 'Запитати хлопця, де він це чув',
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } },
-      },
-    ],
-  },
-  {
     id: 'phase5.final_wait',
     kind: 'final',
     phase: [5],
+    once: true,
     text: 'День, який не мав настати. Позиція тримається, але пил у повітрі вже не пил.',
     options: [
       {
@@ -749,6 +1337,469 @@ export const TEST_CARDS: Card[] = [
       },
     ],
   },
+  {
+    id: 'phase5.last_cigarette',
+    kind: 'routine',
+    phase: [5],
+    text: 'Остання цигарка на відділення. Її пускають по колу, і кожен робить вигляд, що не хоче.',
+    options: [
+      {
+        id: 'pass',
+        text: 'Передати далі, не затягнувшись',
+        effects: { stats: { bonds: 2, health: -1 } },
+      },
+      {
+        id: 'puff',
+        text: 'Затягнутись раз',
+        effects: { stats: { energy: 1, health: -1, bonds: 1 } },
+      },
+      {
+        id: 'talk',
+        text: 'Сказати, що це безглуздо, і почати розмову',
+        effects: { stats: { understanding: 2, bonds: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.promises',
+    kind: 'person',
+    phase: [5],
+    text: 'Хлопець просить обіцянку: «Якщо зі мною що — скажи мамі, що я не боявся». Ти знаєш, що це неправда.',
+    options: [
+      {
+        id: 'lie',
+        text: 'Обіцяти',
+        effects: { stats: { bonds: 2, understanding: -1, energy: 1 } },
+      },
+      {
+        id: 'honest',
+        text: 'Сказати, що не можеш обіцяти',
+        effects: { stats: { understanding: 2, bonds: -1 } },
+      },
+      {
+        id: 'other',
+        text: 'Пообіцяти сказати інше — те, що буде правдою',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.quiet_meal',
+    kind: 'routine',
+    phase: [5],
+    text: 'Вечеря. Хтось дістає останню банку тушонки й ділить на всіх, включно з тими, хто вже не їсть.',
+    options: [
+      {
+        id: 'eat',
+        text: 'З\'їсти свою частину',
+        effects: { stats: { health: 1, energy: 1, supplies: -1 } },
+      },
+      {
+        id: 'give',
+        text: 'Віддати свою частину',
+        effects: { stats: { bonds: 3, health: -1, energy: -1 } },
+      },
+      {
+        id: 'thanks',
+        text: 'Подякувати вголос',
+        effects: { stats: { bonds: 1, understanding: 2 } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.last_call',
+    kind: 'event',
+    phase: [5],
+    once: true,
+    text: 'Зв\'язок. Кажуть, що «завтра буде важко». Мама в трубці питає, чи ти їв.',
+    options: [
+      {
+        id: 'truth',
+        text: 'Сказати правду — може, востаннє',
+        effects: { stats: { bonds: 2, understanding: 2, energy: -2 } },
+      },
+      {
+        id: 'lie',
+        text: 'Сказати, що все добре',
+        effects: { stats: { bonds: 1, understanding: -1, energy: 1 } },
+      },
+      {
+        id: 'silent',
+        text: 'Слухати й мовчати',
+        effects: { stats: { bonds: 3, energy: -2 } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.plan_after',
+    kind: 'event',
+    phase: [5],
+    text: 'Хтось починає планувати, що буде після. Ремонт у дворі, рибалка, шашлики. Усі слухають.',
+    options: [
+      {
+        id: 'join',
+        text: 'Долучитись до планування',
+        effects: { stats: { bonds: 2, energy: 2, understanding: -1 } },
+      },
+      {
+        id: 'honest',
+        text: 'Сказати, що не варто',
+        effects: { stats: { understanding: 2, bonds: -2, energy: -1 } },
+      },
+      {
+        id: 'listen',
+        text: 'Слухати й нічого не казати',
+        effects: { stats: { understanding: 1, energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.broken_radio',
+    kind: 'system',
+    phase: [5],
+    text: 'Рація перестала приймати. Може, села батарея, може — позицію просто виключили зі списків.',
+    options: [
+      {
+        id: 'fix',
+        text: 'Спробувати полагодити',
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { understanding: 2, energy: -2 }, skills: { system: 1 }, flags: { fixed_radio: true } },
+      },
+      {
+        id: 'assume',
+        text: 'Вирішити, що нас виключили',
+        effects: { stats: { understanding: 2, bonds: -1, trust: -2 } },
+      },
+      {
+        id: 'not_tell',
+        text: 'Не казати хлопцям',
+        effects: { stats: { bonds: -1, energy: -1, understanding: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'phase5.photo_found',
+    kind: 'routine',
+    phase: [5],
+    requires: { flagTrue: ['photo_to_mom'] },
+    once: true,
+    text: 'У кишені — те фото. Мала, заламінована, з плямою від дощу. Мама його, мабуть, так і не отримала.',
+    options: [
+      {
+        id: 'keep_close',
+        text: 'Носити ближче до тіла',
+        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } },
+      },
+      {
+        id: 'give',
+        text: 'Віддати хлопцеві, який виходить',
+        effects: { stats: { bonds: 3, supplies: -1 }, flags: { photo_passed: true } },
+      },
+      {
+        id: 'burn',
+        text: 'Спалити, щоб не шкодило',
+        effects: { stats: { understanding: 2, bonds: -2 } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── Наскрізні лінії: хто лишився, що з чиєї вини ───────────────────────────
+  {
+    id: 'line.volunteers_thanks',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['thanks_volunteers'] },
+    text: 'Прийшла відповідь від волонтерів. Дитячим почерком: «Дякуємо, що ви є. Надішліть, будь ласка, імена».',
+    options: [
+      {
+        id: 'names',
+        text: 'Написати всі імена, включно з тими, кого вже немає',
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } },
+      },
+      {
+        id: 'short',
+        text: 'Написати тільки своє',
+        effects: { stats: { understanding: 1, bonds: -1, energy: 1 } },
+      },
+      {
+        id: 'nothing',
+        text: 'Не відповідати',
+        effects: {},
+      },
+    ],
+  },
+  {
+    id: 'line.assault_after',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['assault'] },
+    text: 'Твоя «штурмова» виявилась звичайною піхотою з гучною назвою. Із двадцяти — семеро.',
+    options: [
+      {
+        id: 'count',
+        text: 'Порахувати й запам\'ятати',
+        effects: { stats: { understanding: 3, energy: -2 }, flags: { knows_seven: true } },
+      },
+      {
+        id: 'tell',
+        text: 'Сказати іншим правду про «штурмову»',
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+      },
+      {
+        id: 'silence',
+        text: 'Не згадувати',
+        effects: { stats: { energy: 1, understanding: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'line.fake_informer',
+    kind: 'event',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['fake_informer'] },
+    text: 'Командир відділення питає, чому від тебе досі «жодної конкретики». Дивиться довго.',
+    options: [
+      {
+        id: 'give',
+        text: 'Дати йому щось — будь-що',
+        effects: { stats: { trust: 2, bonds: -3, understanding: -1 } },
+      },
+      {
+        id: 'refuse',
+        text: 'Сказати, що нічого немає',
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+      },
+      {
+        id: 'turn',
+        text: 'Сказати, що передумав',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 1, trust: -1 }, flags: { informer_out: true } },
+      },
+    ],
+  },
+  {
+    id: 'line.kept_promise',
+    kind: 'event',
+    phase: [5],
+    once: true,
+    requires: { flagTrue: ['true_promise'] },
+    text: 'Той хлопець живий. Дивиться на тебе й чекає, чи ти пам\'ятаєш, що обіцяв. Ти пам\'ятаєш.',
+    options: [
+      {
+        id: 'say',
+        text: 'Сказати йому те, що обіцяв',
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { promise_kept: true } },
+      },
+      {
+        id: 'now',
+        text: 'Відкласти — не час',
+        effects: { stats: { energy: 1, bonds: -2 } },
+      },
+      {
+        id: 'write',
+        text: 'Записати, щоб не забути',
+        effects: { stats: { understanding: 2, energy: -1 }, flags: { promise_written: true } },
+      },
+    ],
+  },
+  {
+    id: 'line.known_plan',
+    kind: 'event',
+    phase: [5],
+    once: true,
+    requires: { flagTrue: ['knows_plan'] },
+    text: 'Ти знаєш план. Він не передбачає, що всі вийдуть. Сказати хлопцям — це вже зрада, мовчати — теж.',
+    options: [
+      {
+        id: 'tell_all',
+        text: 'Сказати всім',
+        effects: { stats: { understanding: 3, bonds: 2, trust: -3 } },
+      },
+      {
+        id: 'tell_few',
+        text: 'Сказати тільки тим, кому довіряєш',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 2, energy: -1 }, flags: { told_withdraw: true } },
+      },
+      {
+        id: 'keep',
+        text: 'Носити це сам',
+        effects: { stats: { understanding: 2, energy: -3, bonds: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'line.named_photo',
+    kind: 'routine',
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ['names_sent'] },
+    text: 'Волонтери надіслали фото: наші імена написані на табличці в їхньому штабі. Знайшов своє. І одразу побачив, чиїх немає.',
+    options: [
+      {
+        id: 'look',
+        text: 'Дивитися довго',
+        effects: { stats: { understanding: 3, bonds: 1, energy: -1 }, flags: { saw_names: true } },
+      },
+      {
+        id: 'pass',
+        text: 'Показати хлопцям',
+        effects: { stats: { bonds: 3, understanding: 1, energy: -1 } },
+      },
+      {
+        id: 'hide',
+        text: 'Сховати',
+        effects: { stats: { energy: 1, understanding: -1 } },
+      },
+    ],
+  },
+
+  // ─────────────────────────── Розрядка: людина, а не посада ───────────────────────────
+  {
+    id: 'misc.dog',
+    kind: 'event',
+    phase: [3, 4, 5],
+    once: true,
+    text: 'До позиції приблукав пес. Худий, з обірваним повідком. Ніхто не проганяє. Усі роблять вигляд, що не раді.',
+    options: [
+      {
+        id: 'feed',
+        text: 'Віддати йому частину пайки',
+        effects: { stats: { bonds: 2, supplies: -2, health: -1 } },
+      },
+      {
+        id: 'name',
+        text: 'Дати йому ім\'я',
+        effects: { stats: { bonds: 2, energy: 1 } },
+      },
+      {
+        id: 'drive',
+        text: 'Прогнати, поки не прив\'язались',
+        effects: { stats: { understanding: 1, bonds: -2, energy: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'misc.dugout',
+    kind: 'routine',
+    phase: [3, 4],
+    text: 'У бліндажі знайшли старі газети 2014 року. Хтось читає вголос, і всі слухають, як казку.',
+    options: [
+      {
+        id: 'listen',
+        text: 'Слухати',
+        effects: { stats: { understanding: 2, energy: 1 } },
+      },
+      {
+        id: 'joke',
+        text: 'Жартувати, що нічого не змінилось',
+        effects: { stats: { understanding: 1, bonds: 2, trust: -1 } },
+      },
+      {
+        id: 'compare',
+        text: 'Порівняти, що писали тоді й що пишуть зараз',
+        effects: { stats: { understanding: 3, energy: -1 }, skills: { system: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'misc.tea',
+    kind: 'routine',
+    phase: [2, 3, 4, 5],
+    text: 'Хтось заварив чай на буржуйці. У ньому щось плаває. Пахне дитинством.',
+    options: [
+      {
+        id: 'drink',
+        text: 'Випити',
+        effects: { stats: { energy: 2, bonds: 1 } },
+      },
+      {
+        id: 'share',
+        text: 'Налити всім',
+        effects: { stats: { bonds: 2, energy: 1, supplies: -1 } },
+      },
+      {
+        id: 'skip',
+        text: 'Відмовитись',
+        effects: { stats: { health: 1 } },
+      },
+    ],
+  },
+  {
+    id: 'misc.argue',
+    kind: 'event',
+    phase: [3, 4],
+    text: 'Двоє сваряться, хто винен, що вчорашній вихід провалився. Кричать так, що чути на сусідній позиції.',
+    options: [
+      {
+        id: 'split',
+        text: 'Розборонити',
+        effects: { stats: { bonds: 1, energy: -2, understanding: 1 } },
+      },
+      {
+        id: 'truth',
+        text: 'Сказати, хто справді винен',
+        effects: { stats: { understanding: 2, bonds: -3, trust: 1 } },
+      },
+      {
+        id: 'leave',
+        text: 'Піти, поки не втягнули',
+        effects: { stats: { energy: 1, bonds: -1 } },
+      },
+    ],
+  },
+  {
+    id: 'misc.birthday',
+    kind: 'routine',
+    phase: [4, 5],
+    once: true,
+    text: 'У хлопця день народження. Нічим пригостити. Він каже: «Та нічого, я вже дорослий».',
+    options: [
+      {
+        id: 'give',
+        text: 'Віддати йому щось своє',
+        effects: { stats: { supplies: -2, bonds: 3 } },
+      },
+      {
+        id: 'sing',
+        text: 'Заспівати «Многая літа» якомога гірше',
+        effects: { stats: { bonds: 2, energy: 1 } },
+      },
+      {
+        id: 'word',
+        text: 'Просто сказати щось справжнє',
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { said_real_thing: true } },
+      },
+    ],
+  },
+  {
+    id: 'misc.writing',
+    kind: 'routine',
+    phase: [3, 4, 5],
+    text: 'Ти починаєш записувати, що бачиш. Не для звіту. Просто щоб це не зникло.',
+    options: [
+      {
+        id: 'write',
+        text: 'Писати щодня',
+        effects: { stats: { understanding: 3, energy: -2 }, flags: { keeps_diary: true } },
+      },
+      {
+        id: 'burn',
+        text: 'Спалити зошит — небезпечно',
+        effects: { stats: { understanding: -2, trust: 2, energy: 1 } },
+      },
+      {
+        id: 'show',
+        text: 'Показати комусь близькому',
+        effects: { stats: { understanding: 2, bonds: 2, trust: -1 }, flags: { diary_shown: true } },
+      },
+    ],
+  },
 ];
 
 export const TEST_ENDINGS: Ending[] = [
@@ -760,6 +1811,8 @@ export const TEST_ENDINGS: Ending[] = [
       'Він загинув за банку тушкованої моркви, яку приніс із собою в окоп. У зведенні цього не буде. У селі — теж.',
     defaultEpitaph: 'Носив із собою моркву. Не доніс.',
     weight: 1,
+    // Тільки коли військкомат/збірка лишили слід — «зронив з рук» трапляється з побутом.
+    requires: { flagTrue: ['hid_call'] },
   },
   {
     id: 'ending.tihiy',
@@ -769,7 +1822,7 @@ export const TEST_ENDINGS: Ending[] = [
       'Його «списали» за розкладеним графіком. Документи в порядку, дата в наказі — точна. Ніхто не помітив, коли саме все скінчилося.',
     defaultEpitaph: 'Списали за графіком. Без коментарів.',
     weight: 2,
-    requires: { statAtMost: { understanding: 4 } },
+    requires: { statAtMost: { understanding: 5 } },
   },
   {
     id: 'ending.poruch',
@@ -778,8 +1831,9 @@ export const TEST_ENDINGS: Ending[] = [
     epilogue:
       'Його винесли з позиції, яку ніхто не мав тримати. Той, хто вижив, не знав його прізвища, але запам’ятав його спальник.',
     defaultEpitaph: 'Віддав спальник. Більше не змерз.',
-    weight: 2,
-    requires: { statAtLeast: { bonds: 6 } },
+    weight: 3,
+    // Не лише великі зв'язки: ще й передчасний день, щоб не перекривати пізні фінали.
+    requires: { statAtLeast: { bonds: 8 }, dayAtMost: 38 },
   },
   {
     id: 'ending.dobra',
@@ -788,8 +1842,10 @@ export const TEST_ENDINGS: Ending[] = [
     epilogue:
       'Про нього згадують у відділенні без пафосу: «Він рахував блокпости й питав дурні питання». Це — найкраще, що тут можна отримати.',
     defaultEpitaph: 'Питав дурні питання. Ніхто не смів відповісти.',
-    weight: 1,
-    requires: { statAtLeast: { understanding: 6, bonds: 6 } },
+    weight: 2,
+    // Стає основним фіналом лише коли гравець справді дійшов до розуміння
+    // й не втратив людей: потрібна й помірна довіра, інакше тіло просто не дійшло.
+    requires: { statAtLeast: { understanding: 6, bonds: 5 } },
   },
   {
     id: 'ending.kryk',
@@ -798,7 +1854,7 @@ export const TEST_ENDINGS: Ending[] = [
     epilogue:
       'Він устиг сказати вголос те, що всі думали вночі. Це нічого не змінило. Це змінило трьох людей у бліндажі.',
     defaultEpitaph: 'Сказав це вголос. Один раз.',
-    weight: 1,
+    weight: 2,
     requires: { flagTrue: ['doubt_shared', 'honest_epitaph'] },
   },
   {
@@ -815,19 +1871,31 @@ export const TEST_ENDINGS: Ending[] = [
     kind: 'accident',
     title: 'Своїми ногами, не своєю волею',
     epilogue:
-      'Він зробив усе правильно — і все одно не встиг. Рана виявилась швидшою за будь-яку навичку.',
-    defaultEpitaph: 'Все правильно. Все одно не встиг.',
+      'Він вийшов сам. Дійшов до краю посадки й сів. Далі його несли. У документах це назвуть «пораненням, несумісним із життям». У селі скажуть: «помер на війні».',
+    defaultEpitaph: 'Дійшов сам. Це вважається.',
     weight: 2,
-    requires: { statAtLeast: { understanding: 3 } },
+    // Тільки коли здоров’я впало до нуля власними рішеннями (reason === 'wounds'),
+    // і тільки на початку чи в середині — щоб не перекривати «долю» примерту на пізніх днях.
+    requires: { dayAtMost: 40 },
   },
   {
     id: 'ending.letters',
     kind: 'quiet',
     title: 'Потім напишеш',
     epilogue:
-      'Він писав листи, які не доходили. Одного листа таки прочитали — через рік, в іншому місті, чужі люди.',
-    defaultEpitaph: 'Писав листи. Один дійшов.',
-    weight: 1,
+      'Він не встиг. Листи знайшли в кишені, перев’язані шнурком. Один — недописаний, з датою, якої вже не було.',
+    defaultEpitaph: 'Обіцяв написати завтра.',
+    weight: 2,
     requires: { flagTrue: ['letters_help'] },
+  },
+  {
+    id: 'ending.diary',
+    kind: 'quiet',
+    title: 'Зошит у підкладці',
+    epilogue:
+      'Зошит знайшли через рік. Сторінки прочитали вголос у редакції — і вирізали половину. Те, що лишилось, надрукували. Це вже не він, але це точніше за зведення.',
+    defaultEpitaph: 'Писав, щоб не зникло.',
+    weight: 2,
+    requires: { flagTrue: ['keeps_diary'], statAtLeast: { understanding: 6 } },
   },
 ];

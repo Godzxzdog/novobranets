@@ -155,6 +155,11 @@ export class Run {
       }
     }
 
+    // Власні рішення, що били по здоров'ю, пам'ятаємо: вони змінюють фінал.
+    if ((option.effects?.stats?.health ?? 0) < 0) {
+      s.recentHurt = (s.recentHurt ?? 0) + 1;
+    }
+
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
     s.pending = undefined;
@@ -250,10 +255,21 @@ export class Run {
     const eligible = all.filter((e) =>
       meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day),
     );
+    // Фінал за замовчуванням — для своєї причини. Якщо такого немає,
+    // беремо споріднені, і лише потім будь-який доступний.
     const byKind = eligible.filter((e) => {
-      if (reason === 'wounds') return e.kind === 'accident' || e.kind === 'quiet';
+      // Поранення від власних рішень: спершу accident, quiet — лише як запас.
+      if (reason === 'wounds') return e.kind === 'accident';
+      // Випадкова смерть: якщо в грі був вибір, що бив по здоров'ю, — це поранення,
+      // інакше — «не наша» випадковість.
+      if (reason === 'accident' && e.kind === 'accident') {
+        return e.id === 'ending.wounds'
+          ? hurtByOwnChoice(s)
+          : true;
+      }
       if (reason === 'hardend') return e.kind === 'system';
       if (reason === 'accident') return e.kind === 'accident';
+      if (reason === 'exhausted') return e.kind === 'quiet' || e.kind === 'system';
       return true;
     });
     const pool = byKind.length > 0 ? byKind : eligible;
@@ -292,4 +308,13 @@ export class Run {
     if (s.status === 'running' && s.decisions > 500) errors.push('run too long');
     return errors;
   }
+}
+
+/**
+ * Чи смерть «від долі» сталася після власного вибору, що бив по здоров'ю.
+ * Тоді фінал — поранення, а не «не наша» випадковість.
+ * recentHurt — лічильник рішень із від’ємним здоров’ям у поточному забігу.
+ */
+function hurtByOwnChoice(state: RunState): boolean {
+  return (state.recentHurt ?? 0) > 0;
 }

@@ -135,9 +135,9 @@ export const DEFAULT_DIRECTOR: DirectorConfig = {
   safeUntilDay: 20,
   inevitabilityStartsDay: 30,
   hardEndDay: 60,
-  baseFatalChance: 0.02,
-  rampPerDay: 0.015,
-  maxFatalChance: 0.55,
+  baseFatalChance: 0.012,
+  rampPerDay: 0.010,
+  maxFatalChance: 0.32,
 };
 
 export interface RunConfig {
@@ -175,6 +175,8 @@ export interface RunState {
   inevitability: number;
   endingId?: string;
   decisions: number;
+  /** Скільки рішень у забігу били по здоров'ю (для вибору фіналу-поранення). */
+  recentHurt?: number;
   /** Поточна картка, якщо є. */
   pending?: { cardId: string; options: string[] };
 }
