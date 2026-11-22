@@ -1,9 +1,9 @@
 diff --git a/CHANGES.md b/CHANGES.md
 new file mode 100644
-index 0000000..2096cbf
+index 0000000..d0e35e6
 --- /dev/null
 +++ b/CHANGES.md
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,43 @@
 +# Що змінено після рев'ю
 +
 +## Помилки, які були в коді
@@ -38,30 +38,40 @@ index 0000000..2096cbf
 +
 +- `npm test`: 20/20; валідатор без помилок; усі 9 фіналів досяжні в симуляції.
 +- Збірка `dist/novobranets.html` пройшла в Chromium без помилок консолі: забіг до фіналу, «привид» минулого шляху, підказки заблокованих варіантів.
++
++## Дерево подій і відсутність повторів (друга хвиля)
++
++- **Картки не повторюються.** `allowRepeats: false` за замовчуванням: кожна картка — раз за забіг. Перевірено на 4500 симульованих забігах і в браузері: 0 повторів. Коли картки фази скінчились, минає час (`rollDay`), а не повторюються сцени; коли непоказаного контенту нема взагалі — фінал `exhausted`.
++- **Дерево подій.** `ChoiceOption.next` (`'id'` або `{ card, inDays }`) планує наслідок. Черга обходить фазу, але поважає `requires` картки і правило «раз за забіг». Підключено 11 гілок: від `call.queue/leave` до `line.named_photo` (гілки спрацьовують у ~90% забігів, решта обривається смертю чи невиконаними умовами).
++- **`state.tree`** і блок «Гілки твого шляху» на екрані фіналу.
++- **`npm run tree`** генерує `docs/event-tree.html` і `docs/EVENT_TREE.md` з контенту.
++- Валідатор перевіряє `next`; 6 нових тестів (усього 26).
++- **Ціна:** довжина забігу тепер обмежена контентом: 48–66 рішень замість 87 (ТЗ хоче 60–120). Далі — писати картки.
 diff --git a/README.md b/README.md
-index da8da00..2a0f021 100644
+index da8da00..549cb28 100644
 --- a/README.md
 +++ b/README.md
-@@ -1,9 +1,12 @@
+@@ -1,9 +1,13 @@
 -# Новобранець — двигун (варіант 2)
 +# Новобранець — двигун і прототип
  
 -Прототип ядра забігу. Див. [docs/ENGINE.md](docs/ENGINE.md).
-+Прототип ядра забігу й браузерної версії. Деталі — [docs/ENGINE.md](docs/ENGINE.md), правки після рев'ю — [CHANGES.md](CHANGES.md).
++Прототип ядра забігу й браузерної версії. Деталі — [docs/ENGINE.md](docs/ENGINE.md), правки після рев'ю — [CHANGES.md](CHANGES.md), дерево подій — [docs/EVENT_TREE.md](docs/EVENT_TREE.md).
  
  ```bash
 -npm test
 -npm run sim
 -node --experimental-strip-types scripts/validate.ts
-+npm test          # 20 тестів: детермінізм, директор, фінали, контент
++npm test          # 26 тестів: детермінізм, директор, дерево, повтори, фінали, контент
 +npm run sim       # 5 стилів гри × 2000 забігів + звіт про недосяжні фінали
++npm run tree      # дерево подій з контенту → docs/event-tree.html + docs/EVENT_TREE.md
 +npm run build     # dist/novobranets.html — одна сторінка, ~300 KB, без сервера
 +node --experimental-strip-types scripts/validate.ts   # перевірка контенту
  ```
 +
 +Node 22+, без залежностей (esbuild береться через `npx` лише для збірки).
 diff --git a/data/test-content.ts b/data/test-content.ts
-index ff38366..b22f2bc 100644
+index ff38366..ac31bbb 100644
 --- a/data/test-content.ts
 +++ b/data/test-content.ts
 @@ -8,6 +8,7 @@ export const TEST_CARDS: Card[] = [
@@ -81,7 +91,12 @@ index ff38366..b22f2bc 100644
          effects: { stats: { understanding: 2, bonds: 1 }, skills: { people: 1 }, journal: 'Друг розповів, як це насправді.' },
          outcome: {
            text: 'Друг говорив сорок хвилин і жодного разу не сказав «не бійся». Це було найчесніше, що ти чув за тиждень.',
-@@ -73,7 +74,7 @@ export const TEST_CARDS: Card[] = [
+@@ -69,11 +70,12 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'leave',
++        next: { card: 'call.tried_to_leave_after', inDays: 14 },
+         text: 'Спробувати вийти з черги й піти додому',
          effects: { stats: { health: -2, trust: -1, supplies: -1 }, flags: { tried_to_leave: true } },
          outcome: {
            text: 'Ти зробив три кроки назад і на четвертому тебе повернули за лікоть. Жодних криків — тільки «куди».',
@@ -90,7 +105,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -92,7 +93,7 @@ export const TEST_CARDS: Card[] = [
+@@ -92,7 +94,7 @@ export const TEST_CARDS: Card[] = [
          effects: { stats: { health: 1, trust: -1 }, flags: { knee_noted: true } },
          outcome: {
            text: 'Лікар записав «скарги на коліно» й подивився на тебе вперше за весь огляд. Не зі співчуттям — з інтересом.',
@@ -99,7 +114,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -109,7 +110,7 @@ export const TEST_CARDS: Card[] = [
+@@ -109,7 +111,7 @@ export const TEST_CARDS: Card[] = [
          effects: { stats: { trust: -2, energy: 1 }, skills: { drill: 1 } },
          outcome: {
            text: 'Лікар не усміхнувся, але й не записав. Хтось за спиною пирснув.',
@@ -108,7 +123,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -164,7 +165,7 @@ export const TEST_CARDS: Card[] = [
+@@ -164,7 +166,7 @@ export const TEST_CARDS: Card[] = [
          id: 'listen',
          text: 'Слухати й кивати', effects: { stats: { understanding: 1, energy: 1 } },
          outcome: {
@@ -117,7 +132,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -201,17 +202,28 @@ export const TEST_CARDS: Card[] = [
+@@ -201,17 +203,28 @@ export const TEST_CARDS: Card[] = [
          id: 'prove',
          text: 'Доводити, що це давно й не так',
          effects: { stats: { trust: -1, energy: -2, understanding: 1 }, flags: { proved_himself: true } },
@@ -146,7 +161,7 @@ index ff38366..b22f2bc 100644
        },
      ],
    },
-@@ -332,7 +344,7 @@ export const TEST_CARDS: Card[] = [
+@@ -332,7 +345,7 @@ export const TEST_CARDS: Card[] = [
          id: 'joke',
          text: 'Жартувати з цього', effects: { stats: { bonds: 2, energy: -1 } },
          outcome: {
@@ -155,7 +170,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -368,7 +380,7 @@ export const TEST_CARDS: Card[] = [
+@@ -368,7 +381,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Дивитися у вікно й рахувати блокпости',
          effects: { stats: { understanding: 2, energy: -1 }, journal: 'Порахував вісім блокпостів.' },
          outcome: {
@@ -164,7 +179,7 @@ index ff38366..b22f2bc 100644
            voice: 'Водій за шість годин сказав одне слово: «Приїхали».',
          },
        },
-@@ -377,7 +389,7 @@ export const TEST_CARDS: Card[] = [
+@@ -377,7 +390,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Роздати те, що взяв із дому',
          effects: { stats: { bonds: 3, supplies: -2 } },
          outcome: {
@@ -173,7 +188,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -405,8 +417,8 @@ export const TEST_CARDS: Card[] = [
+@@ -405,8 +418,8 @@ export const TEST_CARDS: Card[] = [
          text: 'Записати в блокнот і перепитати двічі',
          effects: { skills: { survival: 1 }, stats: { understanding: 1, energy: -1 }, flags: { knows_okop: true } },
          outcome: {
@@ -184,7 +199,12 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -424,8 +436,8 @@ export const TEST_CARDS: Card[] = [
+@@ -420,12 +433,13 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'ask_why',
++        next: { card: 'phase4.tolko_dies', inDays: 12 },
+         text: 'Запитати, скільки з тих, кого він учив, ще живі',
          requires: { skillAtLeast: { people: 1 } },
          effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { tolko_honest: true } },
          outcome: {
@@ -195,7 +215,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -458,7 +470,7 @@ export const TEST_CARDS: Card[] = [
+@@ -458,7 +472,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Віддати свою порцію хлопцеві з сусіднього відділення',
          effects: { stats: { bonds: 2, energy: -1, health: -1, supplies: -1 } },
          outcome: {
@@ -204,7 +224,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -476,7 +488,7 @@ export const TEST_CARDS: Card[] = [
+@@ -476,7 +490,7 @@ export const TEST_CARDS: Card[] = [
          text: '«Усе добре, мамо»',
          effects: { stats: { bonds: 1, understanding: 1, energy: -1 }, journal: 'Збрехав мамі.' },
          outcome: {
@@ -213,7 +233,15 @@ index ff38366..b22f2bc 100644
            voice: 'Вона подзвонить знову через два дні й запитає те саме.',
          },
        },
-@@ -873,7 +885,7 @@ export const TEST_CARDS: Card[] = [
+@@ -510,6 +524,7 @@ export const TEST_CARDS: Card[] = [
+     options: [
+       {
+         id: 'volunteer',
++        next: { card: 'line.assault_after', inDays: 5 },
+         text: 'Вийди першим, поки не обрали',
+         effects: { stats: { health: -2, trust: 2, bonds: 1 }, flags: { assault: true }, journal: 'Пішов у штурмову добровільно.' },
+         outcome: {
+@@ -873,7 +888,7 @@ export const TEST_CARDS: Card[] = [
          requires: { skillAtLeast: { survival: 1 } },
          effects: { stats: { supplies: 2, health: -1, energy: -2 }, skills: { survival: 1 } },
          outcome: {
@@ -222,7 +250,7 @@ index ff38366..b22f2bc 100644
            voice: 'Смак не питають, коли справа йде про ковток.',
          },
        },
-@@ -901,7 +913,7 @@ export const TEST_CARDS: Card[] = [
+@@ -901,7 +916,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Сказати вголос, що він загинув',
          effects: { stats: { understanding: 2, bonds: 1, energy: -2 }, flags: { said_he_died: true } },
          outcome: {
@@ -231,7 +259,15 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -937,16 +949,26 @@ export const TEST_CARDS: Card[] = [
+@@ -914,6 +929,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'letter',
++        next: { card: 'phase3.letter_followup', inDays: 10 },
+         text: 'Почати писати лист його мамі',
+         effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } },
+         outcome: {
+@@ -937,16 +953,26 @@ export const TEST_CARDS: Card[] = [
          id: 'finish',
          text: 'Дописати й віддати',
          effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { letter_sent: true }, journal: 'Дописав лист.' },
@@ -258,7 +294,7 @@ index ff38366..b22f2bc 100644
        },
      ],
    },
-@@ -971,7 +993,7 @@ export const TEST_CARDS: Card[] = [
+@@ -971,7 +997,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Порахувати, скільки людей на фото',
          effects: { stats: { understanding: 2, energy: -1 }, flags: { counted_photo: true } },
          outcome: {
@@ -267,7 +303,39 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -1292,7 +1314,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1120,6 +1146,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'write_back',
++        next: { card: 'line.volunteers_thanks', inDays: 7 },
+         text: 'Записати адресу волонтерів, щоб подякувати',
+         effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
+         outcome: {
+@@ -1138,6 +1165,7 @@ export const TEST_CARDS: Card[] = [
+     options: [
+       {
+         id: 'agree',
++        next: { card: 'phase4.informer_after', inDays: 6 },
+         text: 'Погодитись — це прикриття',
+         effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } },
+         outcome: {
+@@ -1154,6 +1182,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'pretend',
++        next: { card: 'line.fake_informer', inDays: 6 },
+         text: 'Погодитись і не робити нічого',
+         requires: { skillAtLeast: { system: 1 } },
+         effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } },
+@@ -1226,6 +1255,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'send',
++        next: { card: 'phase5.photo_found', inDays: 8 },
+         text: 'Попросити, щоб надіслали мамі',
+         effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
+         outcome: {
+@@ -1292,7 +1322,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Сказати сержантові, що це шкодить',
          effects: { stats: { trust: -2, bonds: 1, understanding: 1 } },
          outcome: {
@@ -276,7 +344,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -1336,7 +1358,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1336,7 +1366,7 @@ export const TEST_CARDS: Card[] = [
          requires: { skillAtLeast: { people: 1 } },
          effects: { stats: { understanding: 2, bonds: 2, health: -1 }, flags: { knows_triage: true } },
          outcome: {
@@ -285,7 +353,15 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -1521,7 +1543,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1490,6 +1520,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'ask_plan',
++        next: { card: 'line.known_plan', inDays: 3 },
+         text: 'Запитати, у чому план полягає насправді',
+         requires: { skillAtLeast: { system: 2 } },
+         effects: { stats: { understanding: 3, bonds: 1 }, flags: { knows_plan: true } },
+@@ -1521,7 +1552,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Мовчати',
          effects: { stats: { understanding: 1, trust: -1, energy: -1 } },
          outcome: {
@@ -294,7 +370,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -1666,7 +1688,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1666,7 +1697,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Відповісти зараз, поки є зв\'язок',
          effects: { stats: { bonds: 3, energy: -2 } },
          outcome: {
@@ -303,7 +379,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -1674,7 +1696,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1674,7 +1705,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Відкласти — зараз не до цього',
          effects: { stats: { energy: 1, bonds: -2, understanding: -1 } },
          outcome: {
@@ -312,7 +388,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -1759,7 +1781,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1759,7 +1790,7 @@ export const TEST_CARDS: Card[] = [
          requires: { skillAtLeast: { people: 1 } },
          effects: { stats: { bonds: 2, energy: 1, trust: -1 } },
          outcome: {
@@ -321,7 +397,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -1874,7 +1896,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1874,7 +1905,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Закритись',
          effects: { stats: { energy: -1, bonds: -2, understanding: 1 } },
          outcome: {
@@ -330,7 +406,7 @@ index ff38366..b22f2bc 100644
          },
        },
      ],
-@@ -1886,6 +1908,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1886,6 +1917,7 @@ export const TEST_CARDS: Card[] = [
      follows: ['phase4.cold', 'phase4.wound', 'phase4.night_watch'],
      lead: 'Наказ, який ніхто не пояснив.',
      echo: [
@@ -338,7 +414,7 @@ index ff38366..b22f2bc 100644
        { flag: 'wounded_stayed', line: 'Нога, яку ти не віддав у тил, тягне при кожному кроці.' },
        { flag: 'held_post', line: 'Ти вже тримав цю позицію. Тримати вдруге легше — або гірше.' },
        { flag: 'assault', line: 'Ти сам пішов у штурмову. Тепер це відчувається як наслідок, а не як випадок.' },
-@@ -1925,6 +1948,7 @@ export const TEST_CARDS: Card[] = [
+@@ -1925,6 +1957,7 @@ export const TEST_CARDS: Card[] = [
      id: 'phase5.epitaph',
      follows: ['phase5.lastpost', 'phase4.desert'],
      lead: 'Розмова, яку всі уникали.',
@@ -346,7 +422,15 @@ index ff38366..b22f2bc 100644
      kind: 'event',
      phase: [4, 5],
      once: true,
-@@ -2164,7 +2188,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2139,6 +2172,7 @@ export const TEST_CARDS: Card[] = [
+       },
+       {
+         id: 'other',
++        next: { card: 'line.kept_promise', inDays: 3 },
+         text: 'Пообіцяти сказати інше — те, що буде правдою',
+         requires: { skillAtLeast: { people: 1 } },
+         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } },
+@@ -2164,7 +2198,7 @@ export const TEST_CARDS: Card[] = [
          text: 'З\'їсти свою частину',
          effects: { stats: { health: 1, energy: 1, supplies: -1 } },
          outcome: {
@@ -355,7 +439,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2211,7 +2235,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2211,7 +2245,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Сказати, що все добре',
          effects: { stats: { bonds: 1, understanding: -1, energy: 1 } },
          outcome: {
@@ -364,7 +448,15 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2400,7 +2424,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2358,6 +2392,7 @@ export const TEST_CARDS: Card[] = [
+     options: [
+       {
+         id: 'names',
++        next: { card: 'line.named_photo', inDays: 4 },
+         text: 'Написати всі імена, включно з тими, кого вже немає',
+         effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } },
+         outcome: {
+@@ -2400,7 +2435,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Порахувати й запам\'ятати',
          effects: { stats: { understanding: 3, energy: -2 }, flags: { knows_seven: true } },
          outcome: {
@@ -373,7 +465,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2566,7 +2590,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2566,7 +2601,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Показати хлопцям',
          effects: { stats: { bonds: 3, understanding: 1, energy: -1 } },
          outcome: {
@@ -382,7 +474,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2606,7 +2630,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2606,7 +2641,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Дати йому ім\'я',
          effects: { stats: { bonds: 2, energy: 1 } },
          outcome: {
@@ -391,7 +483,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2672,7 +2696,7 @@ export const TEST_CARDS: Card[] = [
+@@ -2672,7 +2707,7 @@ export const TEST_CARDS: Card[] = [
          text: 'Випити',
          effects: { stats: { energy: 2, bonds: 1 } },
          outcome: {
@@ -400,7 +492,7 @@ index ff38366..b22f2bc 100644
          },
        },
        {
-@@ -2838,7 +2862,7 @@ export const TEST_ENDINGS: Ending[] = [
+@@ -2838,7 +2873,7 @@ export const TEST_ENDINGS: Ending[] = [
      epilogue:
        'Його винесли з позиції, яку ніхто не мав тримати. Той, хто вижив, не знав його прізвища, але запам’ятав його спальник.',
      defaultEpitaph: 'Віддав спальник. Більше не змерз.',
@@ -410,16 +502,16 @@ index ff38366..b22f2bc 100644
      requires: { statAtLeast: { bonds: 8 }, dayAtMost: 38 },
    },
 diff --git a/docs/ENGINE.md b/docs/ENGINE.md
-index bc5dd2e..7ee9cc9 100644
+index bc5dd2e..2b869ce 100644
 --- a/docs/ENGINE.md
 +++ b/docs/ENGINE.md
-@@ -5,65 +5,58 @@
+@@ -5,65 +5,69 @@
  ## Запуск
  
  ```bash
 -npm test        # 10 тестів: детермінізм, фінали, межі показників, директор
 -npm run sim     # 8000 забігів у 4 стилях гри → розподіл днів, рішень, фіналів
-+npm test        # 20 тестів
++npm test        # 26 тестів
 +npm run sim     # баланс: 5 стилів гри, розподіл днів, рішень, фіналів
  node --experimental-strip-types scripts/validate.ts   # перевірка контенту
  ```
@@ -460,75 +552,143 @@ index bc5dd2e..7ee9cc9 100644
 -| Голод/виснаження підвищують шанс (до ×1.85) | бідність вибору має ціну, але обізнаність — ні |
 -| Показники 0..10, навички 0..3 | як у ТЗ |
 -| Мертвий прапорець = помилка валідації | умова, яку ніхто не встановлює, — це мертвий контент |
--
--## Симуляція: перші результати
--
--2000 забігів на стиль. Контент — 32 картки, тому цифри показують **механіку**, а не фінальний баланс.
--
--| Стиль гри | Днів (медіана) | Рішень | Різних фіналів |
--|---|---|---|---|
--| «обізнаний» (Розуміння+Зв'язки) | 29 | 71 | 3 |
--| «виживальник» (Здоров'я+Запаси) | 31 | 73 | 3 |
--| «конформіст» (Довіра) | 11 | 29 | 3 |
--| випадковий | 14 | 39 | 4 |
--
--**Що це вже показує:**
--
--1. **Конформізм карається.** Гравець, який догоджає системі, живе вдвічі менше — 11 днів проти 29. Це найсильніше повідомлення гри, і воно виходить з механіки, а не з тексту. Саме цього домагається ТЗ.
--2. **Довжина забігу поки закоротка.** Медіана 29 днів ≈ 70 рішень. ТЗ хоче 15–25 хв → це приблизно 60–120 рішень, тобто межа норми, але p10 = 22 дні. На 32 картках пул швидко вичерпується — треба 80 карток, як у MVP, і м'якший рамп смертності в перші 30 днів.
--3. **Фінали одноманітні.** Три фінали з восьми забирають 95%. Причина — умови фіналів жорсткі (`understanding >= 6, bonds >= 6` майже недосяжно при такій короткій грі). Після балансування роampу фінали треба перевірити ще раз — інакше «≥2 різних фінали на гравця за місяць» не виконати.
--
--## Наступні кроки (порядок має значення)
--
--1. **Розширити контент до 80 карток** і повторити симуляцію — без цього решта балансування марна: пул визначає все.
--2. **Підкрутити рамп директора** під цільову тривалість 60–120 рішень (зараз ~70).
--3. **Пом'якшити умови рідкісних фіналів** — щоб вони були рідкісні, але досяжні.
--4. Тільки після цього — UI. Ядро вже достатньо стабільне, щоб зверху повісити Reigns-подібний свайп.
--
--## Обмеження прототипу (свідомі)
--
--- Немає метапрогресії між забігами (розділ 4.2 ТЗ) — це наступний шар.
--- Немає вагової кривої для персонажів (Толік, Оля, командир) — картки роздаються плоско.
--- Карток 32, а не 80; фіналів 8, а не 6 — навмисно більше, щоб перевірити, чи вони розрізняються.
--- Локалізації немає: тексти одразу українською, але структура (окремі рядки в картці) готова до `ua/en` словників без переписування логіки.
-\ No newline at end of file
 +| Детермінований seed | баг і забіг відтворюються, аналітика чесна |
 +| Доля кидає кубик **раз на добу** (в `advanceTime`), не на картку | інакше ризик залежить від того, скільки карток випало за день |
 +| `inevitability` — реальний множник ризику (+1,2% за день після дня 30) | «лічильник неминучості» з ТЗ має впливати, а не прикрашати |
 +| Безпечно до дня 20, жорстко на дні 60 | темп фази 5 (було 90 у ТЗ) |
 +| Перший нуль здоров'я — «тебе виносять» (здоров'я 2, прапорець `carried_out`), другий — кінець | смерть має бути сценою, а не помилкою шкали |
 +| Фінал залежить від причини **і** від шляху: заслужені фінали (прапорці, високі показники) важать ×2 | колись «доля» могла дати лише accident-фінали, і п'ять із дев'яти були недосяжні |
-+| Вікно пам'яті 4 картки + квадратичне здешевлення повторів | одна «сумка» тричі поспіль — це нудьга |
++| **Кожна картка — раз за забіг** (`allowRepeats: false` за замовчуванням) | сцена, що повертається, перестає бути подією |
++| Картки скінчились у фазі — минає час (`rollDay`), а не повторюються сцени; коли непоказаного контенту немає взагалі — фінал `exhausted` | забіг короткий, але чесний |
++| **Дерево подій**: `option.next = { card, inDays }` планує наслідок у чергу; черга обходить фазу, але не `requires` і не «раз за забіг» | вибір має гарантовані відповіді, а не лише ймовірні |
++| `state.tree` пам'ятає гілки, що спрацювали | екран фіналу показує «рішення → наслідок» |
 +| `echo` лише додає рядок-спогад, але не вмикає й не вимикає картку | раніше картки з echo зникали, поки не було сліду |
 +| Мертвий прапорець, мертвий echo або замкнена навичка = помилка валідації | недосяжний контент — це баг, а не «рідкісна подія» |
 +
++## Дерево подій
++
++`npm run tree` будує з контенту `docs/event-tree.html` (усі 76 карток по фазах, наведи курсор — буде текст) і `docs/EVENT_TREE.md` (Mermaid, рендериться на GitHub).
+ 
+-## Симуляція: перші результати
++Є чотири види зв'язків: `next` (жорстка гілка, 11 штук), `requires.flagTrue` (вчинок відкриває картку), «вчинок відкриває варіант» (2) і `echo` (м'який спогад, 54). У дереві 23 картки, решта вільні в межах своїх фаз. Валідатор перевіряє, що кожен `next` веде на існуючу картку.
+ 
+-2000 забігів на стиль. Контент — 32 картки, тому цифри показують **механіку**, а не фінальний баланс.
 +## Симуляція (2000 забігів на стиль)
-+
-+| Стиль гри | Днів (медіана) | Рішень | 
+ 
+-| Стиль гри | Днів (медіана) | Рішень | Різних фіналів |
+-|---|---|---|---|
+-| «обізнаний» (Розуміння+Зв'язки) | 29 | 71 | 3 |
+-| «виживальник» (Здоров'я+Запаси) | 31 | 73 | 3 |
+-| «конформіст» (Довіра) | 11 | 29 | 3 |
+-| випадковий | 14 | 39 | 4 |
++| Стиль гри | Днів (медіана) | Рішень (середнє) |
 +|---|---|---|
-+| «обізнаний» (Розуміння+Зв'язки) | 36 | 87 |
-+| «виживальник» (Здоров'я+Запаси) | 37 | 90 |
-+| «слідотворець» (шукає вчинки/навички) | 17 | 44 |
-+| випадковий | 28 | 68 |
-+| «конформіст» (Довіра) | 15 | 39 |
-+
-+Конформізм і далі карається (15 днів проти 36). Усі 9 фіналів досяжні хоча б одним стилем: різні стилі помирають по-різному («обізнаний» частіше дістає «Добру пам'ять» і «Потім напишеш», «виживальник» — «Неліпу випадковість»).
-+
++| «обізнаний» (Розуміння+Зв'язки) | 36 | 60 |
++| «виживальник» (Здоров'я+Запаси) | 37 | 60 |
++| «слідотворець» (шукає вчинки/навички) | 26 | 48 |
++| випадковий | 32 | 56 |
++| «конформіст» (Довіра) | 19 | 38 |
+ 
+-**Що це вже показує:**
++**Ціна відсутності повторів:** забіг не довший за кількість карток. Максимум 66–73 рішень на 76 карток; ТЗ хоче 60–120. Тож тепер довжину визначає лише обсяг контенту.
+ 
+-1. **Конформізм карається.** Гравець, який догоджає системі, живе вдвічі менше — 11 днів проти 29. Це найсильніше повідомлення гри, і воно виходить з механіки, а не з тексту. Саме цього домагається ТЗ.
+-2. **Довжина забігу поки закоротка.** Медіана 29 днів ≈ 70 рішень. ТЗ хоче 15–25 хв → це приблизно 60–120 рішень, тобто межа норми, але p10 = 22 дні. На 32 картках пул швидко вичерпується — треба 80 карток, як у MVP, і м'якший рамп смертності в перші 30 днів.
+-3. **Фінали одноманітні.** Три фінали з восьми забирають 95%. Причина — умови фіналів жорсткі (`understanding >= 6, bonds >= 6` майже недосяжно при такій короткій грі). Після балансування роampу фінали треба перевірити ще раз — інакше «≥2 різних фінали на гравця за місяць» не виконати.
++Конформізм і далі карається (19 днів проти 36). Усі 9 фіналів досяжні хоча б одним стилем: різні стилі помирають по-різному («обізнаний» частіше дістає «Добру пам'ять» і «Потім напишеш», «виживальник» — «Неліпу випадковість»).
+ 
+-## Наступні кроки (порядок має значення)
 +## Наступні кроки
-+
-+1. **Контент**: 76 → 120+ карток; у фазі 1 лише 9, у фазі 2 — 14.
+ 
+-1. **Розширити контент до 80 карток** і повторити симуляцію — без цього решта балансування марна: пул визначає все.
+-2. **Підкрутити рамп директора** під цільову тривалість 60–120 рішень (зараз ~70).
+-3. **Пом'якшити умови рідкісних фіналів** — щоб вони були рідкісні, але досяжні.
+-4. Тільки після цього — UI. Ядро вже достатньо стабільне, щоб зверху повісити Reigns-подібний свайп.
++1. **Контент**: 76 → 120+ карток (тепер це пряма межа довжини забігу); у фазі 1 лише 9, у фазі 2 — 14. Кожна нова гілка `next` робить дерево глибшим.
 +2. **Баланс «слідотворця»**: він живе вдвічі менше за «обізнаного» — подивитись, чи це задум, чи наслідок цін.
 +3. **Метапрогресія й Книга пам'яті** (розділ 8 ТЗ) — `localStorage`, потім бекенд.
 +4. **Звук і тиша у фіналі**, локалізація EN.
-+
+ 
+-## Обмеження прототипу (свідомі)
 +## Свідомі обмеження
-+
+ 
+-- Немає метапрогресії між забігами (розділ 4.2 ТЗ) — це наступний шар.
+-- Немає вагової кривої для персонажів (Толік, Оля, командир) — картки роздаються плоско.
+-- Карток 32, а не 80; фіналів 8, а не 6 — навмисно більше, щоб перевірити, чи вони розрізняються.
+-- Локалізації немає: тексти одразу українською, але структура (окремі рядки в картці) готова до `ua/en` словників без переписування логіки.
+\ No newline at end of file
 +Немає метапрогресії, немає вагової кривої для персонажів (Толік, Оля, командир), немає EN. Реальні фото прибрано свідомо: вигадана історія не ілюструється кадрами реальної війни.
+diff --git a/docs/EVENT_TREE.md b/docs/EVENT_TREE.md
+new file mode 100644
+index 0000000..32760d7
+--- /dev/null
++++ b/docs/EVENT_TREE.md
+@@ -0,0 +1,60 @@
++# Дерево подій
++
++Генерується з контенту: `npm run tree`. Інтерактивна картинка з усіма 76 картками — [event-tree.html](event-tree.html).
++
++- **Товста стрілка** — `next`: вибір гарантовано веде до події (іноді через N днів).
++- **Тонка** — вчинок відкриває картку (`requires.flagTrue`).
++- **Пунктир** — вчинок відкриває варіант на іншій картці.
++- Echo-зв’язки (м’які спогади) показані лише на картинці.
++
++Кожна картка показується **не більше одного разу за забіг**, тож дерево не повторюється, а гілка або спрацьовує, або ні.
++
++```mermaid
++flowchart LR
++  subgraph F1["Фаза 1"]
++    call_queue["call.queue<br/><small>Черга у військкоматі. Хтось п…</small>"]
++  end
++  subgraph F2["Фаза 2"]
++    phase2_sapper["phase2.sapper<br/><small>Толік, сапер із третьої роти,…</small>"]
++    phase2_split["phase2.split<br/><small>Прапорщик будує роту. Каже: «…</small>"]
++  end
++  subgraph F3["Фаза 3"]
++    call_tried_to_leave_after["call.tried_to_leave_after<br/><small>У документах хтось дописав пр…</small>"]
++    phase3_loss["phase3.loss<br/><small>Уранці хлопця з сусіднього ві…</small>"]
++    phase3_medic["phase3.medic<br/><small>Оля, санінструкторка, каже, щ…</small>"]
++    phase3_food_ration["phase3.food_ration<br/><small>Пакунок від волонтерів. Три ш…</small>"]
++    phase3_coward["phase3.coward<br/><small>Командир відділення пропонує…</small>"]
++    phase3_photo["phase3.photo<br/><small>Хтось приніс фотоапарат. Хлоп…</small>"]
++  end
++  subgraph F4["Фаза 4"]
++    phase3_letter_followup["phase3.letter_followup<br/><small>Той лист досі не дописаний. В…</small>"]
++    phase4_informer_after["phase4.informer_after<br/><small>Хлопці перестали говорити при…</small>"]
++    phase4_doubt["phase4.doubt<br/><small>Уночі, коли всі сплять, ти ло…</small>"]
++    phase4_standing["phase4.standing<br/><small>Командир роти збирає тих, хто…</small>"]
++    phase4_wound["phase4.wound<br/><small>Уламок зайшов у стегно. Оля к…</small>"]
++    phase4_tolko_dies["phase4.tolko_dies<br/><small>Толіка більше немає. Саме йог…</small>"]
++    phase5_promises["phase5.promises<br/><small>Хлопець просить обіцянку: «Як…</small>"]
++    phase5_photo_found["phase5.photo_found<br/><small>У кишені — те фото. Мала, зал…</small>"]
++    line_volunteers_thanks["line.volunteers_thanks<br/><small>Прийшла відповідь від волонте…</small>"]
++    line_assault_after["line.assault_after<br/><small>Твоя «штурмова» виявилась зви…</small>"]
++    line_fake_informer["line.fake_informer<br/><small>Командир відділення питає, чо…</small>"]
++    line_named_photo["line.named_photo<br/><small>Волонтери надіслали фото: наш…</small>"]
++  end
++  subgraph F5["Фаза 5"]
++    line_kept_promise["line.kept_promise<br/><small>Той хлопець живий. Дивиться н…</small>"]
++    line_known_plan["line.known_plan<br/><small>Ти знаєш план. Він не передба…</small>"]
++  end
++  call_queue ==>|"Спробувати вийти з черги й… · +14 дн."| call_tried_to_leave_after
++  phase2_sapper ==>|"Запитати, скільки з тих, ко… · +12 дн."| phase4_tolko_dies
++  phase2_split ==>|"Вийди першим, поки не обрали · +5 дн."| line_assault_after
++  phase3_loss ==>|"Почати писати лист його мамі · +10 дн."| phase3_letter_followup
++  phase3_food_ration ==>|"Записати адресу волонтерів,… · +7 дн."| line_volunteers_thanks
++  phase3_coward ==>|"Погодитись — це прикриття · +6 дн."| phase4_informer_after
++  phase3_coward ==>|"Погодитись і не робити нічо… · +6 дн."| line_fake_informer
++  phase3_photo ==>|"Попросити, щоб надіслали ма… · +8 дн."| phase5_photo_found
++  phase2_sapper -.->|"відкриває: Сказати Толікові"| phase4_doubt
++  phase4_standing ==>|"Запитати, у чому план поляг… · +3 дн."| line_known_plan
++  phase3_medic -.->|"відкриває: Обробити сам, як учил…"| phase4_wound
++  phase5_promises ==>|"Пообіцяти сказати інше — те… · +3 дн."| line_kept_promise
++  line_volunteers_thanks ==>|"Написати всі імена, включно… · +4 дн."| line_named_photo
++```
 diff --git a/docs/SIMPLE.md b/docs/SIMPLE.md
-index 0e3dfca..d56f1be 100644
+index 0e3dfca..3aede77 100644
 --- a/docs/SIMPLE.md
 +++ b/docs/SIMPLE.md
-@@ -3,30 +3,32 @@
+@@ -3,30 +3,35 @@
  ## Запуск
  
  ```bash
@@ -540,6 +700,7 @@ index 0e3dfca..d56f1be 100644
 +open dist/novobranets.html   # macOS; на інших ОС — просто відкрити файл у браузері
 +npm test
 +npm run sim
++npm run tree     # картинка дерева подій: docs/event-tree.html
  ```
  
 -`dist/novobranets.html` — один файл, 75 KB, без сервера й без інтернету. Його можна надіслати в месенджер, відкрити з телефона, покласти на будь-який хостинг.
@@ -551,6 +712,8 @@ index 0e3dfca..d56f1be 100644
 -- Варіанти, закриті умовами, показані сірим із підказкою — щоб було видно, що шлях існує.
 -- «Директор долі»: до дня 20 смерть лише від власних помилок, після 30-го шанс зростає, на 60-му — жорсткий кінець.
 -- Після фіналу: «Прожити ще раз» (новий seed) і «Той самий шлях» (той самий seed — видно, де рішення розійшлися).
++- Картки **не повторюються**: кожна сцена — раз за забіг.
++- **Дерево подій**: 11 виборів гарантовано мають наслідок (іноді через кілька днів), на фіналі видно «гілки твого шляху».
 +- 76 карток, 9 фіналів, 6 показників, 4 навички, 5 фаз.
 +- Авторський текст наслідку для кожного з 228 виборів.
 +- Картки пам'ятають твої рішення (echo): рядок-спогад з'являється, якщо вчинок справді був.
@@ -576,6 +739,637 @@ index 0e3dfca..d56f1be 100644
  
 -Акаунтів, бекенду, аналітики, звуку, локалізації EN. Усе це — після того, як гра доведе, що в неї хочеться грати вдруге.
 +Акаунтів, бекенду, аналітики, звуку, EN, фото. Усе це — після того, як гра доведе, що в неї хочеться грати вдруге.
+diff --git a/docs/event-tree.html b/docs/event-tree.html
+new file mode 100644
+index 0000000..dfac838
+--- /dev/null
++++ b/docs/event-tree.html
+@@ -0,0 +1,609 @@
++<!doctype html><html lang="uk"><head><meta charset="utf-8"><title>Дерево подій — Новобранець</title>
++<style>body{margin:0;background:#14140f;color:#e6e2d4;font-family:Georgia,serif}
++header{padding:16px 30px;border-bottom:1px solid #33332a}h1{margin:0 0 6px;font-size:20px}
++.leg{display:flex;gap:22px;flex-wrap:wrap;font:12px ui-monospace,monospace;color:#8d8977}
++.leg i{display:inline-block;width:26px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
++.wrap{overflow:auto}svg{font-family:ui-monospace,monospace}</style></head><body>
++<header><h1>Дерево подій</h1>
++<div style="font:13px ui-monospace,monospace;color:#8d8977;margin-bottom:10px">76 карток, 23 у дереві (жорсткі зв’язки), 67 ребер разом з м’якими спогадами. Наведи курсор на картку чи лінію — буде текст. Тьмяні картки не мають жорстких зв’язків: вони вільні в межах своїх фаз і з’являються раз за забіг.</div>
++<div class="leg"><span><i style="border-color:#e0b04a;border-top-style:solid"></i>вибір гарантовано веде до події (`next`), іноді з відстрочкою (11)</span><span><i style="border-color:#6f8fa8;border-top-style:dotted"></i>картка згадує вчинок, але від нього не залежить (54)</span><span><i style="border-color:#a8728f;border-top-style:dashed"></i>вчинок відкриває варіант на іншій картці (2)</span></div></header>
++<div class="wrap"><svg width="1560" height="1684" viewBox="0 0 1560 1684"><defs><marker id="a-next" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#e0b04a"/></marker><marker id="a-flag" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7e9b62"/></marker><marker id="a-echo" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#6f8fa8"/></marker><marker id="a-gate" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a8728f"/></marker></defs><text x="30" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 1</text><text x="330" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 2</text><text x="630" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 3</text><text x="930" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 4</text><text x="1230" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 5</text><path d="M250,87 C440,87 440,567 630,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → phase3.bribe
++«Спробувати вийти з черги й…»</title></path>
++<path d="M250,183 C440,183 440,615 630,615" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.medical → phase3.rot
++«Сказати про коліно, яке ниє…»</title></path>
++<path d="M850,375 C890,375 890,663 930,663" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase4.cold
++«Пустити сусіда на свою суху…»</title></path>
++<path d="M250,231 C590,231 590,663 930,663" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase4.cold
++«Лишити шоколадку їй — на чай»</title></path>
++<path d="M850,135 C890,135 890,711 930,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.loss → phase4.letters
++«Почати писати лист його мамі»</title></path>
++<path d="M550,567 C740,567 740,711 930,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.letters_home → phase4.letters
++«Показати, як писати про дрі…»</title></path>
++<path d="M850,375 C890,375 890,183 930,183" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase4.doubt
++«Пустити сусіда на свою суху…»</title></path>
++<path d="M250,135 C590,135 590,183 930,183" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.paper → phase4.doubt
++«Сховати повістку під стос г…»</title></path>
++<path d="M250,87 C590,87 590,231 930,231" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → phase4.standing
++«Спробувати вийти з черги й…»</title></path>
++<path d="M850,87 C890,87 890,807 930,807" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.tried_to_leave_after → phase4.gossip
++«Спитати, хто саме це написав»</title></path>
++<path d="M250,183 C590,183 590,279 930,279" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.medical → phase4.wound
++«Сказати про коліно, яке ниє…»</title></path>
++<path d="M850,327 C890,327 890,903 930,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.photo → phase4.home_news
++«Попросити, щоб надіслали ма…»</title></path>
++<path d="M250,231 C590,231 590,903 930,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase4.home_news
++«Лишити шоколадку їй — на чай»</title></path>
++<path d="M850,183 C890,183 890,951 930,951" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.medic → phase4.replacement
++«Запитати, скільки джгутів р…»</title></path>
++<path d="M550,135 C740,135 740,951 930,951" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase4.replacement
++«Вийди першим, поки не обрали»</title></path>
++<path d="M550,87 C740,87 740,999 930,999" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.night_watch
++«Записати в блокнот і перепи…»</title></path>
++<path d="M550,663 C740,663 740,1047 930,1047" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → phase4.rumours
++«Рахувати й запам'ятовувати»</title></path>
++<path d="M1150,807 C1220,807 1220,1047 1150,1047" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → phase4.rumours
++«Перевірити через знайомого…»</title></path>
++<path d="M850,567 C890,567 890,1095 930,1095" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.bribe → phase4.stolen
++«Заплатити»</title></path>
++<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.tolko_dies
++«Запитати, скільки з тих, ко…»</title></path>
++<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.tolko_dies
++«Записати в блокнот і перепи…»</title></path>
++<path d="M1150,279 C1220,279 1220,1143 1150,1143" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.wound → phase5.lastpost
++«Лишитись на позиції»</title></path>
++<path d="M550,135 C740,135 740,1143 930,1143" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase5.lastpost
++«Вийди першим, поки не обрали»</title></path>
++<path d="M1150,807 C1220,807 1220,1239 1150,1239" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → phase5.silence
++«Перевірити через знайомого…»</title></path>
++<path d="M550,663 C740,663 740,1239 930,1239" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → phase5.silence
++«Рахувати й запам'ятовувати»</title></path>
++<path d="M250,231 C590,231 590,1287 930,1287" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase5.wind
++«Лишити шоколадку їй — на чай»</title></path>
++<path d="M1450,87 C1520,87 1220,1287 1150,1287" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.kept_promise → phase5.wind
++«Сказати йому те, що обіцяв»</title></path>
++<path d="M1150,231 C1220,231 1220,1335 1150,1335" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.final_wait
++«Запитати, у чому план поляг…»</title></path>
++<path d="M1150,279 C1220,279 1220,1335 1150,1335" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.wound → phase5.final_wait
++«Лишитись на позиції»</title></path>
++<path d="M850,375 C890,375 890,1383 930,1383" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase5.last_cigarette
++«Пустити сусіда на свою суху…»</title></path>
++<path d="M1150,87 C1220,87 1220,375 1150,375" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.letter_followup → phase5.promises
++«Дописати й віддати»</title></path>
++<path d="M850,135 C890,135 890,375 930,375" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.loss → phase5.promises
++«Почати писати лист його мамі»</title></path>
++<path d="M850,231 C890,231 890,1431 930,1431" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.food_ration → phase5.quiet_meal
++«Записати адресу волонтерів,…»</title></path>
++<path d="M250,135 C590,135 590,1479 930,1479" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.paper → phase5.last_call
++«Сховати повістку під стос г…»</title></path>
++<path d="M850,327 C890,327 890,1479 930,1479" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.photo → phase5.last_call
++«Попросити, щоб надіслали ма…»</title></path>
++<path d="M1150,231 C1220,231 1220,1527 1150,1527" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.plan_after
++«Запитати, у чому план поляг…»</title></path>
++<path d="M1150,231 C1220,231 1220,1527 1150,1527" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.plan_after
++«Погодитись»</title></path>
++<path d="M550,135 C740,135 740,1575 930,1575" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase5.broken_radio
++«Запитати, за яким принципом…»</title></path>
++<path d="M850,471 C890,471 890,423 930,423" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.propaganda → phase5.photo_found
++«Порахувати, скільки людей н…»</title></path>
++<path d="M1150,615 C1220,615 1220,423 1150,423" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.named_photo → phase5.photo_found
++«Дивитися довго»</title></path>
++<path d="M850,231 C890,231 890,471 930,471" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.food_ration → line.volunteers_thanks
++«Записати адресу волонтерів,…»</title></path>
++<path d="M1150,615 C1220,615 1220,471 1150,471" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.named_photo → line.volunteers_thanks
++«Дивитися довго»</title></path>
++<path d="M550,135 C740,135 740,519 930,519" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → line.assault_after
++«Вийди першим, поки не обрали»</title></path>
++<path d="M850,663 C890,663 890,567 930,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → line.fake_informer
++«Зробити вигляд, що виконуєш»</title></path>
++<path d="M850,279 C890,279 890,567 930,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.coward → line.fake_informer
++«Погодитись — це прикриття»</title></path>
++<path d="M1150,375 C1190,375 1190,87 1230,87" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase5.promises → line.kept_promise
++«Пообіцяти сказати інше — те…»</title></path>
++<path d="M1150,423 C1220,423 1220,615 1150,615" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase5.photo_found → line.named_photo
++«Віддати хлопцеві, який вихо…»</title></path>
++<path d="M250,471 C440,471 440,759 630,759" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.toilet → misc.dog
++«Знайти шматок брезенту й по…»</title></path>
++<path d="M550,663 C590,663 590,807 630,807" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → misc.dugout
++«Рахувати й запам'ятовувати»</title></path>
++<path d="M250,87 C290,87 290,711 330,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → misc.tea
++«Спробувати вийти з черги й…»</title></path>
++<path d="M850,663 C920,663 920,855 850,855" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → misc.argue
++«Зробити вигляд, що виконуєш»</title></path>
++<path d="M250,231 C590,231 590,1623 930,1623" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → misc.birthday
++«Лишити шоколадку їй — на чай»</title></path>
++<path d="M850,663 C920,663 920,903 850,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → misc.writing
++«Зробити вигляд, що виконуєш»</title></path>
++<path d="M1150,807 C1220,807 920,903 850,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → misc.writing
++«Повірити й розповісти хлопц…»</title></path>
++<path d="M550,87 C740,87 740,183 930,183" fill="none" stroke="#a8728f" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.9" marker-end="url(#a-gate)"><title>phase2.sapper → phase4.doubt
++«відкриває: Сказати Толікові»</title></path>
++<path d="M850,183 C890,183 890,279 930,279" fill="none" stroke="#a8728f" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.9" marker-end="url(#a-gate)"><title>phase3.medic → phase4.wound
++«відкриває: Обробити сам, як учил…»</title></path>
++<path d="M250,87 C440,87 440,87 630,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>call.queue → call.tried_to_leave_after
++«Спробувати вийти з черги й…»
++через 14 дн.</title></path>
++<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase2.sapper → phase4.tolko_dies
++«Запитати, скільки з тих, ко…»
++через 12 дн.</title></path>
++<path d="M550,135 C740,135 740,519 930,519" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase2.split → line.assault_after
++«Вийди першим, поки не обрали»
++через 5 дн.</title></path>
++<path d="M850,135 C890,135 890,87 930,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.loss → phase3.letter_followup
++«Почати писати лист його мамі»
++через 10 дн.</title></path>
++<path d="M850,231 C890,231 890,471 930,471" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.food_ration → line.volunteers_thanks
++«Записати адресу волонтерів,…»
++через 7 дн.</title></path>
++<path d="M850,279 C890,279 890,135 930,135" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.coward → phase4.informer_after
++«Погодитись — це прикриття»
++через 6 дн.</title></path>
++<path d="M850,279 C890,279 890,567 930,567" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.coward → line.fake_informer
++«Погодитись і не робити нічо…»
++через 6 дн.</title></path>
++<path d="M850,327 C890,327 890,423 930,423" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.photo → phase5.photo_found
++«Попросити, щоб надіслали ма…»
++через 8 дн.</title></path>
++<path d="M1150,231 C1190,231 1190,135 1230,135" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase4.standing → line.known_plan
++«Запитати, у чому план поляг…»
++через 3 дн.</title></path>
++<path d="M1150,375 C1190,375 1190,87 1230,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase5.promises → line.kept_promise
++«Пообіцяти сказати інше — те…»
++через 3 дн.</title></path>
++<path d="M1150,471 C1220,471 1220,615 1150,615" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>line.volunteers_thanks → line.named_photo
++«Написати всі імена, включно…»
++через 4 дн.</title></path><g transform="translate(30,118)" opacity="0.42"><title>call.paper
++Повістка в поштовій скриньці. Папір щільний, пахне свіжою фарбою. Мама каже: «Може, помилка». Ти вже знаєш, що не помилка.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.paper</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Повістка в поштовій скриньці. Пап…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
++<g transform="translate(30,70)" opacity="1"><title>call.queue
++Черга у військкоматі. Хтось попереду жартує, що беруть усіх, у кого є пульс. Ніхто не сміється.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.queue</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Черга у військкоматі. Хтось попер…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(30,166)" opacity="0.42"><title>call.medical
++Медкомісія. Лікар дивиться в бланк, не на тебе. «Скарги є?» — питає так, ніби відповідь уже надрукована.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.medical</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Медкомісія. Лікар дивиться в блан…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(30,214)" opacity="0.42"><title>call.bag
++Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.bag</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Збираєш сумку. Мама мовчки кладе…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(30,262)" opacity="0.42"><title>call.busstop
++Дядько Гриша з третього поверху виходить на балкон і каже вниз те, що казав усім: «Я в Афгані був. Нічого не бійся, головне — не висовуйся».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.busstop</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Дядько Гриша з третього поверху в…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
++<g transform="translate(630,70)" opacity="1"><title>call.tried_to_leave_after
++У документах хтось дописав примітку: «схильний до ухилення». Ти бачиш це випадково, коли підписують відпустку — тобі відмовляють.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.tried_to_leave_after</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У документах хтось дописав приміт…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
++<g transform="translate(30,310)" opacity="0.42"><title>call.farewell
++Вечір перед від'їздом. Мама вийшла на кухню й там стоїть. Ти чуєш, як вода з крана тече надто довго.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.farewell</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Вечір перед від'їздом. Мама вийшл…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
++<g transform="translate(30,358)" opacity="0.42"><title>call.queue_old
++Перед тобою в черзі стоїть чоловік років п'ятдесяти й тримає повістку двома руками, ніби вона може вирватись.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.queue_old</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Перед тобою в черзі стоїть чолові…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(30,406)" opacity="0.42"><title>call.street
++Дорогою до військкомату повз проходять двоє з пакетами. Один каже другому: «Не наша війна». Той киває. Ніхто не дивиться на тебе.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.street</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Дорогою до військкомату повз прох…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(30,454)" opacity="0.42"><title>call.toilet
++Туалет у військкоматі не має дверей. Інструктор каже: «Привикайте». Перші три дні це здається найбільшою проблемою.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">call.toilet</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Туалет у військкоматі не має двер…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
++<g transform="translate(330,166)" opacity="0.42"><title>phase2.bus
++Автобус із запітнілими вікнами везе вас на схід. Хтось намагається заснути, хтось — доїсти домашнє. Водій мовчить усі шість годин.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.bus</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Автобус із запітнілими вікнами ве…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2 · раз</text></g>
++<g transform="translate(330,70)" opacity="1"><title>phase2.sapper
++Толік, сапер із третьої роти, показує тобі «правильний» спосіб сидіти в окопі. Каже, що його вчив прапорщик, який воює з 2015-го.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.sapper</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Толік, сапер із третьої роти, пок…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,214)" opacity="0.42"><title>phase2.soup
++Польова кухня. У каструлі щось, що називають борщем. Хлопець поруч упевнено каже: «Головне — гаряче».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.soup</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Польова кухня. У каструлі щось, щ…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,262)" opacity="0.42"><title>phase2.phone
++Мама телефонує. Голос тремтить: по телевізору кажуть, що все добре. Ти дивишся на розбите вікно казарми.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.phone</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Мама телефонує. Голос тремтить: п…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,118)" opacity="1"><title>phase2.split
++Прапорщик будує роту. Каже: «Хто хоче в штурмову — крок уперед». Ніхто не рухається. Він обирає сам.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.split</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Прапорщик будує роту. Каже: «Хто…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3 · раз</text></g>
++<g transform="translate(330,310)" opacity="0.42"><title>phase2.commander_orders
++Новий наказ: щоденна муштра на плацу, попри мороз. «Солдат має виглядати солдатом».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.commander_orders</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Новий наказ: щоденна муштра на пл…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,358)" opacity="0.42"><title>phase2.hazing
++«Дідівщина» в новому вигляді: новачкам — прибирати, старшим — нічого. Один із сержантів називає це «традиціями».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.hazing</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">«Дідівщина» в новому вигляді: нов…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2 · раз</text></g>
++<g transform="translate(330,406)" opacity="0.42"><title>phase2.weapon
++Тобі видають автомат. Він старий, важкий і, здається, пам'ятає більше, ніж ти. Сержант каже: «Це твій найкращий друг».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.weapon</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Тобі видають автомат. Він старий,…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
++<g transform="translate(330,454)" opacity="0.42"><title>phase2.hole
++Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.hole</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Перша ніч у полі. Ти риєш «окоп»…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
++<g transform="translate(330,502)" opacity="0.42"><title>phase2.test_song
++Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.test_song</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Політрук питає, хто знає другий к…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
++<g transform="translate(330,550)" opacity="0.42"><title>phase2.letters_home
++Хлопці пишуть листи додому. Один питає, що писати, якщо насправді нічого доброго немає.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.letters_home</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хлопці пишуть листи додому. Один…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,598)" opacity="0.42"><title>phase2.socks
++Прання. Сусід по намету миє шкарпетки в каску. Ти бачиш це й розумієш, що тепер каска — це назавжди два предмети.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.socks</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Прання. Сусід по намету миє шкарп…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
++<g transform="translate(330,646)" opacity="0.42"><title>phase2.first_fire
++Перший обстріл. Усі лежать. Хтось читає молитву, яку не знає. Ти раптом рахуєш секунди між розривами.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.first_fire</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Перший обстріл. Усі лежать. Хтось…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3 · раз</text></g>
++<g transform="translate(630,358)" opacity="0.42"><title>phase3.trench
++Твій окоп заливає вода. Сусідній — теж. Ніхто не пропонує допомогти, але всі дивляться.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.trench</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Твій окоп заливає вода. Сусідній…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3</text></g>
++<g transform="translate(630,406)" opacity="0.42"><title>phase3.water
++Вода в каністрі закінчується. Останній ковток — і треба йти через відкриту ділянку до колодязя.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.water</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Вода в каністрі закінчується. Ост…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,118)" opacity="1"><title>phase3.loss
++Уранці хлопця з сусіднього відділення немає. Ніхто не знає, що казати. Хтось каже: «Я його бачив увечері». Ще хтось: «Я теж».</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.loss</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Уранці хлопця з сусіднього відділ…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
++<g transform="translate(930,70)" opacity="1"><title>phase3.letter_followup
++Той лист досі не дописаний. Він лежить у нагрудній кишені й пахне твоїм потом, а не чужим життям.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.letter_followup</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Той лист досі не дописаний. Він л…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(630,454)" opacity="0.42"><title>phase3.propaganda
++Приїжджає «преса». Просить сфотографуватися з усмішкою. Хтось усміхається. Ти думаєш, кому потім покажуть це фото.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.propaganda</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Приїжджає «преса». Просить сфотог…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,166)" opacity="1"><title>phase3.medic
++Оля, санінструкторка, каже, що джгут треба накладати вище, ніж усі думають. Каже тихо, ніби ділиться краденим.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.medic</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Оля, санінструкторка, каже, що дж…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,502)" opacity="0.42"><title>phase3.break
++Третій день без сну. Руки тремтять, думки плутаються. Командир каже, що це «нормально».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.break</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Третій день без сну. Руки тремтят…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,550)" opacity="0.42"><title>phase3.bribe
++Тиловий прапорщик пропонує «вирішити питання» з переведенням у другий ешелон. Ціна — три тисячі й мовчання.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.bribe</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Тиловий прапорщик пропонує «виріш…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
++<g transform="translate(630,214)" opacity="1"><title>phase3.food_ration
++Пакунок від волонтерів. Три шоколадки, два носки й записка «Тримайтесь, хлопці». Носки однакові.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.food_ration</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Пакунок від волонтерів. Три шокол…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,262)" opacity="1"><title>phase3.coward
++Командир відділення пропонує тобі стати його «очима»: доносити, хто що каже про накази. Обіцяє «прикриття».</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.coward</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Командир відділення пропонує тобі…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(930,118)" opacity="1"><title>phase4.informer_after
++Хлопці перестали говорити при тобі. Помітив не відразу. Хтось перестав сідати поруч — теж не відразу.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.informer_after</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хлопці перестали говорити при тоб…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(630,310)" opacity="1"><title>phase3.photo
++Хтось приніс фотоапарат. Хлопці хочуть фото «на пам'ять». Ти думаєш, кому це фото потім показувати.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.photo</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хтось приніс фотоапарат. Хлопці х…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,598)" opacity="0.42"><title>phase3.rot
++Взуття розмокло й уже не сохне. Ноги в кволі. Медсестра каже: «Поки не чорні — все добре».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.rot</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Взуття розмокло й уже не сохне. Н…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(630,646)" opacity="0.42"><title>phase3.drill_hard
++Раптовий «навчальний підйом» о третій ночі. Хтось засинає стоячи. Сержант кричить, що «це і є перевірка».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.drill_hard</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Раптовий «навчальний підйом» о тр…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3</text></g>
++<g transform="translate(630,694)" opacity="0.42"><title>phase3.medicine
++У медпункті лишилось три пігулки від болю. Оля каже: «Реальних претендентів — шестеро».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.medicine</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У медпункті лишилось три пігулки…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(930,646)" opacity="0.42"><title>phase4.cold
++Мороз крізь спальник. Спальник — не твій, тобі віддав сусід. Уночі він кашляє.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.cold</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Мороз крізь спальник. Спальник —…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,694)" opacity="0.42"><title>phase4.letters
++Хлопець питає, як писати листи рідним. У нього вже три написаних, і жоден не відправлений.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.letters</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хлопець питає, як писати листи рі…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,166)" opacity="1"><title>phase4.doubt
++Уночі, коли всі сплять, ти ловиш себе на думці: «А що, як нас тут узагалі немає причини тримати?» Потім згадуєш, що за цю думку ти вже комусь не довіряєш.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.doubt</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Уночі, коли всі сплять, ти ловиш…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,214)" opacity="1"><title>phase4.standing
++Командир роти збирає тих, хто ще вміє думати. Каже: «Мені потрібні люди не для подвигів, а для того, щоб вижити».</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.standing</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Командир роти збирає тих, хто ще…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,742)" opacity="0.42"><title>phase4.desert
++Двоє з відділення пішли вночі. Уранці це називають «зрадою». Ти сам думав про це дев'ять ночей.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.desert</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Двоє з відділення пішли вночі. Ур…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,790)" opacity="0.42"><title>phase4.gossip
++Тиловий писар розповідає, що «нагорі» вже все вирішено й нас залишили як приманку. Він каже це з гордістю.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.gossip</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Тиловий писар розповідає, що «наг…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,262)" opacity="1"><title>phase4.wound
++Уламок зайшов у стегно. Оля каже, що дійде й так. Каже це швидше собі.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.wound</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Уламок зайшов у стегно. Оля каже,…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,838)" opacity="0.42"><title>phase4.quiet_evening
++Тихий вечір. Хтось дістає гітару й грає пісню, яку всі знають, але не пам'ятають, звідки.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.quiet_evening</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Тихий вечір. Хтось дістає гітару…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,886)" opacity="0.42"><title>phase4.home_news
++Сестра пише, що в місті закрили школу й перевели її клас у підвал. Просить «не переживати».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.home_news</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Сестра пише, що в місті закрили ш…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,934)" opacity="0.42"><title>phase4.replacement
++Прийшов «молодий» — двадцять років і впевненість, що він знає все. Дивиться на тебе, як на старика.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.replacement</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Прийшов «молодий» — двадцять рокі…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,982)" opacity="0.42"><title>phase4.night_watch
++Твоя зміна на спостереженні. Мінус десять, ніч, тиша. Хочеться спати так, що боляче.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.night_watch</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Твоя зміна на спостереженні. Міну…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1030)" opacity="0.42"><title>phase4.rumours
++Ходять чутки, що скоро «все закінчиться». Одні кажуть — добре, інші — що тоді нас точно не заберуть.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.rumours</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Ходять чутки, що скоро «все закін…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1078)" opacity="0.42"><title>phase4.stolen
++У тебе зникли сухарі. Хтось їх узяв. Ти знаєш, хто — він не їв три дні.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.stolen</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У тебе зникли сухарі. Хтось їх уз…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,310)" opacity="1"><title>phase4.tolko_dies
++Толіка більше немає. Саме його, того, хто вчив тебе сидіти в окопі. Ти сидиш правильно. І нікого це не врятувало.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.tolko_dies</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Толіка більше немає. Саме його, т…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,1126)" opacity="0.42"><title>phase5.lastpost
++Наказ тримати позицію. Ніхто не пояснює навіщо. Рація шипить.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.lastpost</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Наказ тримати позицію. Ніхто не п…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,1174)" opacity="0.42"><title>phase5.epitaph
++Хтось із хлопців питає: «Якщо що — що про нас скажуть?» Усі сміються. Потім тихо.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.epitaph</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хтось із хлопців питає: «Якщо що…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,1222)" opacity="0.42"><title>phase5.silence
++Тиша. Довго. Хлопці починають шепотітися, що «це вже все». Ніхто не знає.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.silence</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Тиша. Довго. Хлопці починають шеп…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1270)" opacity="0.42"><title>phase5.wind
++Вітер змінюється. Усі піднімають голови. Ти раптом думаєш про кухню вдома й про те, що там тепер ніхто не сидить.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.wind</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Вітер змінюється. Усі піднімають…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1318)" opacity="0.42"><title>phase5.final_wait
++День, який не мав настати. Позиція тримається, але пил у повітрі вже не пил.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.final_wait</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">День, який не мав настати. Позиці…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,1366)" opacity="0.42"><title>phase5.last_cigarette
++Остання цигарка на відділення. Її пускають по колу, і кожен робить вигляд, що не хоче.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.last_cigarette</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Остання цигарка на відділення. Її…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,358)" opacity="1"><title>phase5.promises
++Хлопець просить обіцянку: «Якщо зі мною що — скажи мамі, що я не боявся». Ти знаєш, що це неправда.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.promises</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хлопець просить обіцянку: «Якщо з…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1414)" opacity="0.42"><title>phase5.quiet_meal
++Вечеря. Хтось дістає останню банку тушонки й ділить на всіх, включно з тими, хто вже не їсть.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.quiet_meal</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Вечеря. Хтось дістає останню банк…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1462)" opacity="0.42"><title>phase5.last_call
++Зв'язок. Кажуть, що «завтра буде важко». Мама в трубці питає, чи ти їв.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.last_call</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Зв'язок. Кажуть, що «завтра буде…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,1510)" opacity="0.42"><title>phase5.plan_after
++Хтось починає планувати, що буде після. Ремонт у дворі, рибалка, шашлики. Усі слухають.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.plan_after</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хтось починає планувати, що буде…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,1558)" opacity="0.42"><title>phase5.broken_radio
++Рація перестала приймати. Може, села батарея, може — позицію просто виключили зі списків.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.broken_radio</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Рація перестала приймати. Може, с…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
++<g transform="translate(930,406)" opacity="1"><title>phase5.photo_found
++У кишені — те фото. Мала, заламінована, з плямою від дощу. Мама його, мабуть, так і не отримала.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.photo_found</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У кишені — те фото. Мала, заламін…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,454)" opacity="1"><title>line.volunteers_thanks
++Прийшла відповідь від волонтерів. Дитячим почерком: «Дякуємо, що ви є. Надішліть, будь ласка, імена».</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.volunteers_thanks</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Прийшла відповідь від волонтерів.…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,502)" opacity="1"><title>line.assault_after
++Твоя «штурмова» виявилась звичайною піхотою з гучною назвою. Із двадцяти — семеро.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.assault_after</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Твоя «штурмова» виявилась звичайн…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(930,550)" opacity="1"><title>line.fake_informer
++Командир відділення питає, чому від тебе досі «жодної конкретики». Дивиться довго.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.fake_informer</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Командир відділення питає, чому в…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(1230,70)" opacity="1"><title>line.kept_promise
++Той хлопець живий. Дивиться на тебе й чекає, чи ти пам'ятаєш, що обіцяв. Ти пам'ятаєш.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.kept_promise</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Той хлопець живий. Дивиться на те…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф5 · раз</text></g>
++<g transform="translate(1230,118)" opacity="1"><title>line.known_plan
++Ти знаєш план. Він не передбачає, що всі вийдуть. Сказати хлопцям — це вже зрада, мовчати — теж.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.known_plan</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Ти знаєш план. Він не передбачає,…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф5 · раз</text></g>
++<g transform="translate(930,598)" opacity="1"><title>line.named_photo
++Волонтери надіслали фото: наші імена написані на табличці в їхньому штабі. Знайшов своє. І одразу побачив, чиїх немає.</title>
++<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">line.named_photo</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Волонтери надіслали фото: наші ім…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(630,742)" opacity="0.42"><title>misc.dog
++До позиції приблукав пес. Худий, з обірваним повідком. Ніхто не проганяє. Усі роблять вигляд, що не раді.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.dog</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">До позиції приблукав пес. Худий,…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–5 · раз</text></g>
++<g transform="translate(630,790)" opacity="0.42"><title>misc.dugout
++У бліндажі знайшли старі газети 2014 року. Хтось читає вголос, і всі слухають, як казку.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.dugout</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У бліндажі знайшли старі газети 2…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(330,694)" opacity="0.42"><title>misc.tea
++Хтось заварив чай на буржуйці. У ньому щось плаває. Пахне дитинством.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.tea</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Хтось заварив чай на буржуйці. У…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–5</text></g>
++<g transform="translate(630,838)" opacity="0.42"><title>misc.argue
++Двоє сваряться, хто винен, що вчорашній вихід провалився. Кричать так, що чути на сусідній позиції.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.argue</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Двоє сваряться, хто винен, що вчо…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
++<g transform="translate(930,1606)" opacity="0.42"><title>misc.birthday
++У хлопця день народження. Нічим пригостити. Він каже: «Та нічого, я вже дорослий».</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.birthday</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">У хлопця день народження. Нічим п…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
++<g transform="translate(630,886)" opacity="0.42"><title>misc.writing
++Ти починаєш записувати, що бачиш. Не для звіту. Просто щоб це не зникло.</title>
++<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.writing</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">Ти починаєш записувати, що бачиш.…</text>
++<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–5</text></g></svg></div></body></html>
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index e689fb8..5d2e496 100644
+--- a/package.json
++++ b/package.json
+@@ -8,6 +8,7 @@
+     "test": "node --test --experimental-strip-types test/*.test.ts",
+     "sim": "node --experimental-strip-types scripts/simulate.ts",
+     "build": "node build.mjs",
+-    "play": "node build.mjs && open dist/novobranets.html"
++    "play": "node build.mjs && open dist/novobranets.html",
++    "tree": "node --experimental-strip-types scripts/tree.ts"
+   }
+-}
+\ No newline at end of file
++}
 diff --git a/scripts/simulate.ts b/scripts/simulate.ts
 index 359e666..4bb2f93 100644
 --- a/scripts/simulate.ts
@@ -616,6 +1410,181 @@ index 359e666..4bb2f93 100644
 +} else {
 +  console.log(`\n✅ Усі ${TEST_ENDINGS.length} фіналів досяжні хоча б одним стилем гри`);
 +}
+diff --git a/scripts/tree.ts b/scripts/tree.ts
+new file mode 100644
+index 0000000..957f756
+--- /dev/null
++++ b/scripts/tree.ts
+@@ -0,0 +1,169 @@
++// Дерево подій: будується з контенту, а не малюється вручну, тож не застаріває.
++// Запуск: npm run tree  →  docs/event-tree.html (картинка) і docs/EVENT_TREE.md (Mermaid).
++import { writeFileSync } from 'node:fs';
++import { TEST_CARDS } from '../data/test-content.ts';
++import type { Card, NextEvent } from '../src/types.ts';
++
++type EdgeKind = 'next' | 'flag' | 'echo' | 'gate';
++interface Edge { from: string; to: string; kind: EdgeKind; label: string; days?: number }
++
++const byId = new Map(TEST_CARDS.map((c) => [c.id, c]));
++const short = (t: string, n = 38) => (t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t);
++const nextList = (n?: NextEvent | NextEvent[]) => (n ? (Array.isArray(n) ? n : [n]) : []);
++
++// Хто ставить прапорець.
++const setters = new Map<string, { card: string; option: string; text: string }[]>();
++for (const c of TEST_CARDS) {
++  for (const o of c.options) {
++    const flags = [
++      ...Object.keys(o.effects?.flags ?? {}),
++      ...(o.conditionalEffects ?? []).flatMap((ce) => Object.keys(ce.then.flags ?? {})),
++    ];
++    for (const f of flags) {
++      const arr = setters.get(f) ?? [];
++      arr.push({ card: c.id, option: o.id, text: o.text });
++      setters.set(f, arr);
++    }
++  }
++}
++
++const edges: Edge[] = [];
++const seen = new Set<string>();
++const add = (e: Edge) => {
++  const key = `${e.from}>${e.to}:${e.kind}:${e.label}`;
++  if (e.from !== e.to && !seen.has(key) && byId.has(e.from) && byId.has(e.to)) {
++    seen.add(key);
++    edges.push(e);
++  }
++};
++
++for (const c of TEST_CARDS) {
++  for (const o of c.options) {
++    for (const n of nextList(o.next)) {
++      const to = typeof n === 'string' ? n : n.card;
++      add({ from: c.id, to, kind: 'next', label: short(o.text, 28), days: typeof n === 'string' ? 0 : n.inDays ?? 0 });
++    }
++  }
++  // Жорстка залежність: картка існує лише після певного вчинку.
++  for (const f of c.requires?.flagTrue ?? []) {
++    for (const s of setters.get(f) ?? []) add({ from: s.card, to: c.id, kind: 'flag', label: short(s.text, 28) });
++  }
++  // Echo: картка пам'ятає вчинок (м'яка залежність — картка від цього не зникає).
++  for (const e of c.echo ? (Array.isArray(c.echo) ? c.echo : [c.echo]) : []) {
++    for (const s of setters.get(e.flag) ?? []) add({ from: s.card, to: c.id, kind: 'echo', label: short(s.text, 28) });
++  }
++  // Варіанти, відкриті вчинком.
++  for (const o of c.options) {
++    for (const f of o.requires?.flagTrue ?? []) {
++      for (const s of setters.get(f) ?? []) add({ from: s.card, to: c.id, kind: 'gate', label: `відкриває: ${short(o.text, 22)}` });
++    }
++  }
++}
++
++// «flag» дублює «next», коли обидва ведуть з тієї ж пари карток: next важливіший.
++const nextPairs = new Set(edges.filter((e) => e.kind === 'next').map((e) => `${e.from}>${e.to}`));
++const finalEdges = edges.filter((e) => e.kind !== 'flag' || !nextPairs.has(`${e.from}>${e.to}`));
++
++const linked = new Set<string>();
++// Дерево — це жорсткі зв'язки; echo лише тло (м'які спогади), вони не роблять картку «деревною».
++for (const e of finalEdges) if (e.kind !== 'echo') { linked.add(e.from); linked.add(e.to); }
++
++// ---------- HTML + SVG
++const COLW = 300, NODEW = 220, NODEH = 34, GAP = 14, TOP = 70, LEFT = 30;
++const phases = [1, 2, 3, 4, 5] as const;
++const colOf = (c: Card) => Math.min(...c.phase) - 1;
++const cols: Card[][] = phases.map(() => []);
++// Спершу пов'язані картки (вони — дерево), потім самотні.
++for (const c of TEST_CARDS) if (linked.has(c.id)) cols[colOf(c)]!.push(c);
++for (const c of TEST_CARDS) if (!linked.has(c.id)) cols[colOf(c)]!.push(c);
++const pos = new Map<string, { x: number; y: number }>();
++cols.forEach((col, ci) => col.forEach((c, ri) => pos.set(c.id, { x: LEFT + ci * COLW, y: TOP + ri * (NODEH + GAP) })));
++const H = TOP + Math.max(...cols.map((c) => c.length)) * (NODEH + GAP) + 30;
++const W = LEFT * 2 + COLW * 5;
++
++const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
++const STYLE: Record<EdgeKind, { color: string; dash: string; w: number }> = {
++  next: { color: '#e0b04a', dash: '', w: 2.4 },
++  flag: { color: '#7e9b62', dash: '', w: 1.6 },
++  echo: { color: '#6f8fa8', dash: '2 4', w: 1.2 },
++  gate: { color: '#a8728f', dash: '6 4', w: 1.2 },
++};
++
++const drawOrder: EdgeKind[] = ['echo', 'gate', 'flag', 'next'];
++const edgeSvg = [...finalEdges].sort((a, b) => drawOrder.indexOf(a.kind) - drawOrder.indexOf(b.kind)).map((e) => {
++  const a = pos.get(e.from)!, b = pos.get(e.to)!;
++  const st = STYLE[e.kind];
++  const x1 = a.x + NODEW, y1 = a.y + NODEH / 2;
++  const forward = b.x > a.x;
++  const x2 = forward ? b.x : b.x + NODEW, y2 = b.y + NODEH / 2;
++  const dx = forward ? (x2 - x1) / 2 : 70;
++  const c1x = x1 + (forward ? dx : 70), c2x = forward ? x2 - dx : x2 + 70;
++  const title = `${byId.get(e.from)!.id} → ${byId.get(e.to)!.id}\n«${e.label}»${e.days ? `\nчерез ${e.days} дн.` : ''}`;
++  return `<path d="M${x1},${y1} C${c1x},${y1} ${c2x},${y2} ${x2},${y2}" fill="none" stroke="${st.color}" stroke-width="${st.w}" ${st.dash ? `stroke-dasharray="${st.dash}"` : ''} opacity="${e.kind === 'echo' ? 0.28 : 0.9}" marker-end="url(#a-${e.kind})"><title>${esc(title)}</title></path>`;
++}).join('\n');
++
++const nodeSvg = TEST_CARDS.map((c) => {
++  const p = pos.get(c.id)!;
++  const on = linked.has(c.id);
++  const range = c.phase.length > 1 ? `ф${Math.min(...c.phase)}–${Math.max(...c.phase)}` : `ф${c.phase[0]}`;
++  return `<g transform="translate(${p.x},${p.y})" opacity="${on ? 1 : 0.42}"><title>${esc(c.id)}\n${esc(c.text)}</title>
++<rect width="${NODEW}" height="${NODEH}" rx="4" fill="${on ? '#26261c' : '#1c1c16'}" stroke="${on ? '#8d8977' : '#33332a'}"/>
++<text x="8" y="14" font-size="10" fill="#e6e2d4">${esc(short(c.id, 30))}</text>
++<text x="8" y="27" font-size="9" fill="#8d8977">${esc(short(c.text, 34))}</text>
++<text x="${NODEW - 6}" y="12" font-size="8" fill="#8d8977" text-anchor="end">${range}${c.once ? ' · раз' : ''}</text></g>`;
++}).join('\n');
++
++const colHeads = phases.map((p, i) => `<text x="${LEFT + i * COLW}" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза ${p}</text>`).join('');
++const markers = (Object.keys(STYLE) as EdgeKind[]).map((k) =>
++  `<marker id="a-${k}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="${STYLE[k].color}"/></marker>`).join('');
++
++const legend = [
++  ['next', 'вибір гарантовано веде до події (`next`), іноді з відстрочкою'],
++  ['flag', 'вчинок відкриває картку (`requires.flagTrue`)'],
++  ['echo', 'картка згадує вчинок, але від нього не залежить'],
++  ['gate', 'вчинок відкриває варіант на іншій картці'],
++] as const;
++const counts = Object.fromEntries((['next', 'flag', 'echo', 'gate'] as EdgeKind[]).map((k) => [k, finalEdges.filter((e) => e.kind === k).length]));
++
++const html = `<!doctype html><html lang="uk"><head><meta charset="utf-8"><title>Дерево подій — Новобранець</title>
++<style>body{margin:0;background:#14140f;color:#e6e2d4;font-family:Georgia,serif}
++header{padding:16px 30px;border-bottom:1px solid #33332a}h1{margin:0 0 6px;font-size:20px}
++.leg{display:flex;gap:22px;flex-wrap:wrap;font:12px ui-monospace,monospace;color:#8d8977}
++.leg i{display:inline-block;width:26px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
++.wrap{overflow:auto}svg{font-family:ui-monospace,monospace}</style></head><body>
++<header><h1>Дерево подій</h1>
++<div style="font:13px ui-monospace,monospace;color:#8d8977;margin-bottom:10px">${TEST_CARDS.length} карток, ${linked.size} у дереві (жорсткі зв’язки), ${finalEdges.length} ребер разом з м’якими спогадами. Наведи курсор на картку чи лінію — буде текст. Тьмяні картки не мають жорстких зв’язків: вони вільні в межах своїх фаз і з’являються раз за забіг.</div>
++<div class="leg">${legend.filter(([k]) => counts[k]).map(([k, t]) => `<span><i style="border-color:${STYLE[k].color};border-top-style:${k === 'echo' ? 'dotted' : k === 'gate' ? 'dashed' : 'solid'}"></i>${t} (${counts[k]})</span>`).join('')}</div></header>
++<div class="wrap"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>${markers}</defs>${colHeads}${edgeSvg}${nodeSvg}</svg></div></body></html>`;
++writeFileSync(new URL('../docs/event-tree.html', import.meta.url), html);
++
++// ---------- Mermaid (рендериться на GitHub)
++const mid = (id: string) => id.replace(/[^a-zA-Z0-9]/g, '_');
++const mm: string[] = ['```mermaid', 'flowchart LR'];
++for (const p of phases) {
++  const cs = TEST_CARDS.filter((c) => linked.has(c.id) && Math.min(...c.phase) === p);
++  if (!cs.length) continue;
++  mm.push(`  subgraph F${p}["Фаза ${p}"]`);
++  for (const c of cs) mm.push(`    ${mid(c.id)}["${short(c.id, 30)}<br/><small>${short(c.text, 30).replace(/"/g, "'")}</small>"]`);
++  mm.push('  end');
++}
++for (const e of finalEdges.filter((x) => x.kind !== 'echo')) {
++  const arrow = e.kind === 'next' ? '==>' : e.kind === 'flag' ? '-->' : '-.->';
++  const lbl = `${e.label.replace(/["|]/g, "'")}${e.days ? ` · +${e.days} дн.` : ''}`;
++  mm.push(`  ${mid(e.from)} ${arrow}|"${lbl}"| ${mid(e.to)}`);
++}
++mm.push('```');
++writeFileSync(new URL('../docs/EVENT_TREE.md', import.meta.url), `# Дерево подій
++
++Генерується з контенту: \`npm run tree\`. Інтерактивна картинка з усіма ${TEST_CARDS.length} картками — [event-tree.html](event-tree.html).
++
++- **Товста стрілка** — \`next\`: вибір гарантовано веде до події (іноді через N днів).
++- **Тонка** — вчинок відкриває картку (\`requires.flagTrue\`).
++- **Пунктир** — вчинок відкриває варіант на іншій картці.
++- Echo-зв’язки (м’які спогади) показані лише на картинці.
++
++Кожна картка показується **не більше одного разу за забіг**, тож дерево не повторюється, а гілка або спрацьовує, або ні.
++
++${mm.join('\n')}
++`);
++console.log(`✅ дерево: ${TEST_CARDS.length} карток, ${linked.size} у зв’язках, ребра:`, counts);
 diff --git a/src/conditions.ts b/src/conditions.ts
 index 8c4f687..89067e0 100644
 --- a/src/conditions.ts
@@ -672,7 +1641,7 @@ index 8c4f687..89067e0 100644
 +
 +export { SKILL_KEYS, STAT_KEYS };
 diff --git a/src/run.ts b/src/run.ts
-index 2145207..d323465 100644
+index 2145207..e0b9e21 100644
 --- a/src/run.ts
 +++ b/src/run.ts
 @@ -1,11 +1,12 @@
@@ -710,7 +1679,35 @@ index 2145207..d323465 100644
    /**
     * Підтягнути наступну картку. Викликати, коли pending === undefined.
     * Повертає картку або завершує забіг, якщо подій більше немає.
-@@ -120,9 +128,17 @@ export class Run {
+@@ -113,19 +121,93 @@ export class Run {
+       return null;
+     }
+ 
+-    // Доля кидає кубик раз на добу — в advanceTime, не на кожну картку.
+-    const pool = this.config.content.cards.filter((c) => this.isEligible(c));
++    // 1) Дерево подій: вибір раніше запланував конкретну картку, і її час настав.
++    const queued = this.takeQueued();
++    if (queued) {
++      return this.present(queued);
++    }
++
++    // 2) Звичайний пул. Якщо картки в цій фазі скінчилися — минає час, а не повторюються сцени.
++    let pool = this.config.content.cards.filter((c) => this.isEligible(c));
++    let guard = 0;
++    while (pool.length === 0 && s.status === 'running' && guard < 80) {
++      guard += 1;
++      if (!this.hasFutureContent()) {
++        this.endWith('exhausted');
++        return null;
++      }
++      this.rollDay();
++      if (s.status === 'ended') return null;
++      const again = this.takeQueued();
++      if (again) return this.present(again);
++      pool = this.config.content.cards.filter((c) => this.isEligible(c));
++    }
+     if (pool.length === 0) {
+       this.endWith('exhausted');
        return null;
      }
  
@@ -722,14 +1719,73 @@ index 2145207..d323465 100644
 +      (c) => !recent.includes(c.id) || (s.lastCardId !== undefined && (c.after ?? []).includes(s.lastCardId)),
 +    );
 +
-+    const card = this.weightedPick(fresh.length > 0 ? fresh : pool);
++    return this.present(this.weightedPick(fresh.length > 0 ? fresh : pool));
++  }
++
++  /** Показати картку: фіксує pending, лічильник бачених і вікно недавніх. */
++  private present(card: Card): Card {
++    const s = this.state;
      s.pending = { cardId: card.id, options: card.options.map((o) => o.id) };
      s.seenCards[card.id] = (s.seenCards[card.id] ?? 0) + 1;
-+    s.recent = [...recent, card.id].slice(-RECENT_WINDOW);
++    s.recent = [...(s.recent ?? []), card.id].slice(-RECENT_WINDOW);
      return card;
    }
  
-@@ -174,10 +190,27 @@ export class Run {
++  /**
++   * Дістати з черги першу подію, чий час настав і яка ще має сенс.
++   * Недійсні (вже бачені, з невиконаними requires) тихо викидаються.
++   */
++  private takeQueued(): Card | null {
++    const s = this.state;
++    const q = s.queue ?? [];
++    if (q.length === 0) return null;
++    const keep: typeof q = [];
++    let found: Card | null = null;
++    for (const item of q) {
++      const card = this.cardsById.get(item.cardId);
++      if (!card) continue;
++      const repeat = !(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0;
++      if (repeat) continue;
++      if (found || item.dueDay > s.day) {
++        keep.push(item);
++        continue;
++      }
++      const ok =
++        meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day) &&
++        card.options.some((o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day));
++      if (ok) {
++        found = card;
++        const fromDay = [...s.journal].reverse().find((j) => j.cardId === item.from)?.day ?? s.day;
++        s.tree = [...(s.tree ?? []), { from: item.from, fromOption: item.fromOption, to: card.id, fromDay, day: s.day }];
++      }
++    }
++    s.queue = keep;
++    return found;
++  }
++
++  /** Чи лишилось у грі що показати: непоказані картки цієї чи пізніших фаз або заплановані події. */
++  private hasFutureContent(): boolean {
++    const s = this.state;
++    if ((s.queue ?? []).length > 0) return true;
++    return this.config.content.cards.some((c) => {
++      if (!(this.config.allowRepeats ?? false) && (s.seenCards[c.id] ?? 0) > 0) return false;
++      return c.phase.some((p) => p >= s.phase);
++    });
++  }
++
+   /** Обрати варіант за id. Повертає true, якщо вибір прийнято. */
+   choose(optionId: string): boolean {
+     const s = this.state;
+@@ -167,6 +249,8 @@ export class Run {
+       cardId: card.id,
+     } as RunState['lastOutcome'];
+ 
++    this.enqueueNext(option, card.id);
++
+     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
+     s.decisions += 1;
+     s.pending = undefined;
+@@ -174,23 +258,62 @@ export class Run {
      // справді чіпляються до попередньої сцени, а не до самої себе.
      s.lastCardId = card.id;
  
@@ -760,8 +1816,56 @@ index 2145207..d323465 100644
      }
  
      this.advanceTime();
-@@ -245,8 +278,8 @@ export class Run {
+     return true;
+   }
+ 
++  /** Вибір планує наслідки: гілка дерева подій. Бачені картки в чергу не потрапляють. */
++  private enqueueNext(option: ChoiceOption, fromCard: string): void {
++    const s = this.state;
++    if (!option.next) return;
++    const list = Array.isArray(option.next) ? option.next : [option.next];
++    const queue = [...(s.queue ?? [])];
++    for (const n of list) {
++      const cardId = typeof n === 'string' ? n : n.card;
++      const inDays = typeof n === 'string' ? 0 : (n.inDays ?? 0);
++      if (!this.cardsById.has(cardId)) continue;
++      if (queue.some((q) => q.cardId === cardId)) continue;
++      queue.push({ cardId, dueDay: s.day + inDays, from: fromCard, fromOption: option.id });
++    }
++    queue.sort((a, b) => a.dueDay - b.dueDay);
++    s.queue = queue;
++  }
++
+   private advanceTime(): void {
+     const s = this.state;
+     const doneToday = s.journal.filter((j) => j.day === s.day).length;
+     const target = this.targetCardsForDay(s.day);
+ 
+     if (doneToday < target) return;
++    this.rollDay();
++  }
+ 
++  /** Переходить на наступну добу: фаза, втома, неминучість, жорсткий кінець, кубик долі. */
++  private rollDay(): void {
++    const s = this.state;
+     s.day += 1;
+     s.phase = phaseForDay(s.day);
+     // Денна втома: енергія падає, запаси витрачаються.
+@@ -212,7 +335,7 @@ export class Run {
+ 
+     // Доля кидає кубик раз на добу — і це той самий день, що й у календарі.
+     if (s.day > this.director.safeUntilDay) {
+-      let chance = this.fatalChance();
++      const chance = this.fatalChance();
+       if (this.rng.chance(chance)) {
+         this.endWith('accident');
+       }
+@@ -243,10 +366,12 @@ export class Run {
+   private isEligible(card: Card): boolean {
+     const s = this.state;
      if (!card.phase.includes(s.phase)) return false;
++    // Кожна картка — раз за забіг (allowRepeats вмикає старе повторення).
++    if (!(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0) return false;
      if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
      if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
 -    // Картка-спогад без жодного сліду в минулому не має сенсу.
@@ -771,7 +1875,7 @@ index 2145207..d323465 100644
      // Картка без жодного доступного варіанта — не показуємо.
      const any = card.options.some((o) =>
        meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day),
-@@ -271,7 +304,7 @@ export class Run {
+@@ -271,7 +396,7 @@ export class Run {
      const last = this.state.lastCardId;
      if (last) {
        const next = pool.filter((c) => (c.after ?? []).includes(last));
@@ -780,7 +1884,7 @@ index 2145207..d323465 100644
      }
  
      // Зв'язність: продовження того, що сталося нещодавно, важить значно більше
-@@ -283,10 +316,17 @@ export class Run {
+@@ -283,10 +408,17 @@ export class Run {
        const recent = last !== undefined && refs.includes(last);
        const chained = refs.some((id) => (this.state.seenCards[id] ?? 0) > 0);
        const mult = recent ? 6 : chained ? 2.5 : 1;
@@ -800,7 +1904,7 @@ index 2145207..d323465 100644
      for (let i = 0; i < pool.length; i += 1) {
        r -= weights[i]!;
        if (r <= 0) return pool[i]!;
-@@ -309,30 +349,25 @@ export class Run {
+@@ -309,30 +441,25 @@ export class Run {
      const eligible = all.filter((e) =>
        meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day),
      );
@@ -847,15 +1951,17 @@ index 2145207..d323465 100644
      }
      return pool[pool.length - 1];
    }
-@@ -352,6 +387,7 @@ export class Run {
+@@ -352,6 +479,9 @@ export class Run {
        skills: { ...s.skills },
        flags: { ...s.flags },
        seenCards: { ...s.seenCards },
 +      recent: s.recent ? [...s.recent] : undefined,
++      queue: s.queue ? s.queue.map((q) => ({ ...q })) : undefined,
++      tree: s.tree ? s.tree.map((t) => ({ ...t })) : undefined,
        journal: s.journal.map((j) => ({ ...j })),
        lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : undefined,
        pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : undefined,
-@@ -374,6 +410,30 @@ export class Run {
+@@ -374,6 +504,30 @@ export class Run {
    }
  }
  
@@ -887,10 +1993,28 @@ index 2145207..d323465 100644
   * Чи смерть «від долі» сталася після власного вибору, що бив по здоров'ю.
   * Тоді фінал — поранення, а не «не наша» випадковість.
 diff --git a/src/types.ts b/src/types.ts
-index 0d2a30c..a10bf74 100644
+index 0d2a30c..0366a76 100644
 --- a/src/types.ts
 +++ b/src/types.ts
-@@ -141,6 +141,12 @@ export interface CardEcho {
+@@ -67,8 +67,17 @@ export interface Condition {
+   anySkillAtLeast?: { key: SkillKey; level: number }[];
+ }
+ 
++/**
++ * Ребро дерева подій: вибір веде до конкретної картки.
++ * `inDays` — через скільки діб вона має з'явитись (0 — наступною).
++ * Картка з черги ігнорує фазу, але не свої `requires` і не правило «раз за забіг».
++ */
++export type NextEvent = string | { card: string; inDays?: number };
++
+ export interface ChoiceOption {
+   id: string;
++  /** Гілка історії: після цього вибору гарантовано (або з відстрочкою) настане ця подія. */
++  next?: NextEvent | NextEvent[];
+   text: string;
+   /** Чому цей варіант недоступний (для UI). Не впливає на логіку. */
+   lockedHint?: string;
+@@ -141,6 +150,12 @@ export interface CardEcho {
  
  export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
  
@@ -903,7 +2027,7 @@ index 0d2a30c..a10bf74 100644
  export interface Ending {
    id: string;
    kind: EndingKind;
-@@ -151,6 +157,11 @@ export interface Ending {
+@@ -151,6 +166,11 @@ export interface Ending {
    requires?: Condition;
    /** Вага при виборі серед доступних. */
    weight?: number;
@@ -915,7 +2039,7 @@ index 0d2a30c..a10bf74 100644
  }
  
  /** «Директор долі»: параметри неминучості. */
-@@ -187,6 +198,11 @@ export interface RunConfig {
+@@ -187,6 +207,16 @@ export interface RunConfig {
    startSkills?: Partial<Skills>;
    /** Скільки карток за день (мінімум/максимум). */
    cardsPerDay?: { min: number; max: number };
@@ -924,20 +2048,29 @@ index 0d2a30c..a10bf74 100644
 +   * і лише вдруге це кінець. За замовчуванням увімкнено: смерть має бути не помилкою шкали, а сценою.
 +   */
 +  reprieve?: boolean;
++  /**
++   * За замовчуванням `false`: кожна картка показується не більше одного разу за забіг.
++   * Якщо контенту не вистачає, час просто йде далі (минають дні), а не повторюються сцени.
++   */
++  allowRepeats?: boolean;
  }
  
  export interface JournalEntry {
-@@ -215,6 +231,8 @@ export interface RunState {
+@@ -215,6 +245,12 @@ export interface RunState {
    decisions: number;
    /** Скільки рішень у забігу били по здоров'ю (для вибору фіналу-поранення). */
    recentHurt?: number;
++  /** Черга подій-наслідків, запланованих виборами (дерево подій). */
++  queue?: { cardId: string; dueDay: number; from: string; fromOption: string }[];
++  /** Гілки, що справді спрацювали в цьому забігу: «рішення → його наслідок». */
++  tree?: { from: string; fromOption: string; to: string; fromDay: number; day: number }[];
 +  /** Останні показані картки: щоб одна й та сама не поверталась за кілька кроків. */
 +  recent?: string[];
    /** Остання показана картка — для ланцюгів продовження. */
    lastCardId?: string;
    /** Остання сцена-наслідок (для екрана після вибору). */
 diff --git a/src/validate.ts b/src/validate.ts
-index 7e4dec6..1d95650 100644
+index 7e4dec6..cbf72db 100644
 --- a/src/validate.ts
 +++ b/src/validate.ts
 @@ -1,7 +1,7 @@
@@ -949,10 +2082,23 @@ index 7e4dec6..1d95650 100644
  
  export interface ValidationIssue {
    level: 'error' | 'warn';
-@@ -97,9 +97,46 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
+@@ -97,9 +97,59 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
      readFlags(e.requires, where);
    }
  
++  // Дерево: next має вести на існуючу картку; наслідок, чий requires ніхто не виконує, — мертва гілка.
++  for (const card of cards) {
++    for (const opt of card.options) {
++      const list = opt.next ? (Array.isArray(opt.next) ? opt.next : [opt.next]) : [];
++      for (const n of list) {
++        const target = typeof n === 'string' ? n : n.card;
++        if (!ids.has(target)) {
++          issues.push({ level: 'error', where: `card ${card.id}/${opt.id}`, message: `next веде на неіснуючу картку: ${target}` });
++        }
++      }
++    }
++  }
++
 +  // Echo теж читає прапорці: рядок-спогад про вчинок, якого гра ніде не фіксує, — мертвий рядок.
 +  for (const card of cards) {
 +    const echoes = card.echo ? (Array.isArray(card.echo) ? card.echo : [card.echo]) : [];
@@ -999,10 +2145,10 @@ index 7e4dec6..1d95650 100644
    }
 diff --git a/test/polish.test.ts b/test/polish.test.ts
 new file mode 100644
-index 0000000..1fb57fa
+index 0000000..dd21cfa
 --- /dev/null
 +++ b/test/polish.test.ts
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,290 @@
 +import assert from 'node:assert/strict';
 +import test from 'node:test';
 +
@@ -1188,6 +2334,111 @@ index 0000000..1fb57fa
 +  const issues = validateContent(cards, []);
 +  assert.ok(issues.some((i) => i.level === 'error' && i.where === 'skill people'));
 +});
++
++test('жодна картка не показується двічі за забіг (за замовчуванням)', () => {
++  for (let i = 0; i < 300; i += 1) {
++    const run = newRun(`norepeat-${i}`);
++    const seen = new Set<string>();
++    let guard = 0;
++    while (run.state.status === 'running' && guard < 400) {
++      guard += 1;
++      const card = run.draw();
++      if (!card) break;
++      assert.ok(!seen.has(card.id), `забіг ${i}: картка ${card.id} повторилась`);
++      seen.add(card.id);
++      const opts = run.availableOptions();
++      run.choose(opts[(i + guard) % opts.length]!.id);
++    }
++  }
++});
++
++test('allowRepeats: true повертає повтори (контролюваний режим)', () => {
++  let repeats = 0;
++  for (let i = 0; i < 60; i += 1) {
++    const run = newRun(`rep-${i}`, { allowRepeats: true });
++    let guard = 0;
++    while (run.state.status === 'running' && guard < 300) {
++      guard += 1;
++      if (!run.draw()) break;
++      run.choose(run.availableOptions()[0]!.id);
++    }
++    repeats += Object.values(run.state.seenCards).filter((n) => n > 1).length;
++  }
++  assert.ok(repeats > 0, 'з allowRepeats картки мали б повторюватись');
++});
++
++test('дерево: вибір планує наслідок, і той настає через заданий час', () => {
++  const cards = [
++    { id: 'root', kind: 'event' as const, phase: [1 as const], text: 'корінь', once: true, weight: 100,
++      options: [
++        { id: 'go', text: 'піти', next: { card: 'leaf', inDays: 2 }, effects: { flags: { went: true } } },
++        { id: 'stay', text: 'лишитись' },
++      ] },
++    { id: 'leaf', kind: 'event' as const, phase: [5 as const], text: 'наслідок', requires: { flagTrue: ['went'] },
++      options: [{ id: 'ok', text: 'ок' }, { id: 'ok2', text: 'ок2' }] },
++    { id: 'filler1', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'a', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++    { id: 'filler2', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'b', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++    { id: 'filler3', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'c', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++    { id: 'filler4', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'd', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++  ];
++  const endings = [{ id: 'e', kind: 'accident' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
++  const run = new Run({ seed: 't', content: { cards, endings }, director: { safeUntilDay: 999 } });
++  assert.equal(run.draw()!.id, 'root');
++  run.choose('go');
++  const dayPlanned = run.state.day;
++  let leafDay = -1;
++  for (let g = 0; g < 40 && run.state.status === 'running'; g += 1) {
++    const c = run.draw();
++    if (!c) break;
++    if (c.id === 'leaf') { leafDay = run.state.day; run.choose('ok'); break; }
++    run.choose('a');
++  }
++  assert.ok(leafDay >= dayPlanned + 2, `наслідок мав настати не раніше ніж через 2 дні, настав на дні ${leafDay} (вибір на ${dayPlanned})`);
++  assert.deepEqual(run.state.tree?.map((t) => [t.from, t.to]), [['root', 'leaf']]);
++});
++
++test('дерево: наслідок не показується, якщо його requires не виконані', () => {
++  const cards = [
++    { id: 'root', kind: 'event' as const, phase: [1 as const], text: 'корінь', once: true, weight: 100,
++      options: [{ id: 'go', text: 'піти', next: 'leaf' }, { id: 'stay', text: 'лишитись' }] },
++    { id: 'leaf', kind: 'event' as const, phase: [1 as const], text: 'наслідок', requires: { flagTrue: ['never'] },
++      options: [{ id: 'ok', text: 'ок' }, { id: 'ok2', text: 'ок2' }] },
++    { id: 'f', kind: 'routine' as const, phase: [1 as const], text: 'f', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++  ];
++  const endings = [{ id: 'e', kind: 'accident' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
++  const run = new Run({ seed: 'u', content: { cards, endings } });
++  run.draw();
++  run.choose('go');
++  const next = run.draw();
++  assert.notEqual(next?.id, 'leaf');
++});
++
++test('контент закінчився: час іде далі, картки не повторюються, фінал настає', () => {
++  const cards = [
++    { id: 'only', kind: 'event' as const, phase: [1 as const], text: 'єдина', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
++  ];
++  const endings = [{ id: 'e', kind: 'quiet' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
++  const run = new Run({ seed: 'x', content: { cards, endings } });
++  assert.equal(run.draw()!.id, 'only');
++  run.choose('a');
++  assert.equal(run.draw(), null);
++  assert.equal(run.state.status, 'ended');
++  assert.equal((run.state as { endingReason?: string }).endingReason, 'exhausted');
++});
++
++test('дерево з контенту: кожен next веде на існуючу картку', () => {
++  const ids = new Set(TEST_CARDS.map((c) => c.id));
++  let edges = 0;
++  for (const c of TEST_CARDS) {
++    for (const o of c.options) {
++      for (const n of o.next ? (Array.isArray(o.next) ? o.next : [o.next]) : []) {
++        edges += 1;
++        assert.ok(ids.has(typeof n === 'string' ? n : n.card), `${c.id}/${o.id} веде на неіснуючу картку`);
++      }
++    }
++  }
++  assert.ok(edges >= 10, `у дереві мало гілок: ${edges}`);
++});
 diff --git a/test/run.test.ts b/test/run.test.ts
 index 6b78735..e2f0ada 100644
 --- a/test/run.test.ts
@@ -1216,10 +2467,10 @@ index 6b78735..e2f0ada 100644
    // Знаходимо картку, де перший варіант справді змінює здоров'я.
    const run = newRun('outcome-test');
 diff --git a/web/app.js b/web/app.js
-index 675a9d0..9463030 100644
+index 675a9d0..baa7862 100644
 --- a/web/app.js
 +++ b/web/app.js
-@@ -41,6 +41,32 @@ let run = new Run({
+@@ -41,6 +41,48 @@ let run = new Run({
  let lastChoice = null;
  // true, поки показуємо реакцію — кнопки заблоковані.
  let reactionOpen = false;
@@ -1237,6 +2488,22 @@ index 675a9d0..9463030 100644
 +  return g && g.cardId === card.id ? g : null;
 +}
 +
++/** Гілки дерева, що спрацювали: «рішення → його наслідок». Показує, що світ відповідав на вибір. */
++function branchesHtml() {
++  const tree = run.state.tree ?? [];
++  if (!tree.length) return '';
++  const byId = new Map(TEST_CARDS.map((c) => [c.id, c]));
++  const rows = tree.map((t) => {
++    const from = byId.get(t.from);
++    const opt = from?.options.find((o) => o.id === t.fromOption);
++    const to = byId.get(t.to);
++    return `<div class="branch"><span>д${t.fromDay} · ${escapeHtml(opt?.text ?? t.fromOption)}</span>`
++      + `<span class="arrow">↓ через ${t.day - t.fromDay} дн.</span>`
++      + `<span>д${t.day} · ${escapeHtml((to?.lead ?? to?.text ?? t.to).slice(0, 90))}</span></div>`;
++  }).join('');
++  return `<div class="branches"><div class="meta">Гілки твого шляху: ${tree.length}</div>${rows}</div>`;
++}
++
 +function divergence() {
 +  if (!ghost) return '';
 +  const now = pathOf(run);
@@ -1252,7 +2519,7 @@ index 675a9d0..9463030 100644
  
  function newSeed() {
    return Math.random().toString(36).slice(2, 10);
-@@ -82,6 +108,7 @@ function render() {
+@@ -82,6 +124,7 @@ function render() {
    if (!card) return renderEnding();
  
    const available = new Set(run.availableOptions().map((o) => o.id));
@@ -1260,7 +2527,7 @@ index 675a9d0..9463030 100644
    // Зв'язок з попереднім: рядок «звідки» показуємо лише тоді, коли картка
    // справді продовжує попередню сцену, а не просто має поле lead.
    const link = run.lastCard();
-@@ -99,10 +126,12 @@ function render() {
+@@ -99,10 +142,12 @@ function render() {
        <div>${escapeHtml(card.text)}</div>
      </div>
      <div class="options">
@@ -1277,10 +2544,11 @@ index 675a9d0..9463030 100644
      </div>
    `;
  
-@@ -217,20 +246,23 @@ function renderEnding() {
+@@ -217,20 +262,24 @@ function renderEnding() {
        <h1>${escapeHtml(title)}</h1>
        <p class="ep">${escapeHtml(epitaph)}</p>
        <p>${escapeHtml(epilogue)}</p>
++      ${branchesHtml()}
 +      ${ghost ? `<div class="meta">${escapeHtml(divergence())}</div>` : ''}
        <div class="meta">
          Розуміння ${st.stats.understanding}/10 · Зв'язки ${st.stats.bonds}/10 ·
@@ -1303,15 +2571,18 @@ index 675a9d0..9463030 100644
      render();
    });
 diff --git a/web/index.html b/web/index.html
-index 4389b25..04ed78e 100644
+index 4389b25..064f8cd 100644
 --- a/web/index.html
 +++ b/web/index.html
-@@ -95,6 +95,8 @@
+@@ -95,6 +95,11 @@
    button.opt.chosen::before { content: '➜ '; color: var(--good); }
    button.opt.faded { opacity: .28; transition: opacity .2s; }
  
 +  button.opt.ghost { border-left: 3px solid #6f6b58; }
 +  button.opt .ghost-tag { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
++  .branches { margin: 14px 0; }
++  .branch { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; margin-bottom: 8px; border-left: 2px solid #e0b04a; font-size: 13px; }
++  .branch .arrow { font-family: ui-monospace, monospace; font-size: 10px; color: var(--dim); }
    .echo {
      margin: 0 0 12px; padding: 8px 0 8px 10px;
      border-left: 2px solid #4a4a38; font-size: 14px; font-style: italic;

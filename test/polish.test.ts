@@ -183,3 +183,108 @@ test('валідатор ловить замкнене коло навички',
   const issues = validateContent(cards, []);
   assert.ok(issues.some((i) => i.level === 'error' && i.where === 'skill people'));
 });
+
+test('жодна картка не показується двічі за забіг (за замовчуванням)', () => {
+  for (let i = 0; i < 300; i += 1) {
+    const run = newRun(`norepeat-${i}`);
+    const seen = new Set<string>();
+    let guard = 0;
+    while (run.state.status === 'running' && guard < 400) {
+      guard += 1;
+      const card = run.draw();
+      if (!card) break;
+      assert.ok(!seen.has(card.id), `забіг ${i}: картка ${card.id} повторилась`);
+      seen.add(card.id);
+      const opts = run.availableOptions();
+      run.choose(opts[(i + guard) % opts.length]!.id);
+    }
+  }
+});
+
+test('allowRepeats: true повертає повтори (контролюваний режим)', () => {
+  let repeats = 0;
+  for (let i = 0; i < 60; i += 1) {
+    const run = newRun(`rep-${i}`, { allowRepeats: true });
+    let guard = 0;
+    while (run.state.status === 'running' && guard < 300) {
+      guard += 1;
+      if (!run.draw()) break;
+      run.choose(run.availableOptions()[0]!.id);
+    }
+    repeats += Object.values(run.state.seenCards).filter((n) => n > 1).length;
+  }
+  assert.ok(repeats > 0, 'з allowRepeats картки мали б повторюватись');
+});
+
+test('дерево: вибір планує наслідок, і той настає через заданий час', () => {
+  const cards = [
+    { id: 'root', kind: 'event' as const, phase: [1 as const], text: 'корінь', once: true, weight: 100,
+      options: [
+        { id: 'go', text: 'піти', next: { card: 'leaf', inDays: 2 }, effects: { flags: { went: true } } },
+        { id: 'stay', text: 'лишитись' },
+      ] },
+    { id: 'leaf', kind: 'event' as const, phase: [5 as const], text: 'наслідок', requires: { flagTrue: ['went'] },
+      options: [{ id: 'ok', text: 'ок' }, { id: 'ok2', text: 'ок2' }] },
+    { id: 'filler1', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'a', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+    { id: 'filler2', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'b', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+    { id: 'filler3', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'c', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+    { id: 'filler4', kind: 'routine' as const, phase: [1 as const, 2 as const, 3 as const], text: 'd', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+  ];
+  const endings = [{ id: 'e', kind: 'accident' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
+  const run = new Run({ seed: 't', content: { cards, endings }, director: { safeUntilDay: 999 } });
+  assert.equal(run.draw()!.id, 'root');
+  run.choose('go');
+  const dayPlanned = run.state.day;
+  let leafDay = -1;
+  for (let g = 0; g < 40 && run.state.status === 'running'; g += 1) {
+    const c = run.draw();
+    if (!c) break;
+    if (c.id === 'leaf') { leafDay = run.state.day; run.choose('ok'); break; }
+    run.choose('a');
+  }
+  assert.ok(leafDay >= dayPlanned + 2, `наслідок мав настати не раніше ніж через 2 дні, настав на дні ${leafDay} (вибір на ${dayPlanned})`);
+  assert.deepEqual(run.state.tree?.map((t) => [t.from, t.to]), [['root', 'leaf']]);
+});
+
+test('дерево: наслідок не показується, якщо його requires не виконані', () => {
+  const cards = [
+    { id: 'root', kind: 'event' as const, phase: [1 as const], text: 'корінь', once: true, weight: 100,
+      options: [{ id: 'go', text: 'піти', next: 'leaf' }, { id: 'stay', text: 'лишитись' }] },
+    { id: 'leaf', kind: 'event' as const, phase: [1 as const], text: 'наслідок', requires: { flagTrue: ['never'] },
+      options: [{ id: 'ok', text: 'ок' }, { id: 'ok2', text: 'ок2' }] },
+    { id: 'f', kind: 'routine' as const, phase: [1 as const], text: 'f', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+  ];
+  const endings = [{ id: 'e', kind: 'accident' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
+  const run = new Run({ seed: 'u', content: { cards, endings } });
+  run.draw();
+  run.choose('go');
+  const next = run.draw();
+  assert.notEqual(next?.id, 'leaf');
+});
+
+test('контент закінчився: час іде далі, картки не повторюються, фінал настає', () => {
+  const cards = [
+    { id: 'only', kind: 'event' as const, phase: [1 as const], text: 'єдина', options: [{ id: 'a', text: 'a' }, { id: 'b', text: 'b' }] },
+  ];
+  const endings = [{ id: 'e', kind: 'quiet' as const, title: 't', epilogue: 'x'.repeat(90), defaultEpitaph: 'e' }];
+  const run = new Run({ seed: 'x', content: { cards, endings } });
+  assert.equal(run.draw()!.id, 'only');
+  run.choose('a');
+  assert.equal(run.draw(), null);
+  assert.equal(run.state.status, 'ended');
+  assert.equal((run.state as { endingReason?: string }).endingReason, 'exhausted');
+});
+
+test('дерево з контенту: кожен next веде на існуючу картку', () => {
+  const ids = new Set(TEST_CARDS.map((c) => c.id));
+  let edges = 0;
+  for (const c of TEST_CARDS) {
+    for (const o of c.options) {
+      for (const n of o.next ? (Array.isArray(o.next) ? o.next : [o.next]) : []) {
+        edges += 1;
+        assert.ok(ids.has(typeof n === 'string' ? n : n.card), `${c.id}/${o.id} веде на неіснуючу картку`);
+      }
+    }
+  }
+  assert.ok(edges >= 10, `у дереві мало гілок: ${edges}`);
+});

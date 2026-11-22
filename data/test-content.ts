@@ -70,6 +70,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'leave',
+        next: { card: 'call.tried_to_leave_after', inDays: 14 },
         text: 'Спробувати вийти з черги й піти додому',
         effects: { stats: { health: -2, trust: -1, supplies: -1 }, flags: { tried_to_leave: true } },
         outcome: {
@@ -432,6 +433,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'ask_why',
+        next: { card: 'phase4.tolko_dies', inDays: 12 },
         text: 'Запитати, скільки з тих, кого він учив, ще живі',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { tolko_honest: true } },
@@ -522,6 +524,7 @@ export const TEST_CARDS: Card[] = [
     options: [
       {
         id: 'volunteer',
+        next: { card: 'line.assault_after', inDays: 5 },
         text: 'Вийди першим, поки не обрали',
         effects: { stats: { health: -2, trust: 2, bonds: 1 }, flags: { assault: true }, journal: 'Пішов у штурмову добровільно.' },
         outcome: {
@@ -926,6 +929,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'letter',
+        next: { card: 'phase3.letter_followup', inDays: 10 },
         text: 'Почати писати лист його мамі',
         effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } },
         outcome: {
@@ -1142,6 +1146,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'write_back',
+        next: { card: 'line.volunteers_thanks', inDays: 7 },
         text: 'Записати адресу волонтерів, щоб подякувати',
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
         outcome: {
@@ -1160,6 +1165,7 @@ export const TEST_CARDS: Card[] = [
     options: [
       {
         id: 'agree',
+        next: { card: 'phase4.informer_after', inDays: 6 },
         text: 'Погодитись — це прикриття',
         effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } },
         outcome: {
@@ -1176,6 +1182,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'pretend',
+        next: { card: 'line.fake_informer', inDays: 6 },
         text: 'Погодитись і не робити нічого',
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } },
@@ -1248,6 +1255,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'send',
+        next: { card: 'phase5.photo_found', inDays: 8 },
         text: 'Попросити, щоб надіслали мамі',
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
         outcome: {
@@ -1512,6 +1520,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'ask_plan',
+        next: { card: 'line.known_plan', inDays: 3 },
         text: 'Запитати, у чому план полягає насправді',
         requires: { skillAtLeast: { system: 2 } },
         effects: { stats: { understanding: 3, bonds: 1 }, flags: { knows_plan: true } },
@@ -2163,6 +2172,7 @@ export const TEST_CARDS: Card[] = [
       },
       {
         id: 'other',
+        next: { card: 'line.kept_promise', inDays: 3 },
         text: 'Пообіцяти сказати інше — те, що буде правдою',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } },
@@ -2382,6 +2392,7 @@ export const TEST_CARDS: Card[] = [
     options: [
       {
         id: 'names',
+        next: { card: 'line.named_photo', inDays: 4 },
         text: 'Написати всі імена, включно з тими, кого вже немає',
         effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } },
         outcome: {

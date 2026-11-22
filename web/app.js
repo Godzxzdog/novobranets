@@ -55,6 +55,22 @@ function ghostFor(card) {
   return g && g.cardId === card.id ? g : null;
 }
 
+/** Гілки дерева, що спрацювали: «рішення → його наслідок». Показує, що світ відповідав на вибір. */
+function branchesHtml() {
+  const tree = run.state.tree ?? [];
+  if (!tree.length) return '';
+  const byId = new Map(TEST_CARDS.map((c) => [c.id, c]));
+  const rows = tree.map((t) => {
+    const from = byId.get(t.from);
+    const opt = from?.options.find((o) => o.id === t.fromOption);
+    const to = byId.get(t.to);
+    return `<div class="branch"><span>д${t.fromDay} · ${escapeHtml(opt?.text ?? t.fromOption)}</span>`
+      + `<span class="arrow">↓ через ${t.day - t.fromDay} дн.</span>`
+      + `<span>д${t.day} · ${escapeHtml((to?.lead ?? to?.text ?? t.to).slice(0, 90))}</span></div>`;
+  }).join('');
+  return `<div class="branches"><div class="meta">Гілки твого шляху: ${tree.length}</div>${rows}</div>`;
+}
+
 function divergence() {
   if (!ghost) return '';
   const now = pathOf(run);
@@ -246,6 +262,7 @@ function renderEnding() {
       <h1>${escapeHtml(title)}</h1>
       <p class="ep">${escapeHtml(epitaph)}</p>
       <p>${escapeHtml(epilogue)}</p>
+      ${branchesHtml()}
       ${ghost ? `<div class="meta">${escapeHtml(divergence())}</div>` : ''}
       <div class="meta">
         Розуміння ${st.stats.understanding}/10 · Зв'язки ${st.stats.bonds}/10 ·

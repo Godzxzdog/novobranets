@@ -67,8 +67,17 @@ export interface Condition {
   anySkillAtLeast?: { key: SkillKey; level: number }[];
 }
 
+/**
+ * Ребро дерева подій: вибір веде до конкретної картки.
+ * `inDays` — через скільки діб вона має з'явитись (0 — наступною).
+ * Картка з черги ігнорує фазу, але не свої `requires` і не правило «раз за забіг».
+ */
+export type NextEvent = string | { card: string; inDays?: number };
+
 export interface ChoiceOption {
   id: string;
+  /** Гілка історії: після цього вибору гарантовано (або з відстрочкою) настане ця подія. */
+  next?: NextEvent | NextEvent[];
   text: string;
   /** Чому цей варіант недоступний (для UI). Не впливає на логіку. */
   lockedHint?: string;
@@ -203,6 +212,11 @@ export interface RunConfig {
    * і лише вдруге це кінець. За замовчуванням увімкнено: смерть має бути не помилкою шкали, а сценою.
    */
   reprieve?: boolean;
+  /**
+   * За замовчуванням `false`: кожна картка показується не більше одного разу за забіг.
+   * Якщо контенту не вистачає, час просто йде далі (минають дні), а не повторюються сцени.
+   */
+  allowRepeats?: boolean;
 }
 
 export interface JournalEntry {
@@ -231,6 +245,10 @@ export interface RunState {
   decisions: number;
   /** Скільки рішень у забігу били по здоров'ю (для вибору фіналу-поранення). */
   recentHurt?: number;
+  /** Черга подій-наслідків, запланованих виборами (дерево подій). */
+  queue?: { cardId: string; dueDay: number; from: string; fromOption: string }[];
+  /** Гілки, що справді спрацювали в цьому забігу: «рішення → його наслідок». */
+  tree?: { from: string; fromOption: string; to: string; fromDay: number; day: number }[];
   /** Останні показані картки: щоб одна й та сама не поверталась за кілька кроків. */
   recent?: string[];
   /** Остання показана картка — для ланцюгів продовження. */

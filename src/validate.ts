@@ -97,6 +97,19 @@ export function validateContent(cards: Card[], endings: Ending[]): ValidationIss
     readFlags(e.requires, where);
   }
 
+  // Дерево: next має вести на існуючу картку; наслідок, чий requires ніхто не виконує, — мертва гілка.
+  for (const card of cards) {
+    for (const opt of card.options) {
+      const list = opt.next ? (Array.isArray(opt.next) ? opt.next : [opt.next]) : [];
+      for (const n of list) {
+        const target = typeof n === 'string' ? n : n.card;
+        if (!ids.has(target)) {
+          issues.push({ level: 'error', where: `card ${card.id}/${opt.id}`, message: `next веде на неіснуючу картку: ${target}` });
+        }
+      }
+    }
+  }
+
   // Echo теж читає прапорці: рядок-спогад про вчинок, якого гра ніде не фіксує, — мертвий рядок.
   for (const card of cards) {
     const echoes = card.echo ? (Array.isArray(card.echo) ? card.echo : [card.echo]) : [];

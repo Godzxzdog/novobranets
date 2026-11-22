@@ -121,8 +121,27 @@ export class Run {
       return null;
     }
 
-    // Доля кидає кубик раз на добу — в advanceTime, не на кожну картку.
-    const pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    // 1) Дерево подій: вибір раніше запланував конкретну картку, і її час настав.
+    const queued = this.takeQueued();
+    if (queued) {
+      return this.present(queued);
+    }
+
+    // 2) Звичайний пул. Якщо картки в цій фазі скінчилися — минає час, а не повторюються сцени.
+    let pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    let guard = 0;
+    while (pool.length === 0 && s.status === 'running' && guard < 80) {
+      guard += 1;
+      if (!this.hasFutureContent()) {
+        this.endWith('exhausted');
+        return null;
+      }
+      this.rollDay();
+      if (s.status === 'ended') return null;
+      const again = this.takeQueued();
+      if (again) return this.present(again);
+      pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    }
     if (pool.length === 0) {
       this.endWith('exhausted');
       return null;
@@ -135,11 +154,58 @@ export class Run {
       (c) => !recent.includes(c.id) || (s.lastCardId !== undefined && (c.after ?? []).includes(s.lastCardId)),
     );
 
-    const card = this.weightedPick(fresh.length > 0 ? fresh : pool);
+    return this.present(this.weightedPick(fresh.length > 0 ? fresh : pool));
+  }
+
+  /** Показати картку: фіксує pending, лічильник бачених і вікно недавніх. */
+  private present(card: Card): Card {
+    const s = this.state;
     s.pending = { cardId: card.id, options: card.options.map((o) => o.id) };
     s.seenCards[card.id] = (s.seenCards[card.id] ?? 0) + 1;
-    s.recent = [...recent, card.id].slice(-RECENT_WINDOW);
+    s.recent = [...(s.recent ?? []), card.id].slice(-RECENT_WINDOW);
     return card;
+  }
+
+  /**
+   * Дістати з черги першу подію, чий час настав і яка ще має сенс.
+   * Недійсні (вже бачені, з невиконаними requires) тихо викидаються.
+   */
+  private takeQueued(): Card | null {
+    const s = this.state;
+    const q = s.queue ?? [];
+    if (q.length === 0) return null;
+    const keep: typeof q = [];
+    let found: Card | null = null;
+    for (const item of q) {
+      const card = this.cardsById.get(item.cardId);
+      if (!card) continue;
+      const repeat = !(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0;
+      if (repeat) continue;
+      if (found || item.dueDay > s.day) {
+        keep.push(item);
+        continue;
+      }
+      const ok =
+        meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day) &&
+        card.options.some((o) => meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day));
+      if (ok) {
+        found = card;
+        const fromDay = [...s.journal].reverse().find((j) => j.cardId === item.from)?.day ?? s.day;
+        s.tree = [...(s.tree ?? []), { from: item.from, fromOption: item.fromOption, to: card.id, fromDay, day: s.day }];
+      }
+    }
+    s.queue = keep;
+    return found;
+  }
+
+  /** Чи лишилось у грі що показати: непоказані картки цієї чи пізніших фаз або заплановані події. */
+  private hasFutureContent(): boolean {
+    const s = this.state;
+    if ((s.queue ?? []).length > 0) return true;
+    return this.config.content.cards.some((c) => {
+      if (!(this.config.allowRepeats ?? false) && (s.seenCards[c.id] ?? 0) > 0) return false;
+      return c.phase.some((p) => p >= s.phase);
+    });
   }
 
   /** Обрати варіант за id. Повертає true, якщо вибір прийнято. */
@@ -183,6 +249,8 @@ export class Run {
       cardId: card.id,
     } as RunState['lastOutcome'];
 
+    this.enqueueNext(option, card.id);
+
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
     s.pending = undefined;
@@ -217,13 +285,35 @@ export class Run {
     return true;
   }
 
+  /** Вибір планує наслідки: гілка дерева подій. Бачені картки в чергу не потрапляють. */
+  private enqueueNext(option: ChoiceOption, fromCard: string): void {
+    const s = this.state;
+    if (!option.next) return;
+    const list = Array.isArray(option.next) ? option.next : [option.next];
+    const queue = [...(s.queue ?? [])];
+    for (const n of list) {
+      const cardId = typeof n === 'string' ? n : n.card;
+      const inDays = typeof n === 'string' ? 0 : (n.inDays ?? 0);
+      if (!this.cardsById.has(cardId)) continue;
+      if (queue.some((q) => q.cardId === cardId)) continue;
+      queue.push({ cardId, dueDay: s.day + inDays, from: fromCard, fromOption: option.id });
+    }
+    queue.sort((a, b) => a.dueDay - b.dueDay);
+    s.queue = queue;
+  }
+
   private advanceTime(): void {
     const s = this.state;
     const doneToday = s.journal.filter((j) => j.day === s.day).length;
     const target = this.targetCardsForDay(s.day);
 
     if (doneToday < target) return;
+    this.rollDay();
+  }
 
+  /** Переходить на наступну добу: фаза, втома, неминучість, жорсткий кінець, кубик долі. */
+  private rollDay(): void {
+    const s = this.state;
     s.day += 1;
     s.phase = phaseForDay(s.day);
     // Денна втома: енергія падає, запаси витрачаються.
@@ -245,7 +335,7 @@ export class Run {
 
     // Доля кидає кубик раз на добу — і це той самий день, що й у календарі.
     if (s.day > this.director.safeUntilDay) {
-      let chance = this.fatalChance();
+      const chance = this.fatalChance();
       if (this.rng.chance(chance)) {
         this.endWith('accident');
       }
@@ -276,6 +366,8 @@ export class Run {
   private isEligible(card: Card): boolean {
     const s = this.state;
     if (!card.phase.includes(s.phase)) return false;
+    // Кожна картка — раз за забіг (allowRepeats вмикає старе повторення).
+    if (!(this.config.allowRepeats ?? false) && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
     // Echo — лише прикраса: картка без сліду в минулому показується як звичайна
@@ -388,6 +480,8 @@ export class Run {
       flags: { ...s.flags },
       seenCards: { ...s.seenCards },
       recent: s.recent ? [...s.recent] : undefined,
+      queue: s.queue ? s.queue.map((q) => ({ ...q })) : undefined,
+      tree: s.tree ? s.tree.map((t) => ({ ...t })) : undefined,
       journal: s.journal.map((j) => ({ ...j })),
       lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : undefined,
       pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : undefined,

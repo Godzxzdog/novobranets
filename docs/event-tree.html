@@ -1,0 +1,609 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><title>Дерево подій — Новобранець</title>
+<style>body{margin:0;background:#14140f;color:#e6e2d4;font-family:Georgia,serif}
+header{padding:16px 30px;border-bottom:1px solid #33332a}h1{margin:0 0 6px;font-size:20px}
+.leg{display:flex;gap:22px;flex-wrap:wrap;font:12px ui-monospace,monospace;color:#8d8977}
+.leg i{display:inline-block;width:26px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
+.wrap{overflow:auto}svg{font-family:ui-monospace,monospace}</style></head><body>
+<header><h1>Дерево подій</h1>
+<div style="font:13px ui-monospace,monospace;color:#8d8977;margin-bottom:10px">76 карток, 23 у дереві (жорсткі зв’язки), 67 ребер разом з м’якими спогадами. Наведи курсор на картку чи лінію — буде текст. Тьмяні картки не мають жорстких зв’язків: вони вільні в межах своїх фаз і з’являються раз за забіг.</div>
+<div class="leg"><span><i style="border-color:#e0b04a;border-top-style:solid"></i>вибір гарантовано веде до події (`next`), іноді з відстрочкою (11)</span><span><i style="border-color:#6f8fa8;border-top-style:dotted"></i>картка згадує вчинок, але від нього не залежить (54)</span><span><i style="border-color:#a8728f;border-top-style:dashed"></i>вчинок відкриває варіант на іншій картці (2)</span></div></header>
+<div class="wrap"><svg width="1560" height="1684" viewBox="0 0 1560 1684"><defs><marker id="a-next" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#e0b04a"/></marker><marker id="a-flag" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7e9b62"/></marker><marker id="a-echo" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#6f8fa8"/></marker><marker id="a-gate" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a8728f"/></marker></defs><text x="30" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 1</text><text x="330" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 2</text><text x="630" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 3</text><text x="930" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 4</text><text x="1230" y="40" font-size="13" fill="#e6e2d4" font-weight="600">Фаза 5</text><path d="M250,87 C440,87 440,567 630,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → phase3.bribe
+«Спробувати вийти з черги й…»</title></path>
+<path d="M250,183 C440,183 440,615 630,615" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.medical → phase3.rot
+«Сказати про коліно, яке ниє…»</title></path>
+<path d="M850,375 C890,375 890,663 930,663" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase4.cold
+«Пустити сусіда на свою суху…»</title></path>
+<path d="M250,231 C590,231 590,663 930,663" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase4.cold
+«Лишити шоколадку їй — на чай»</title></path>
+<path d="M850,135 C890,135 890,711 930,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.loss → phase4.letters
+«Почати писати лист його мамі»</title></path>
+<path d="M550,567 C740,567 740,711 930,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.letters_home → phase4.letters
+«Показати, як писати про дрі…»</title></path>
+<path d="M850,375 C890,375 890,183 930,183" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase4.doubt
+«Пустити сусіда на свою суху…»</title></path>
+<path d="M250,135 C590,135 590,183 930,183" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.paper → phase4.doubt
+«Сховати повістку під стос г…»</title></path>
+<path d="M250,87 C590,87 590,231 930,231" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → phase4.standing
+«Спробувати вийти з черги й…»</title></path>
+<path d="M850,87 C890,87 890,807 930,807" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.tried_to_leave_after → phase4.gossip
+«Спитати, хто саме це написав»</title></path>
+<path d="M250,183 C590,183 590,279 930,279" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.medical → phase4.wound
+«Сказати про коліно, яке ниє…»</title></path>
+<path d="M850,327 C890,327 890,903 930,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.photo → phase4.home_news
+«Попросити, щоб надіслали ма…»</title></path>
+<path d="M250,231 C590,231 590,903 930,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase4.home_news
+«Лишити шоколадку їй — на чай»</title></path>
+<path d="M850,183 C890,183 890,951 930,951" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.medic → phase4.replacement
+«Запитати, скільки джгутів р…»</title></path>
+<path d="M550,135 C740,135 740,951 930,951" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase4.replacement
+«Вийди першим, поки не обрали»</title></path>
+<path d="M550,87 C740,87 740,999 930,999" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.night_watch
+«Записати в блокнот і перепи…»</title></path>
+<path d="M550,663 C740,663 740,1047 930,1047" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → phase4.rumours
+«Рахувати й запам'ятовувати»</title></path>
+<path d="M1150,807 C1220,807 1220,1047 1150,1047" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → phase4.rumours
+«Перевірити через знайомого…»</title></path>
+<path d="M850,567 C890,567 890,1095 930,1095" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.bribe → phase4.stolen
+«Заплатити»</title></path>
+<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.tolko_dies
+«Запитати, скільки з тих, ко…»</title></path>
+<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.sapper → phase4.tolko_dies
+«Записати в блокнот і перепи…»</title></path>
+<path d="M1150,279 C1220,279 1220,1143 1150,1143" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.wound → phase5.lastpost
+«Лишитись на позиції»</title></path>
+<path d="M550,135 C740,135 740,1143 930,1143" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase5.lastpost
+«Вийди першим, поки не обрали»</title></path>
+<path d="M1150,807 C1220,807 1220,1239 1150,1239" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → phase5.silence
+«Перевірити через знайомого…»</title></path>
+<path d="M550,663 C740,663 740,1239 930,1239" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → phase5.silence
+«Рахувати й запам'ятовувати»</title></path>
+<path d="M250,231 C590,231 590,1287 930,1287" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → phase5.wind
+«Лишити шоколадку їй — на чай»</title></path>
+<path d="M1450,87 C1520,87 1220,1287 1150,1287" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.kept_promise → phase5.wind
+«Сказати йому те, що обіцяв»</title></path>
+<path d="M1150,231 C1220,231 1220,1335 1150,1335" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.final_wait
+«Запитати, у чому план поляг…»</title></path>
+<path d="M1150,279 C1220,279 1220,1335 1150,1335" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.wound → phase5.final_wait
+«Лишитись на позиції»</title></path>
+<path d="M850,375 C890,375 890,1383 930,1383" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.trench → phase5.last_cigarette
+«Пустити сусіда на свою суху…»</title></path>
+<path d="M1150,87 C1220,87 1220,375 1150,375" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.letter_followup → phase5.promises
+«Дописати й віддати»</title></path>
+<path d="M850,135 C890,135 890,375 930,375" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.loss → phase5.promises
+«Почати писати лист його мамі»</title></path>
+<path d="M850,231 C890,231 890,1431 930,1431" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.food_ration → phase5.quiet_meal
+«Записати адресу волонтерів,…»</title></path>
+<path d="M250,135 C590,135 590,1479 930,1479" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.paper → phase5.last_call
+«Сховати повістку під стос г…»</title></path>
+<path d="M850,327 C890,327 890,1479 930,1479" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.photo → phase5.last_call
+«Попросити, щоб надіслали ма…»</title></path>
+<path d="M1150,231 C1220,231 1220,1527 1150,1527" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.plan_after
+«Запитати, у чому план поляг…»</title></path>
+<path d="M1150,231 C1220,231 1220,1527 1150,1527" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.standing → phase5.plan_after
+«Погодитись»</title></path>
+<path d="M550,135 C740,135 740,1575 930,1575" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → phase5.broken_radio
+«Запитати, за яким принципом…»</title></path>
+<path d="M850,471 C890,471 890,423 930,423" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.propaganda → phase5.photo_found
+«Порахувати, скільки людей н…»</title></path>
+<path d="M1150,615 C1220,615 1220,423 1150,423" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.named_photo → phase5.photo_found
+«Дивитися довго»</title></path>
+<path d="M850,231 C890,231 890,471 930,471" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.food_ration → line.volunteers_thanks
+«Записати адресу волонтерів,…»</title></path>
+<path d="M1150,615 C1220,615 1220,471 1150,471" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>line.named_photo → line.volunteers_thanks
+«Дивитися довго»</title></path>
+<path d="M550,135 C740,135 740,519 930,519" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.split → line.assault_after
+«Вийди першим, поки не обрали»</title></path>
+<path d="M850,663 C890,663 890,567 930,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → line.fake_informer
+«Зробити вигляд, що виконуєш»</title></path>
+<path d="M850,279 C890,279 890,567 930,567" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.coward → line.fake_informer
+«Погодитись — це прикриття»</title></path>
+<path d="M1150,375 C1190,375 1190,87 1230,87" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase5.promises → line.kept_promise
+«Пообіцяти сказати інше — те…»</title></path>
+<path d="M1150,423 C1220,423 1220,615 1150,615" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase5.photo_found → line.named_photo
+«Віддати хлопцеві, який вихо…»</title></path>
+<path d="M250,471 C440,471 440,759 630,759" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.toilet → misc.dog
+«Знайти шматок брезенту й по…»</title></path>
+<path d="M550,663 C590,663 590,807 630,807" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase2.first_fire → misc.dugout
+«Рахувати й запам'ятовувати»</title></path>
+<path d="M250,87 C290,87 290,711 330,711" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.queue → misc.tea
+«Спробувати вийти з черги й…»</title></path>
+<path d="M850,663 C920,663 920,855 850,855" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → misc.argue
+«Зробити вигляд, що виконуєш»</title></path>
+<path d="M250,231 C590,231 590,1623 930,1623" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>call.bag → misc.birthday
+«Лишити шоколадку їй — на чай»</title></path>
+<path d="M850,663 C920,663 920,903 850,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase3.drill_hard → misc.writing
+«Зробити вигляд, що виконуєш»</title></path>
+<path d="M1150,807 C1220,807 920,903 850,903" fill="none" stroke="#6f8fa8" stroke-width="1.2" stroke-dasharray="2 4" opacity="0.28" marker-end="url(#a-echo)"><title>phase4.gossip → misc.writing
+«Повірити й розповісти хлопц…»</title></path>
+<path d="M550,87 C740,87 740,183 930,183" fill="none" stroke="#a8728f" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.9" marker-end="url(#a-gate)"><title>phase2.sapper → phase4.doubt
+«відкриває: Сказати Толікові»</title></path>
+<path d="M850,183 C890,183 890,279 930,279" fill="none" stroke="#a8728f" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.9" marker-end="url(#a-gate)"><title>phase3.medic → phase4.wound
+«відкриває: Обробити сам, як учил…»</title></path>
+<path d="M250,87 C440,87 440,87 630,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>call.queue → call.tried_to_leave_after
+«Спробувати вийти з черги й…»
+через 14 дн.</title></path>
+<path d="M550,87 C740,87 740,327 930,327" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase2.sapper → phase4.tolko_dies
+«Запитати, скільки з тих, ко…»
+через 12 дн.</title></path>
+<path d="M550,135 C740,135 740,519 930,519" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase2.split → line.assault_after
+«Вийди першим, поки не обрали»
+через 5 дн.</title></path>
+<path d="M850,135 C890,135 890,87 930,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.loss → phase3.letter_followup
+«Почати писати лист його мамі»
+через 10 дн.</title></path>
+<path d="M850,231 C890,231 890,471 930,471" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.food_ration → line.volunteers_thanks
+«Записати адресу волонтерів,…»
+через 7 дн.</title></path>
+<path d="M850,279 C890,279 890,135 930,135" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.coward → phase4.informer_after
+«Погодитись — це прикриття»
+через 6 дн.</title></path>
+<path d="M850,279 C890,279 890,567 930,567" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.coward → line.fake_informer
+«Погодитись і не робити нічо…»
+через 6 дн.</title></path>
+<path d="M850,327 C890,327 890,423 930,423" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase3.photo → phase5.photo_found
+«Попросити, щоб надіслали ма…»
+через 8 дн.</title></path>
+<path d="M1150,231 C1190,231 1190,135 1230,135" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase4.standing → line.known_plan
+«Запитати, у чому план поляг…»
+через 3 дн.</title></path>
+<path d="M1150,375 C1190,375 1190,87 1230,87" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>phase5.promises → line.kept_promise
+«Пообіцяти сказати інше — те…»
+через 3 дн.</title></path>
+<path d="M1150,471 C1220,471 1220,615 1150,615" fill="none" stroke="#e0b04a" stroke-width="2.4"  opacity="0.9" marker-end="url(#a-next)"><title>line.volunteers_thanks → line.named_photo
+«Написати всі імена, включно…»
+через 4 дн.</title></path><g transform="translate(30,118)" opacity="0.42"><title>call.paper
+Повістка в поштовій скриньці. Папір щільний, пахне свіжою фарбою. Мама каже: «Може, помилка». Ти вже знаєш, що не помилка.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.paper</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Повістка в поштовій скриньці. Пап…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
+<g transform="translate(30,70)" opacity="1"><title>call.queue
+Черга у військкоматі. Хтось попереду жартує, що беруть усіх, у кого є пульс. Ніхто не сміється.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.queue</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Черга у військкоматі. Хтось попер…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(30,166)" opacity="0.42"><title>call.medical
+Медкомісія. Лікар дивиться в бланк, не на тебе. «Скарги є?» — питає так, ніби відповідь уже надрукована.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.medical</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Медкомісія. Лікар дивиться в блан…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(30,214)" opacity="0.42"><title>call.bag
+Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.bag</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Збираєш сумку. Мама мовчки кладе…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(30,262)" opacity="0.42"><title>call.busstop
+Дядько Гриша з третього поверху виходить на балкон і каже вниз те, що казав усім: «Я в Афгані був. Нічого не бійся, головне — не висовуйся».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.busstop</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Дядько Гриша з третього поверху в…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
+<g transform="translate(630,70)" opacity="1"><title>call.tried_to_leave_after
+У документах хтось дописав примітку: «схильний до ухилення». Ти бачиш це випадково, коли підписують відпустку — тобі відмовляють.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.tried_to_leave_after</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У документах хтось дописав приміт…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
+<g transform="translate(30,310)" opacity="0.42"><title>call.farewell
+Вечір перед від'їздом. Мама вийшла на кухню й там стоїть. Ти чуєш, як вода з крана тече надто довго.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.farewell</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Вечір перед від'їздом. Мама вийшл…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1 · раз</text></g>
+<g transform="translate(30,358)" opacity="0.42"><title>call.queue_old
+Перед тобою в черзі стоїть чоловік років п'ятдесяти й тримає повістку двома руками, ніби вона може вирватись.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.queue_old</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Перед тобою в черзі стоїть чолові…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(30,406)" opacity="0.42"><title>call.street
+Дорогою до військкомату повз проходять двоє з пакетами. Один каже другому: «Не наша війна». Той киває. Ніхто не дивиться на тебе.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.street</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Дорогою до військкомату повз прох…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(30,454)" opacity="0.42"><title>call.toilet
+Туалет у військкоматі не має дверей. Інструктор каже: «Привикайте». Перші три дні це здається найбільшою проблемою.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">call.toilet</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Туалет у військкоматі не має двер…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф1</text></g>
+<g transform="translate(330,166)" opacity="0.42"><title>phase2.bus
+Автобус із запітнілими вікнами везе вас на схід. Хтось намагається заснути, хтось — доїсти домашнє. Водій мовчить усі шість годин.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.bus</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Автобус із запітнілими вікнами ве…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2 · раз</text></g>
+<g transform="translate(330,70)" opacity="1"><title>phase2.sapper
+Толік, сапер із третьої роти, показує тобі «правильний» спосіб сидіти в окопі. Каже, що його вчив прапорщик, який воює з 2015-го.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.sapper</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Толік, сапер із третьої роти, пок…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,214)" opacity="0.42"><title>phase2.soup
+Польова кухня. У каструлі щось, що називають борщем. Хлопець поруч упевнено каже: «Головне — гаряче».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.soup</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Польова кухня. У каструлі щось, щ…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,262)" opacity="0.42"><title>phase2.phone
+Мама телефонує. Голос тремтить: по телевізору кажуть, що все добре. Ти дивишся на розбите вікно казарми.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.phone</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Мама телефонує. Голос тремтить: п…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,118)" opacity="1"><title>phase2.split
+Прапорщик будує роту. Каже: «Хто хоче в штурмову — крок уперед». Ніхто не рухається. Він обирає сам.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.split</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Прапорщик будує роту. Каже: «Хто…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3 · раз</text></g>
+<g transform="translate(330,310)" opacity="0.42"><title>phase2.commander_orders
+Новий наказ: щоденна муштра на плацу, попри мороз. «Солдат має виглядати солдатом».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.commander_orders</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Новий наказ: щоденна муштра на пл…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,358)" opacity="0.42"><title>phase2.hazing
+«Дідівщина» в новому вигляді: новачкам — прибирати, старшим — нічого. Один із сержантів називає це «традиціями».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.hazing</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">«Дідівщина» в новому вигляді: нов…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2 · раз</text></g>
+<g transform="translate(330,406)" opacity="0.42"><title>phase2.weapon
+Тобі видають автомат. Він старий, важкий і, здається, пам'ятає більше, ніж ти. Сержант каже: «Це твій найкращий друг».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.weapon</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Тобі видають автомат. Він старий,…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
+<g transform="translate(330,454)" opacity="0.42"><title>phase2.hole
+Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.hole</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Перша ніч у полі. Ти риєш «окоп»…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
+<g transform="translate(330,502)" opacity="0.42"><title>phase2.test_song
+Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.test_song</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Політрук питає, хто знає другий к…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2</text></g>
+<g transform="translate(330,550)" opacity="0.42"><title>phase2.letters_home
+Хлопці пишуть листи додому. Один питає, що писати, якщо насправді нічого доброго немає.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.letters_home</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хлопці пишуть листи додому. Один…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,598)" opacity="0.42"><title>phase2.socks
+Прання. Сусід по намету миє шкарпетки в каску. Ти бачиш це й розумієш, що тепер каска — це назавжди два предмети.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.socks</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Прання. Сусід по намету миє шкарп…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3</text></g>
+<g transform="translate(330,646)" opacity="0.42"><title>phase2.first_fire
+Перший обстріл. Усі лежать. Хтось читає молитву, яку не знає. Ти раптом рахуєш секунди між розривами.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase2.first_fire</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Перший обстріл. Усі лежать. Хтось…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–3 · раз</text></g>
+<g transform="translate(630,358)" opacity="0.42"><title>phase3.trench
+Твій окоп заливає вода. Сусідній — теж. Ніхто не пропонує допомогти, але всі дивляться.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.trench</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Твій окоп заливає вода. Сусідній…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3</text></g>
+<g transform="translate(630,406)" opacity="0.42"><title>phase3.water
+Вода в каністрі закінчується. Останній ковток — і треба йти через відкриту ділянку до колодязя.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.water</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Вода в каністрі закінчується. Ост…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,118)" opacity="1"><title>phase3.loss
+Уранці хлопця з сусіднього відділення немає. Ніхто не знає, що казати. Хтось каже: «Я його бачив увечері». Ще хтось: «Я теж».</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.loss</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Уранці хлопця з сусіднього відділ…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
+<g transform="translate(930,70)" opacity="1"><title>phase3.letter_followup
+Той лист досі не дописаний. Він лежить у нагрудній кишені й пахне твоїм потом, а не чужим життям.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.letter_followup</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Той лист досі не дописаний. Він л…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(630,454)" opacity="0.42"><title>phase3.propaganda
+Приїжджає «преса». Просить сфотографуватися з усмішкою. Хтось усміхається. Ти думаєш, кому потім покажуть це фото.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.propaganda</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Приїжджає «преса». Просить сфотог…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,166)" opacity="1"><title>phase3.medic
+Оля, санінструкторка, каже, що джгут треба накладати вище, ніж усі думають. Каже тихо, ніби ділиться краденим.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.medic</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Оля, санінструкторка, каже, що дж…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,502)" opacity="0.42"><title>phase3.break
+Третій день без сну. Руки тремтять, думки плутаються. Командир каже, що це «нормально».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.break</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Третій день без сну. Руки тремтят…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,550)" opacity="0.42"><title>phase3.bribe
+Тиловий прапорщик пропонує «вирішити питання» з переведенням у другий ешелон. Ціна — три тисячі й мовчання.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.bribe</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Тиловий прапорщик пропонує «виріш…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4 · раз</text></g>
+<g transform="translate(630,214)" opacity="1"><title>phase3.food_ration
+Пакунок від волонтерів. Три шоколадки, два носки й записка «Тримайтесь, хлопці». Носки однакові.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.food_ration</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Пакунок від волонтерів. Три шокол…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,262)" opacity="1"><title>phase3.coward
+Командир відділення пропонує тобі стати його «очима»: доносити, хто що каже про накази. Обіцяє «прикриття».</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.coward</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Командир відділення пропонує тобі…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(930,118)" opacity="1"><title>phase4.informer_after
+Хлопці перестали говорити при тобі. Помітив не відразу. Хтось перестав сідати поруч — теж не відразу.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.informer_after</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хлопці перестали говорити при тоб…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(630,310)" opacity="1"><title>phase3.photo
+Хтось приніс фотоапарат. Хлопці хочуть фото «на пам'ять». Ти думаєш, кому це фото потім показувати.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.photo</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хтось приніс фотоапарат. Хлопці х…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,598)" opacity="0.42"><title>phase3.rot
+Взуття розмокло й уже не сохне. Ноги в кволі. Медсестра каже: «Поки не чорні — все добре».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.rot</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Взуття розмокло й уже не сохне. Н…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(630,646)" opacity="0.42"><title>phase3.drill_hard
+Раптовий «навчальний підйом» о третій ночі. Хтось засинає стоячи. Сержант кричить, що «це і є перевірка».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.drill_hard</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Раптовий «навчальний підйом» о тр…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3</text></g>
+<g transform="translate(630,694)" opacity="0.42"><title>phase3.medicine
+У медпункті лишилось три пігулки від болю. Оля каже: «Реальних претендентів — шестеро».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase3.medicine</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У медпункті лишилось три пігулки…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(930,646)" opacity="0.42"><title>phase4.cold
+Мороз крізь спальник. Спальник — не твій, тобі віддав сусід. Уночі він кашляє.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.cold</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Мороз крізь спальник. Спальник —…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,694)" opacity="0.42"><title>phase4.letters
+Хлопець питає, як писати листи рідним. У нього вже три написаних, і жоден не відправлений.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.letters</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хлопець питає, як писати листи рі…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,166)" opacity="1"><title>phase4.doubt
+Уночі, коли всі сплять, ти ловиш себе на думці: «А що, як нас тут узагалі немає причини тримати?» Потім згадуєш, що за цю думку ти вже комусь не довіряєш.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.doubt</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Уночі, коли всі сплять, ти ловиш…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,214)" opacity="1"><title>phase4.standing
+Командир роти збирає тих, хто ще вміє думати. Каже: «Мені потрібні люди не для подвигів, а для того, щоб вижити».</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.standing</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Командир роти збирає тих, хто ще…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,742)" opacity="0.42"><title>phase4.desert
+Двоє з відділення пішли вночі. Уранці це називають «зрадою». Ти сам думав про це дев'ять ночей.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.desert</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Двоє з відділення пішли вночі. Ур…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,790)" opacity="0.42"><title>phase4.gossip
+Тиловий писар розповідає, що «нагорі» вже все вирішено й нас залишили як приманку. Він каже це з гордістю.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.gossip</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Тиловий писар розповідає, що «наг…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,262)" opacity="1"><title>phase4.wound
+Уламок зайшов у стегно. Оля каже, що дійде й так. Каже це швидше собі.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.wound</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Уламок зайшов у стегно. Оля каже,…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,838)" opacity="0.42"><title>phase4.quiet_evening
+Тихий вечір. Хтось дістає гітару й грає пісню, яку всі знають, але не пам'ятають, звідки.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.quiet_evening</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Тихий вечір. Хтось дістає гітару…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,886)" opacity="0.42"><title>phase4.home_news
+Сестра пише, що в місті закрили школу й перевели її клас у підвал. Просить «не переживати».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.home_news</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Сестра пише, що в місті закрили ш…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,934)" opacity="0.42"><title>phase4.replacement
+Прийшов «молодий» — двадцять років і впевненість, що він знає все. Дивиться на тебе, як на старика.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.replacement</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Прийшов «молодий» — двадцять рокі…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,982)" opacity="0.42"><title>phase4.night_watch
+Твоя зміна на спостереженні. Мінус десять, ніч, тиша. Хочеться спати так, що боляче.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.night_watch</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Твоя зміна на спостереженні. Міну…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1030)" opacity="0.42"><title>phase4.rumours
+Ходять чутки, що скоро «все закінчиться». Одні кажуть — добре, інші — що тоді нас точно не заберуть.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.rumours</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Ходять чутки, що скоро «все закін…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1078)" opacity="0.42"><title>phase4.stolen
+У тебе зникли сухарі. Хтось їх узяв. Ти знаєш, хто — він не їв три дні.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.stolen</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У тебе зникли сухарі. Хтось їх уз…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,310)" opacity="1"><title>phase4.tolko_dies
+Толіка більше немає. Саме його, того, хто вчив тебе сидіти в окопі. Ти сидиш правильно. І нікого це не врятувало.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase4.tolko_dies</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Толіка більше немає. Саме його, т…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,1126)" opacity="0.42"><title>phase5.lastpost
+Наказ тримати позицію. Ніхто не пояснює навіщо. Рація шипить.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.lastpost</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Наказ тримати позицію. Ніхто не п…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,1174)" opacity="0.42"><title>phase5.epitaph
+Хтось із хлопців питає: «Якщо що — що про нас скажуть?» Усі сміються. Потім тихо.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.epitaph</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хтось із хлопців питає: «Якщо що…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,1222)" opacity="0.42"><title>phase5.silence
+Тиша. Довго. Хлопці починають шепотітися, що «це вже все». Ніхто не знає.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.silence</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Тиша. Довго. Хлопці починають шеп…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1270)" opacity="0.42"><title>phase5.wind
+Вітер змінюється. Усі піднімають голови. Ти раптом думаєш про кухню вдома й про те, що там тепер ніхто не сидить.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.wind</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Вітер змінюється. Усі піднімають…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1318)" opacity="0.42"><title>phase5.final_wait
+День, який не мав настати. Позиція тримається, але пил у повітрі вже не пил.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.final_wait</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">День, який не мав настати. Позиці…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,1366)" opacity="0.42"><title>phase5.last_cigarette
+Остання цигарка на відділення. Її пускають по колу, і кожен робить вигляд, що не хоче.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.last_cigarette</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Остання цигарка на відділення. Її…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,358)" opacity="1"><title>phase5.promises
+Хлопець просить обіцянку: «Якщо зі мною що — скажи мамі, що я не боявся». Ти знаєш, що це неправда.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.promises</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хлопець просить обіцянку: «Якщо з…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1414)" opacity="0.42"><title>phase5.quiet_meal
+Вечеря. Хтось дістає останню банку тушонки й ділить на всіх, включно з тими, хто вже не їсть.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.quiet_meal</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Вечеря. Хтось дістає останню банк…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1462)" opacity="0.42"><title>phase5.last_call
+Зв'язок. Кажуть, що «завтра буде важко». Мама в трубці питає, чи ти їв.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.last_call</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Зв'язок. Кажуть, що «завтра буде…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,1510)" opacity="0.42"><title>phase5.plan_after
+Хтось починає планувати, що буде після. Ремонт у дворі, рибалка, шашлики. Усі слухають.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.plan_after</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хтось починає планувати, що буде…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,1558)" opacity="0.42"><title>phase5.broken_radio
+Рація перестала приймати. Може, села батарея, може — позицію просто виключили зі списків.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.broken_radio</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Рація перестала приймати. Може, с…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5</text></g>
+<g transform="translate(930,406)" opacity="1"><title>phase5.photo_found
+У кишені — те фото. Мала, заламінована, з плямою від дощу. Мама його, мабуть, так і не отримала.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">phase5.photo_found</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У кишені — те фото. Мала, заламін…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,454)" opacity="1"><title>line.volunteers_thanks
+Прийшла відповідь від волонтерів. Дитячим почерком: «Дякуємо, що ви є. Надішліть, будь ласка, імена».</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.volunteers_thanks</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Прийшла відповідь від волонтерів.…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,502)" opacity="1"><title>line.assault_after
+Твоя «штурмова» виявилась звичайною піхотою з гучною назвою. Із двадцяти — семеро.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.assault_after</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Твоя «штурмова» виявилась звичайн…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(930,550)" opacity="1"><title>line.fake_informer
+Командир відділення питає, чому від тебе досі «жодної конкретики». Дивиться довго.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.fake_informer</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Командир відділення питає, чому в…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(1230,70)" opacity="1"><title>line.kept_promise
+Той хлопець живий. Дивиться на тебе й чекає, чи ти пам'ятаєш, що обіцяв. Ти пам'ятаєш.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.kept_promise</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Той хлопець живий. Дивиться на те…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф5 · раз</text></g>
+<g transform="translate(1230,118)" opacity="1"><title>line.known_plan
+Ти знаєш план. Він не передбачає, що всі вийдуть. Сказати хлопцям — це вже зрада, мовчати — теж.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.known_plan</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Ти знаєш план. Він не передбачає,…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф5 · раз</text></g>
+<g transform="translate(930,598)" opacity="1"><title>line.named_photo
+Волонтери надіслали фото: наші імена написані на табличці в їхньому штабі. Знайшов своє. І одразу побачив, чиїх немає.</title>
+<rect width="220" height="34" rx="4" fill="#26261c" stroke="#8d8977"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">line.named_photo</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Волонтери надіслали фото: наші ім…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(630,742)" opacity="0.42"><title>misc.dog
+До позиції приблукав пес. Худий, з обірваним повідком. Ніхто не проганяє. Усі роблять вигляд, що не раді.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.dog</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">До позиції приблукав пес. Худий,…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–5 · раз</text></g>
+<g transform="translate(630,790)" opacity="0.42"><title>misc.dugout
+У бліндажі знайшли старі газети 2014 року. Хтось читає вголос, і всі слухають, як казку.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.dugout</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У бліндажі знайшли старі газети 2…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(330,694)" opacity="0.42"><title>misc.tea
+Хтось заварив чай на буржуйці. У ньому щось плаває. Пахне дитинством.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.tea</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Хтось заварив чай на буржуйці. У…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф2–5</text></g>
+<g transform="translate(630,838)" opacity="0.42"><title>misc.argue
+Двоє сваряться, хто винен, що вчорашній вихід провалився. Кричать так, що чути на сусідній позиції.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.argue</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Двоє сваряться, хто винен, що вчо…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–4</text></g>
+<g transform="translate(930,1606)" opacity="0.42"><title>misc.birthday
+У хлопця день народження. Нічим пригостити. Він каже: «Та нічого, я вже дорослий».</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.birthday</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">У хлопця день народження. Нічим п…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф4–5 · раз</text></g>
+<g transform="translate(630,886)" opacity="0.42"><title>misc.writing
+Ти починаєш записувати, що бачиш. Не для звіту. Просто щоб це не зникло.</title>
+<rect width="220" height="34" rx="4" fill="#1c1c16" stroke="#33332a"/>
+<text x="8" y="14" font-size="10" fill="#e6e2d4">misc.writing</text>
+<text x="8" y="27" font-size="9" fill="#8d8977">Ти починаєш записувати, що бачиш.…</text>
+<text x="214" y="12" font-size="8" fill="#8d8977" text-anchor="end">ф3–5</text></g></svg></div></body></html>
