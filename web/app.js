@@ -1,5 +1,8 @@
 import { Run } from '../src/run.ts';
 import { TEST_CARDS, TEST_ENDINGS } from '../data/test-content.ts';
+import { approach, atmosphereFor } from './atmosphere.js';
+import { Mist } from './mist.js';
+import { chartCaption, routeStripSvg, statsChartSvg } from './visuals.js';
 
 const STAT_LABELS = {
   health: 'Здор',
@@ -31,6 +34,43 @@ const elDay = document.getElementById('day');
 const elStats = document.getElementById('stats');
 const elMain = document.getElementById('main');
 const elLog = document.getElementById('log');
+const elRoute = document.getElementById('route');
+const elMood = document.getElementById('mood');
+const elFog1 = document.getElementById('fog1');
+const elFog2 = document.getElementById('fog2');
+const elHaze = document.getElementById('haze');
+const elVig = document.getElementById('vignette');
+const elToggle = document.getElementById('mistToggle');
+
+// ---- Мряка: вмикається за замовчуванням, пам'ятається, поважає reduced-motion ----
+const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+let mistOn = true;
+try { mistOn = localStorage.getItem('nov.mist') !== 'off'; } catch { /* приватний режим */ }
+const mist = new Mist(document.getElementById('mist'));
+let atmo = { fog: 0.2, rain: 0.2, dark: 0, label: '' };
+
+function applyAtmosphere() {
+  atmo = atmosphereFor(run.state, run.director);
+  elFog1.style.opacity = String(atmo.fog * 0.95);
+  elFog2.style.opacity = String(atmo.fog * 0.75);
+  elHaze.style.opacity = String(atmo.fog * 0.1);
+  elVig.style.opacity = String(atmo.dark);
+  mist.setTarget(atmo.rain);
+  elMood.textContent = mistOn ? atmo.label : '';
+}
+function setMist(on) {
+  mistOn = on;
+  document.body.classList.toggle('nomist', !on);
+  elToggle.setAttribute('aria-pressed', String(on));
+  mist.setEnabled(on && !reduceMotion);
+  try { localStorage.setItem('nov.mist', on ? 'on' : 'off'); } catch { /* ігноруємо */ }
+  elMood.textContent = on ? atmo.label : '';
+}
+elToggle.addEventListener('click', () => setMist(!mistOn));
+
+function renderRoute() {
+  elRoute.innerHTML = routeStripSvg(run.state, run.director);
+}
 
 let run = new Run({
   seed: newSeed(),
@@ -53,6 +93,13 @@ function pathOf(r) {
 function ghostFor(card) {
   const g = ghost?.[run.state.decisions];
   return g && g.cardId === card.id ? g : null;
+}
+
+/** Графік показників за весь шлях + один рядок про те, що він показує. */
+function chartHtml() {
+  const svg = statsChartSvg(run.state.history);
+  if (!svg) return '';
+  return `<div class="chart"><h3>Твій шлях у цифрах</h3>${svg}<div class="cap">${escapeHtml(chartCaption(run.state.history))}</div></div>`;
 }
 
 /** Гілки дерева, що спрацювали: «рішення → його наслідок». Показує, що світ відповідав на вибір. */
@@ -117,6 +164,8 @@ function render() {
   elDay.textContent = `День ${run.state.day} · фаза ${run.state.phase}`;
   renderStats();
   renderLog();
+  applyAtmosphere();
+  renderRoute();
 
   if (run.state.status === 'ended') return renderEnding();
 
@@ -165,6 +214,7 @@ function onChoose(card, btn) {
   if (!option) { reactionOpen = false; return; }
 
   const before = { ...run.state.stats, ...run.state.skills };
+  const fogBefore = atmosphereFor(run.state, run.director).fog;
   if (!run.choose(option.id)) { reactionOpen = false; return; }
   const after = { ...run.state.stats, ...run.state.skills };
 
@@ -176,6 +226,11 @@ function onChoose(card, btn) {
   });
 
   const reaction = buildReaction(option, before, after);
+  // Мряка відповідає на вибір одразу: гравець бачить, що рішення змінило видимість.
+  applyAtmosphere();
+  renderRoute();
+  const dFog = atmo.fog - fogBefore;
+  if (mistOn && Math.abs(dFog) >= 0.04) reaction.changes.push(dFog > 0 ? 'мряка густішає' : 'мряка розвіюється');
   renderStats(reaction.statDelta);
   renderLog();
 
@@ -250,6 +305,8 @@ const NEUTRAL = {
 };
 
 function renderEnding() {
+  applyAtmosphere();
+  renderRoute();
   const e = run.ending();
   const st = run.state;
   const title = e?.title ?? 'Кінець';
@@ -262,6 +319,7 @@ function renderEnding() {
       <h1>${escapeHtml(title)}</h1>
       <p class="ep">${escapeHtml(epitaph)}</p>
       <p>${escapeHtml(epilogue)}</p>
+      ${chartHtml()}
       ${branchesHtml()}
       ${ghost ? `<div class="meta">${escapeHtml(divergence())}</div>` : ''}
       <div class="meta">
@@ -285,4 +343,6 @@ function renderEnding() {
   });
 }
 
+setMist(mistOn);
+mist.start();
 render();

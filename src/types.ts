@@ -247,6 +247,8 @@ export interface RunState {
   recentHurt?: number;
   /** Черга подій-наслідків, запланованих виборами (дерево подій). */
   queue?: { cardId: string; dueDay: number; from: string; fromOption: string }[];
+  /** Знімок показників після кожного рішення — для графіка на екрані фіналу. */
+  history?: { day: number; decision: number; stats: Stats }[];
   /** Гілки, що справді спрацювали в цьому забігу: «рішення → його наслідок». */
   tree?: { from: string; fromOption: string; to: string; fromDay: number; day: number }[];
   /** Останні показані картки: щоб одна й та сама не поверталась за кілька кроків. */

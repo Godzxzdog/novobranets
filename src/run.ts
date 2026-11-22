@@ -253,6 +253,7 @@ export class Run {
 
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
+    s.history = [...(s.history ?? []), { day: s.day, decision: s.decisions, stats: { ...s.stats } }];
     s.pending = undefined;
     // Показана картка стає «попередньою» лише після рішення — так продовження
     // справді чіпляються до попередньої сцени, а не до самої себе.
@@ -482,6 +483,7 @@ export class Run {
       recent: s.recent ? [...s.recent] : undefined,
       queue: s.queue ? s.queue.map((q) => ({ ...q })) : undefined,
       tree: s.tree ? s.tree.map((t) => ({ ...t })) : undefined,
+      history: s.history ? s.history.map((h) => ({ ...h, stats: { ...h.stats } })) : undefined,
       journal: s.journal.map((j) => ({ ...j })),
       lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : undefined,
       pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : undefined,

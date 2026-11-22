@@ -161,7 +161,43 @@
   .log div { opacity: .55; padding: 2px 0; }
   .log div:first-child { opacity: .9; color: #b0ab94; }
 
+
+  /* ---- Мряка: шари позаду контенту + легка пелена поверх + темні краї ---- */
+  #mist { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .fog { position: fixed; inset: -25%; pointer-events: none; z-index: 0; opacity: .3; transition: opacity 2.4s ease; will-change: transform; }
+  .fog1 {
+    background:
+      radial-gradient(ellipse 55% 40% at 30% 40%, rgba(150,156,138,.55), transparent 70%),
+      radial-gradient(ellipse 50% 35% at 78% 72%, rgba(130,138,124,.5), transparent 70%);
+    animation: drift1 70s ease-in-out infinite alternate;
+  }
+  .fog2 {
+    background:
+      radial-gradient(ellipse 60% 30% at 62% 24%, rgba(160,165,150,.45), transparent 70%),
+      radial-gradient(ellipse 45% 40% at 18% 82%, rgba(120,128,116,.45), transparent 70%);
+    animation: drift2 95s ease-in-out infinite alternate;
+  }
+  @keyframes drift1 { from { transform: translate3d(-4%, 0, 0); } to { transform: translate3d(5%, 3%, 0); } }
+  @keyframes drift2 { from { transform: translate3d(5%, 2%, 0); } to { transform: translate3d(-5%, -3%, 0); } }
+  .haze { position: fixed; inset: 0; pointer-events: none; z-index: 3; background: #98a08a; opacity: 0; transition: opacity 2.4s ease; }
+  .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(ellipse at center, transparent 42%, #000 125%); opacity: 0; transition: opacity 2.8s ease; }
+  header.wrap, .wrap, main.wrap, .foot { position: relative; z-index: 2; }
+  button.tog {
+    font: inherit; font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    background: transparent; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 3px 8px; cursor: pointer; margin-left: 10px;
+  }
+  button.tog[aria-pressed="false"] { opacity: .5; text-decoration: line-through; }
+  .hdr-right { display: flex; align-items: baseline; gap: 4px; }
+  #route { padding: 8px 0 0; }
+  .mood { font-family: ui-monospace, monospace; font-size: 10px; color: #6f6b58; text-align: center; padding: 2px 0 0; letter-spacing: .03em; min-height: 14px; }
+  .chart { margin: 16px 0 6px; padding: 12px 10px 6px; border: 1px solid var(--line); border-radius: 4px; background: #191911; }
+  .chart .cap { font-size: 13px; line-height: 1.5; color: #b0ab94; padding: 4px 4px 8px; font-style: italic; }
+  .chart h3 { margin: 0 0 6px 4px; font: 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: normal; }
+  body.nomist #mist, body.nomist .fog, body.nomist .haze { display: none; }
+
   @media (prefers-reduced-motion: reduce) {
+    #mist { display: none; }
+    .fog { animation: none !important; }
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
 
@@ -181,10 +217,18 @@
 </head>
 <body>
 
+<canvas id="mist" aria-hidden="true"></canvas>
+<div class="fog fog1" id="fog1" aria-hidden="true"></div>
+<div class="fog fog2" id="fog2" aria-hidden="true"></div>
+<div class="haze" id="haze" aria-hidden="true"></div>
+<div class="vignette" id="vignette" aria-hidden="true"></div>
+
 <header class="wrap">
   <span>Новобранець</span>
-  <span class="day" id="day">День 1</span>
+  <span class="hdr-right"><span class="day" id="day">День 1</span><button class="tog" id="mistToggle" aria-pressed="true" title="Мряка й дощ">мряка</button></span>
 </header>
+
+<div class="wrap"><div id="route"></div><div class="mood" id="mood"></div></div>
 
 <div class="wrap"><div class="stats" id="stats"></div></div>
 
