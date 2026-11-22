@@ -85,6 +85,7 @@ export class Run {
       decisions: 0,
       favor: 0,
       usedBoons: [],
+      lines: {},
     };
   }
 
@@ -136,8 +137,14 @@ export class Run {
       return this.present(queued);
     }
 
+    // 1.5) Сюжетні лінії. Перший забіг-хід відкриває кілька ліній випадково;
+    // після цього їхні сцени йдуть лише через `next` і ніколи не потрапляють
+    // у спільний пул. Так вибір справді веде далі за сюжетом.
+    const lineScene = this.nextLineScene();
+    if (lineScene) return this.present(lineScene);
+
     // 2) Звичайний пул. Якщо картки в цій фазі скінчилися — минає час, а не повторюються сцени.
-    let pool = this.config.content.cards.filter((c) => this.isEligible(c));
+    let pool = this.config.content.cards.filter((c) => !c.line && this.isEligible(c));
     let guard = 0;
     while (pool.length === 0 && s.status === 'running' && guard < 80) {
       guard += 1;
@@ -149,7 +156,7 @@ export class Run {
       if (s.status === 'ended') return null;
       const again = this.takeQueued();
       if (again) return this.present(again);
-      pool = this.config.content.cards.filter((c) => this.isEligible(c));
+      pool = this.config.content.cards.filter((c) => !c.line && this.isEligible(c));
     }
     if (pool.length === 0) {
       this.endWith('exhausted');
@@ -406,6 +413,66 @@ export class Run {
       ? Array.isArray(card.echo) ? card.echo : [card.echo]
       : [];
     return echoes.filter((e) => this.state.flags?.[e.flag]).map((e) => e.line);
+  }
+
+  /**
+   * Випадково відкрити сюжетні лінії й віддати наступну сцену тієї лінії,
+   * яка вже почалась. Сцени ліній у спільний пул не потрапляють узагалі.
+   */
+  private nextLineScene(): Card | null {
+    const s = this.state;
+    const lines = (s.lines ??= {});
+    const limit = this.config.openLines ?? 2;
+
+    // Скільком лініям узагалі дано старт у цьому забігу.
+    const opened = Object.values(lines).filter((l) => l.opened).length;
+
+    // Черга перших сцен уже відкритих ліній.
+    const pendingHeads = Object.entries(lines)
+      .filter(([, l]) => l.opened && l.headPending)
+      .map(([id]) => id);
+    if (pendingHeads.length > 0) {
+      const id = pendingHeads.sort()[0]!;
+      const head = this.lineHead(id);
+      if (head) {
+        lines[id]!.headPending = false;
+        if (this.isEligible(head)) return head;
+      }
+    }
+
+    // Відкриття нових ліній: перші три доби, і перша з них — гарантовано,
+    // інакше гравець може пройти всю гру й жодного разу не зустріти сюжету.
+    // Друга й наступні — випадково, щоб забіги відрізнялися.
+    if (opened < limit && s.day <= 3) {
+      const heads = this.lineHeads().filter((h) => !lines[h.line!]);
+      const fresh = heads.filter((h) => this.isEligible(h));
+      const mustOpen = opened === 0;
+      if (fresh.length > 0 && (mustOpen || this.rng.chance(0.45))) {
+        const chosen = fresh[Math.floor(this.rng.float() * fresh.length)]!;
+        const id = chosen.line!;
+        lines[id] = { opened: true, seen: 0, headPending: false };
+        return chosen;
+      }
+    }
+    return null;
+  }
+
+  /** Головна (перша) сцена лінії: та, на яку ніхто не веде через `next`. */
+  private lineHeads(): Card[] {
+    const targeted = new Set<string>();
+    for (const c of this.config.content.cards) {
+      for (const o of c.options) {
+        if (!o.next) continue;
+        for (const n of Array.isArray(o.next) ? o.next : [o.next]) {
+          targeted.add(typeof n === 'string' ? n : n.card);
+        }
+      }
+    }
+    return this.config.content.cards.filter((c) => (c.line ?? '') !== '' && !targeted.has(c.id));
+  }
+
+  private lineHead(id: string): Card | undefined {
+    return this.lineHeads().find((c) => c.line === id);
   }
 
   private weightedPick(pool: Card[]): Card {

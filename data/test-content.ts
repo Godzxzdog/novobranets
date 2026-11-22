@@ -4,6 +4,8 @@
 
 import type { Card, Ending } from '../src/types.ts';
 import { EXTRA_CARDS } from './extra-cards.ts';
+import { HNATYUK_CARDS } from './hnatyuk.ts';
+import { SHVETS_CARDS } from './shvets.ts';
 
 export const TEST_CARDS: Card[] = [
   // ─────────────────────────── ФАЗА 1: дім, повістка, військкомат ───────────────────────────
@@ -3163,3 +3165,5 @@ export const TEST_ENDINGS: Ending[] = [
 
 // Додаткові картки з окремого файлу.
 TEST_CARDS.push(...EXTRA_CARDS);
+TEST_CARDS.push(...HNATYUK_CARDS);
+TEST_CARDS.push(...SHVETS_CARDS);
