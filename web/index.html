@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Новобранець</title>
+<style>
+  :root {
+    --bg: #14140f;
+    --panel: #1c1c16;
+    --line: #33332a;
+    --ink: #e6e2d4;
+    --dim: #8d8977;
+    --warn: #c9563f;
+    --good: #7e9b62;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--ink);
+    font-family: "Georgia", "Times New Roman", serif;
+    overscroll-behavior: none;
+  }
+  body { display: flex; flex-direction: column; min-height: 100dvh; }
+  .wrap { width: 100%; max-width: 520px; margin: 0 auto; padding: 0 16px; }
+
+  header {
+    padding: 14px 0 10px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px;
+    color: var(--dim); letter-spacing: .06em; text-transform: uppercase;
+  }
+  header .day { color: var(--ink); }
+
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 12px 0; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .stat .bar {
+    width: 100%; height: 26px; background: #22221a; border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+  .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .25s; }
+  .stat .label { font-family: ui-monospace, monospace; font-size: 9px; color: var(--dim); letter-spacing: .04em; }
+  .stat .val { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ink); }
+  .stat.pair .fill { background: var(--good); }
+
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px 0; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 22px 20px; font-size: 18px; line-height: 1.55;
+    min-height: 190px; display: flex; align-items: center;
+    animation: in .22s ease-out;
+  }
+  @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card .kind {
+    position: absolute; font-family: ui-monospace, monospace; font-size: 9px;
+    color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+  button.opt {
+    font: inherit; font-size: 15px; line-height: 1.4; text-align: left;
+    background: #201f18; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 3px; padding: 13px 14px; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button.opt:hover { background: #282619; border-color: #4a4634; }
+  button.opt:active { transform: scale(.995); }
+  button.opt.locked { color: #555244; border-style: dashed; cursor: not-allowed; }
+  button.opt .hint { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+
+  .log { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); padding: 8px 0 4px; }
+  .log div { opacity: .55; padding: 2px 0; }
+
+  .ending { padding: 26px 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; }
+  .ending h1 { font-size: 24px; margin: 0 0 14px; font-weight: normal; }
+  .ending p { line-height: 1.6; margin: 0 0 16px; font-size: 15px; }
+  .ending .ep { font-style: italic; color: var(--dim); border-left: 2px solid var(--line); padding-left: 12px; }
+  .ending .meta { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); margin-bottom: 18px; }
+  a.btn, button.btn {
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    background: var(--ink); color: var(--bg); border: 0; border-radius: 3px;
+    padding: 14px; font: inherit; font-size: 15px; cursor: pointer; margin-top: 10px;
+  }
+  a.btn.second, button.btn.second { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .foot { font-family: ui-monospace, monospace; font-size: 10px; color: #55523f; text-align: center; padding: 12px 0 18px; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span>Новобранець</span>
+  <span class="day" id="day">День 1</span>
+</header>
+
+<div class="wrap"><div class="stats" id="stats"></div></div>
+
+<main class="wrap" id="main"></main>
+
+<div class="wrap"><div class="log" id="log"></div></div>
+<div class="foot">вигадані люди й частини · смерть гарантована</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

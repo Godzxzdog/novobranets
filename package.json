@@ -6,6 +6,8 @@
   "description": "Engine prototype for the narrative card game Novobranets",
   "scripts": {
     "test": "node --test --experimental-strip-types test/*.test.ts",
-    "sim": "node --experimental-strip-types scripts/simulate.ts"
+    "sim": "node --experimental-strip-types scripts/simulate.ts",
+    "build": "node build.mjs",
+    "play": "node build.mjs && open dist/novobranets.html"
   }
 }
