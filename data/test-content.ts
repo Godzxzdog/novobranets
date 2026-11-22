@@ -17,17 +17,29 @@ export const TEST_CARDS: Card[] = [
         id: 'hide',
         text: 'Сховати повістку під стос газет і нічого не казати',
         effects: { stats: { energy: -1, trust: 1 }, flags: { hid_call: true }, journal: 'Сховав повістку.' },
+        outcome: {
+          text: 'Ти сховав повістку між газетами й сам повірив, що її там немає. Через два дні вона знайшлась — у маминих руках.',
+          voice: 'Мама не сказала ні слова. Тільки поклала її на стіл, рівно, як складають гроші.',
+        },
       },
       {
         id: 'tell',
         text: 'Показати мамі й разом піти до військкомату',
         effects: { stats: { bonds: 1, trust: 1, energy: -1 }, journal: 'Пішов до військкомату з мамою.' },
+        outcome: {
+          text: 'Мама прочитала повістку двічі, ніби сподівалась, що в другий раз там буде щось інше. Потім одягнула пальто й пішла з тобою.',
+          voice: 'Вона тримала тебе під руку так, як у дитинстві — через дорогу.',
+        },
       },
       {
         id: 'ask_friend',
         text: 'Зателефонувати другові, який уже відслужив',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1 }, skills: { people: 1 }, journal: 'Друг розповів, як це насправді.' },
+        outcome: {
+          text: 'Друг говорив сорок хвилин і жодного разу не сказав «не бійся». Це було найчесніше, що ти чув за тиждень.',
+          voice: '«Головне — не вір нікому, хто обіцяє, що знає».',
+        },
       },
     ],
   },
@@ -39,16 +51,30 @@ export const TEST_CARDS: Card[] = [
     phase: [1],
     text: 'Черга у військкоматі. Хтось попереду жартує, що беруть усіх, у кого є пульс. Ніхто не сміється.',
     options: [
-      { id: 'silent', text: 'Стояти мовчки й слухати', effects: { stats: { understanding: 1, energy: -1 } } },
+      {
+        id: 'silent',
+        text: 'Стояти мовчки й слухати', effects: { stats: { understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти стояв і слухав. До кінця черги в голові було три чужі історії, і жодна не закінчувалась добре.',
+        },
+      },
       {
         id: 'talk',
         text: 'Запитати в чоловіка попереду, куди розподіляють',
         effects: { stats: { understanding: 1, bonds: 1 } },
+        outcome: {
+          text: 'Чоловік попереду довго дивився на твої черевики, потім сказав: «Усіх, хто без блату». І повернувся спиною.',
+          voice: 'Він не був грубий. Він просто вже знав.',
+        },
       },
       {
         id: 'leave',
         text: 'Спробувати вийти з черги й піти додому',
         effects: { stats: { health: -2, trust: -1, supplies: -1 }, flags: { tried_to_leave: true } },
+        outcome: {
+          text: 'Ти зробив три кроки назад і на четвертому тебе повернули за лікоть. Жодних криків — тільки «куди».',
+          voice: 'Після цього в якомусь бланку з\\\'явився один рядок, який ти побачиш через рік.',
+        },
       },
     ],
   },
@@ -64,12 +90,27 @@ export const TEST_CARDS: Card[] = [
         id: 'complain',
         text: 'Сказати про коліно, яке ниє з зими',
         effects: { stats: { health: 1, trust: -1 }, flags: { knee_noted: true } },
+        outcome: {
+          text: 'Лікар записав «скарги на коліно» й подивився на тебе вперше за весь огляд. Не зі співчуттям — з інтересом.',
+          voice: 'У бланку з\\\'явився рядок, якого там могло не бути.',
+        },
       },
-      { id: 'silent', text: '«Немає».', effects: { stats: { trust: 1, understanding: -1 } } },
+      {
+        id: 'silent',
+        text: '«Немає».', effects: { stats: { trust: 1, understanding: -1 } },
+        outcome: {
+          text: '«Немає» — і через тридцять секунд ти вже стояв у коридорі з печаткою в руці.',
+          voice: 'Коліно нагадає про себе пізніше. Воно вміє чекати.',
+        },
+      },
       {
         id: 'joke',
         text: '«Є — алергія на дурнів»',
         effects: { stats: { trust: -2, energy: 1 }, skills: { drill: 1 } },
+        outcome: {
+          text: 'Лікар не усміхнувся, але й не записав. Хтось за спиною пирснув.',
+          voice: 'Жарт спрацював рівно настільки, щоб тебе запам\\\'ятали.',
+        },
       },
     ],
   },
@@ -81,17 +122,31 @@ export const TEST_CARDS: Card[] = [
     phase: [1],
     text: 'Збираєш сумку. Мама мовчки кладе туди зайву пару шкарпеток і шоколадку. Ти знаєш, що шоколадку тобі не дадуть донести.',
     options: [
-      { id: 'take', text: 'Взяти все й не сперечатися', effects: { stats: { supplies: 2, bonds: 1, energy: -1 } } },
+      {
+        id: 'take',
+        text: 'Взяти все й не сперечатися', effects: { stats: { supplies: 2, bonds: 1, energy: -1 } },
+        outcome: {
+          text: 'Сумка застебнулась тільки з третього разу. Мама стояла в дверях і дивилась, як ти борешся з блискавкою.',
+        },
+      },
       {
         id: 'leave_sweet',
         text: 'Лишити шоколадку їй — на чай',
         effects: { stats: { bonds: 2, supplies: -1 }, flags: { left_sweet: true } },
+        outcome: {
+          text: 'Ти поклав шоколадку назад на стіл і сказав, що вона її не доїсть сама. Мама кивнула занадто швидко.',
+          voice: 'Вона їла її потім щовечора, по одному квадратику.',
+        },
       },
       {
         id: 'pack_smart',
         text: 'Перепакувати сам: ліки, шнурки, сіль',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { supplies: 3, energy: -1 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ти виклав усе й зібрав заново: ліки вниз, шнурки в кишеню, сіль у носок. Вийшло на третину легше й удвічі розумніше.',
+          voice: 'Це вміння потім врятує не тебе.',
+        },
       },
     ],
   },
@@ -105,16 +160,29 @@ export const TEST_CARDS: Card[] = [
     character: 'Сусід дядько Гриша',
     text: 'Дядько Гриша з третього поверху виходить на балкон і каже вниз те, що казав усім: «Я в Афгані був. Нічого не бійся, головне — не висовуйся».',
     options: [
-      { id: 'listen', text: 'Слухати й кивати', effects: { stats: { understanding: 1, energy: 1 } } },
+      {
+        id: 'listen',
+        text: 'Слухати й кивати', effects: { stats: { understanding: 1, energy: 1 } },
+        outcome: {
+          text: 'Дядько Гриша говорив двадцять хвилин. Ти кивав. З усього запам\\\'ятав «не висовуйся» — і те, що він казав це тричі.',
+        },
+      },
       {
         id: 'ask_what',
         text: 'Запитати, що він має на увазі',
         effects: { stats: { understanding: 2, bonds: 1 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Він замовк, довго дивився вниз, тоді сказав: «Я тобі не скажу, бо ти не повіриш». І пішов з балкона.',
+          voice: 'Це була найкорисніша порада за весь тиждень.',
+        },
       },
       {
         id: 'walk',
         text: 'Піти, не дослухавши',
         effects: { stats: { energy: 1, trust: -1 } },
+        outcome: {
+          text: 'Ти пішов, не дослухавши. За спиною ще довго було чути, як він говорить у порожній двір.',
+        },
       },
     ],
   },
@@ -156,16 +224,30 @@ export const TEST_CARDS: Card[] = [
     once: true,
     text: 'Вечір перед від\'їздом. Мама вийшла на кухню й там стоїть. Ти чуєш, як вода з крана тече надто довго.',
     options: [
-      { id: 'go', text: 'Піти на кухню й обійняти', effects: { stats: { bonds: 3, energy: -1 } } },
+      {
+        id: 'go',
+        text: 'Піти на кухню й обійняти', effects: { stats: { bonds: 3, energy: -1 } },
+        outcome: {
+          text: 'Ти обійняв маму на кухні, і вона заплакала тільки тоді, коли ти вже не бачив. Вода в крані текла ще довго після того, як вона його закрутила.',
+          voice: 'Вона сказала: «Їж більше». Це все.',
+        },
+      },
       {
         id: 'call_sister',
         text: 'Зателефонувати сестрі, яка не приїхала',
         effects: { stats: { bonds: 1, understanding: 1 } },
+        outcome: {
+          text: 'Сестра взяла слухавку на сьомому гудку й говорила швидко, ніби поспішала. Попрощатись не встигли.',
+          voice: '«Я приїду». Вона не приїхала.',
+        },
       },
       {
         id: 'not_say',
         text: 'Нічого не казати — так легше',
         effects: { stats: { bonds: -2, energy: 1, understanding: -1 } },
+        outcome: {
+          text: 'Ти ліг раніше й довго дивився в стелю. Мама заходила двічі — поставити склянку води, поправити ковдру.',
+        },
       },
     ],
   },
@@ -181,16 +263,26 @@ export const TEST_CARDS: Card[] = [
         id: 'ask_years',
         text: 'Запитати, чи він уже служив',
         effects: { stats: { understanding: 2, bonds: 1 } },
+        outcome: {
+          text: 'Він розповів про строкову службу 1987-го так докладно, що ти зрозумів: він готувався до цієї розмови роками.',
+          voice: '«Тоді було кому повертатись. Зараз не знаю».',
+        },
       },
       {
         id: 'silence',
         text: 'Нічого не питати',
         effects: { stats: { energy: 1 } },
+        outcome: {
+          text: 'Ви стояли поруч годину й не сказали одне одному ні слова. Це була найспокійніша година за тиждень.',
+        },
       },
       {
         id: 'swap_place',
         text: 'Пропустити його вперед',
         effects: { stats: { bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Він подякував тричі й на прощання сказав тобі «сину». Тобі стало гірше, а не краще.',
+        },
       },
     ],
   },
@@ -206,16 +298,25 @@ export const TEST_CARDS: Card[] = [
         id: 'agree',
         text: 'Подумати, що він має рацію',
         effects: { stats: { understanding: 2, trust: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти подумав, що він має рацію, і ця думка пішла за тобою до військкомату, як чужа собака.',
+        },
       },
       {
         id: 'angry',
         text: 'Сказати щось у відповідь',
         effects: { stats: { energy: -2, bonds: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти сказав щось різке. Той із пакетами обернувся, подивився на тебе довго й сказав: «Тобі туди». Ніхто не втрутився.',
+        },
       },
       {
         id: 'ignore',
         text: 'Зробити вигляд, що не чув',
         effects: { stats: { energy: 1 } },
+        outcome: {
+          text: 'Ти зробив вигляд, що не чув. Вони йшли за тобою ще півкварталу, говорячи голосніше.',
+        },
       },
     ],
   },
@@ -227,17 +328,29 @@ export const TEST_CARDS: Card[] = [
     phase: [1],
     text: 'Туалет у військкоматі не має дверей. Інструктор каже: «Привикайте». Перші три дні це здається найбільшою проблемою.',
     options: [
-      { id: 'joke', text: 'Жартувати з цього', effects: { stats: { bonds: 2, energy: -1 } } },
+      {
+        id: 'joke',
+        text: 'Жартувати з цього', effects: { stats: { bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Жарт зайшов. Хтось засміявся, хтось уперше подивився на тебе як на свого. Двері так і не з\\\'явились.',
+        },
+      },
       {
         id: 'fix',
         text: 'Знайти шматок брезенту й повісити',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { bonds: 2, supplies: -1, trust: -1 }, flags: { fixed_toilet: true } },
+        outcome: {
+          text: 'Ти повісив брезент на два цвяхи. Наступного ранку там стояла черга — і ніхто не знав, чия це робота.',
+        },
       },
       {
         id: 'endure',
         text: 'Стиснути зуби й терпіти',
         effects: { stats: { energy: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти терпів. Через тиждень уже не помічав, що немає дверей. Це, напевно, і називалося «привик».',
+        },
       },
     ],
   },
@@ -254,16 +367,27 @@ export const TEST_CARDS: Card[] = [
         id: 'watch',
         text: 'Дивитися у вікно й рахувати блокпости',
         effects: { stats: { understanding: 2, energy: -1 }, journal: 'Порахував вісім блокпостів.' },
+        outcome: {
+          text: 'Ти нарахував вісім блокпостів і збився на дев\\\'ятому. За вікном була вже не країна, а смуга.',
+          voice: 'Водій за шість годин сказав одне слово: «Приїхали».',
+        },
       },
       {
         id: 'share',
         text: 'Роздати те, що взяв із дому',
         effects: { stats: { bonds: 3, supplies: -2 } },
+        outcome: {
+          text: 'Домашнє розійшлося за п\\\'ятнадцять хвилин. Хтось сказав «дякую» тільки тобі, і то пошепки.',
+        },
       },
       {
         id: 'sleep',
         text: 'Спати, поки дають',
         effects: { stats: { energy: 2, understanding: -1 } },
+        outcome: {
+          text: 'Ти проспав усю дорогу й прокинувся від того, що автобус став. Ніхто тебе не будив.',
+          voice: 'Ті шість годин потім будуть здаватися найкращим сном у житті.',
+        },
       },
     ],
   },
@@ -280,17 +404,29 @@ export const TEST_CARDS: Card[] = [
         id: 'learn',
         text: 'Записати в блокнот і перепитати двічі',
         effects: { skills: { survival: 1 }, stats: { understanding: 1, energy: -1 }, flags: { knows_okop: true } },
+        outcome: {
+          text: 'Ти записав у блокнот дев\\\'ять пунктів і перепитав двічі. Толік подивився на тебе з повагою, яку не приховував.',
+          voice: '«Запам\\\'ятай: окоп копають не для того, щоб сидіти, а для того, щоб не бігти».',
+        },
       },
       {
         id: 'skeptic',
         text: 'Сказати, що це все одно не допоможе',
         effects: { stats: { bonds: -1, understanding: 1 } },
+        outcome: {
+          text: 'Ти сказав це вголос, і Толік замовк. Потім допив чай і пішов, не сказавши більше нічого.',
+          voice: 'Він більше ніколи не пропонував тобі нічого.',
+        },
       },
       {
         id: 'ask_why',
         text: 'Запитати, скільки з тих, кого він учив, ще живі',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { tolko_honest: true } },
+        outcome: {
+          text: 'Толік довго мовчав, потім назвав п\\\'ять імен і сказав, що ще двоє — «не рахуються». Більше він про це не говорив.',
+          voice: '«Я їх усіх пам\\\'ятаю. Це і є моя робота».',
+        },
       },
     ],
   },
@@ -302,16 +438,28 @@ export const TEST_CARDS: Card[] = [
     phase: [2, 3],
     text: 'Польова кухня. У каструлі щось, що називають борщем. Хлопець поруч упевнено каже: «Головне — гаряче».',
     options: [
-      { id: 'eat', text: 'З\'їсти й подякувати', effects: { stats: { health: 1, energy: 1, supplies: -1 } } },
+      {
+        id: 'eat',
+        text: 'З\'їсти й подякувати', effects: { stats: { health: 1, energy: 1, supplies: -1 } },
+        outcome: {
+          text: 'Борщ був гарячий, і це справді було головне. Ти не думав про папір. Через годину думав.',
+        },
+      },
       {
         id: 'point',
         text: 'Показати кухареві, що в каструлі плаває папір від мішка',
         effects: { stats: { bonds: -1, trust: -1, understanding: 1 } },
+        outcome: {
+          text: 'Кухар виловив папір і мовчки викинув. Потім подивився на тебе так, що ти зрозумів: більше нічого не скажеш без ризику.',
+        },
       },
       {
         id: 'skip',
         text: 'Віддати свою порцію хлопцеві з сусіднього відділення',
         effects: { stats: { bonds: 2, energy: -1, health: -1, supplies: -1 } },
+        outcome: {
+          text: 'Хлопець з сусіднього відділення з\\\'їв обидві порції й сказав, що ти «нормальний». Ти був голодний до вечора.',
+        },
       },
     ],
   },
@@ -327,16 +475,27 @@ export const TEST_CARDS: Card[] = [
         id: 'lie',
         text: '«Усе добре, мамо»',
         effects: { stats: { bonds: 1, understanding: 1, energy: -1 }, journal: 'Збрехав мамі.' },
+        outcome: {
+          text: 'Ти сказав, що все добре, і ще п\\\'ять хвилин описував погоду. Мама повірила — або зробила вигляд.',
+          voice: 'Вона подзвонить знову через два дні й запитає те саме.',
+        },
       },
       {
         id: 'truth',
         text: 'Сказати правду, коротко',
         effects: { stats: { bonds: -1, trust: -1, understanding: 2 } },
+        outcome: {
+          text: 'Ти сказав коротко: холодно, годують, стріляють. Мама замовкла на десять секунд, потім сказала: «Добре, що сказав».',
+          voice: 'Вона більше не питала «як ти».',
+        },
       },
       {
         id: 'hold',
         text: 'Мовчати й слухати, як вона плаче',
         effects: { stats: { bonds: 2, energy: -2 } },
+        outcome: {
+          text: 'Ти не сказав нічого, тільки слухав. Вона плакала й говорила про город. Ти тримав телефон до гудків.',
+        },
       },
     ],
   },
@@ -353,17 +512,27 @@ export const TEST_CARDS: Card[] = [
         id: 'volunteer',
         text: 'Вийди першим, поки не обрали',
         effects: { stats: { health: -2, trust: 2, bonds: 1 }, flags: { assault: true }, journal: 'Пішов у штурмову добровільно.' },
+        outcome: {
+          text: 'Ти вийшов першим, і прапорщик записав твоє прізвище, навіть не глянувши. За спиною хтось видихнув — не твій.',
+        },
       },
       {
         id: 'hide',
         text: 'Стати за широку спину сусіда',
         effects: { stats: { trust: -2, understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти став за спину сусіда, і він це відчув. Нічого не сказав, але відсунувся на крок.',
+        },
       },
       {
         id: 'ask',
         text: 'Запитати, за яким принципом обирають',
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { understanding: 2, trust: -1 }, flags: { knows_selection: true } },
+        outcome: {
+          text: 'Прапорщик подивився на тебе, як на людину, що запитала, чому вода мокра. Відповів усе ж: «За списком».',
+          voice: 'Тепер ти знав список. Це не допомогло.',
+        },
       },
     ],
   },
@@ -379,16 +548,26 @@ export const TEST_CARDS: Card[] = [
         id: 'attend',
         text: 'Сумлінно ходити',
         effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти ходив на муштру щодня. Через два тижні ти вмів ходити так, що ніхто не питав, чи ти боєць. Ноги боліли завжди.',
+        },
       },
       {
         id: 'skip',
         text: 'Пропускати під приводом нарядів',
         effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } },
+        outcome: {
+          text: 'Ти знайшов привід і врятував собі годину. Хтось із сержантів почав дивитися на тебе довше, ніж треба.',
+        },
       },
       {
         id: 'pointless',
         text: 'Запитати, навіщо це в окопі',
         effects: { stats: { trust: -2, understanding: 2, bonds: 1 } },
+        outcome: {
+          text: 'Ти запитав, і рота затихла. Відповіді не було — тільки наказ повторити питання ввечері, при всіх.',
+          voice: 'Але троє потім сказали тобі «дякую».',
+        },
       },
     ],
   },
@@ -405,17 +584,27 @@ export const TEST_CARDS: Card[] = [
         id: 'obey',
         text: 'Прибирати без слів',
         effects: { stats: { trust: 1, energy: -2 } },
+        outcome: {
+          text: 'Ти прибирав без слів три тижні. Потім прийшли нові, і прибирати почали вони. Ти не зупинив це.',
+        },
       },
       {
         id: 'stand',
         text: 'Сказати, що це не традиція, а безлад',
         effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+        outcome: {
+          text: 'Ти сказав це при всіх, і сержант уперше не знайшов, що відповісти. Половина відділення підтримала тебе, половина відвернулась.',
+        },
       },
       {
         id: 'trade',
         text: 'Домовитись: прибираю, але за харчі',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } },
+        outcome: {
+          text: 'Ти домовився: прибираю, але за тушонку. Домовленість трималась місяць, потім про неї «забули».',
+          voice: 'Але ти вмів домовлятися — це вміння будеш використовувати часто.',
+        },
       },
     ],
   },
@@ -431,17 +620,27 @@ export const TEST_CARDS: Card[] = [
         id: 'clean',
         text: 'Розібрати, почистити, зібрати',
         effects: { skills: { drill: 1, survival: 1 }, stats: { energy: -1, health: -1 } },
+        outcome: {
+          text: 'Ти розібрав автомат, почистив і зібрав за шість хвилин. Сержант кивнув — у нього це означало похвалу.',
+        },
       },
       {
         id: 'name',
         text: 'Дати йому ім\'я, щоб не боятися',
         effects: { stats: { energy: 1, bonds: 1, understanding: -1 } },
+        outcome: {
+          text: 'Ти назвав його «Сергій», як свого шкільного друга. Стало не так страшно. Стало й нерозумно.',
+        },
       },
       {
         id: 'ask_clean',
         text: 'Попросити сержанта показати, як правильно',
         requires: { skillAtLeast: { people: 1 } },
         effects: { skills: { drill: 1 }, stats: { trust: 1, energy: -1 }, flags: { knows_weapon: true } },
+        outcome: {
+          text: 'Сержант показав двічі, потім ще раз, не сварячись. Це було несподівано.',
+          voice: '«Питай. Тут за дурні питання не вбивають. За дурні дії — так».',
+        },
       },
     ],
   },
@@ -453,16 +652,28 @@ export const TEST_CARDS: Card[] = [
     phase: [2],
     text: 'Перша ніч у полі. Ти риєш «окоп» і розумієш, що це просто яма. Лопата коротка, земля — як камінь.',
     options: [
-      { id: 'dig', text: 'Копати до світанку', effects: { stats: { energy: -3, health: -1 }, skills: { survival: 1 } } },
+      {
+        id: 'dig',
+        text: 'Копати до світанку', effects: { stats: { energy: -3, health: -1 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ти копав до четвертої ранку. Яма вийшла на двадцять сантиметрів глибша, ніж у сусіда, і це було єдине, чим ти пишався того дня.',
+        },
+      },
       {
         id: 'mask',
         text: 'Закопати трохи й замаскувати',
         effects: { stats: { energy: -1, supplies: -1, understanding: 1 } },
+        outcome: {
+          text: 'Ти закопав трохи, замаскував і заснув. Уранці виявилось, що сержант бачив усе й нічого не сказав.',
+        },
       },
       {
         id: 'help',
         text: 'Копати разом із сусідом — повільніше, але вдвох',
         effects: { stats: { bonds: 2, energy: -2 } },
+        outcome: {
+          text: 'Ви копали вдвох і встигли менше. Але коли почало світати, у вас було дві ями й один спільний страх.',
+        },
       },
     ],
   },
@@ -474,16 +685,28 @@ export const TEST_CARDS: Card[] = [
     phase: [2],
     text: 'Політрук питає, хто знає другий куплет. Усі дивляться в землю. Ти знаєш, але розумієш, що скажеш.',
     options: [
-      { id: 'sing', text: 'Заспівати', effects: { stats: { trust: 2, bonds: -1, energy: -1 } } },
+      {
+        id: 'sing',
+        text: 'Заспівати', effects: { stats: { trust: 2, bonds: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти заспівав, і кілька голосів підхопили. Політрук записав тебе в «надійних». Хтось із хлопців після цього перестав з тобою говорити.',
+        },
+      },
       {
         id: 'mumble',
         text: 'Пробубоніти щось схоже',
         effects: { stats: { trust: 1, understanding: -1 } },
+        outcome: {
+          text: 'Ти пробубонів щось схоже на слова. Ніхто не прислухався. Політрук задоволено кивнув.',
+        },
       },
       {
         id: 'silent',
         text: 'Мовчати, як усі',
         effects: { stats: { bonds: 2, trust: -1 } },
+        outcome: {
+          text: 'Ти мовчав, як усі. Політрук пішов, і хтось сказав: «Ну хоч не стукач».',
+        },
       },
     ],
   },
@@ -499,12 +722,25 @@ export const TEST_CARDS: Card[] = [
         id: 'teach',
         text: 'Показати, як писати про дрібне',
         effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { taught_letters: true } },
+        outcome: {
+          text: 'Ти навчив його писати про дрібне: про чай, про шкарпетки, про те, що бачив сон. Він написав перший лист за місяць.',
+          voice: '«Вона зрозуміє, що я живий, навіть якщо я напишу дурницю».',
+        },
       },
-      { id: 'honest', text: '«Пиши як є»', effects: { stats: { understanding: 2, bonds: -1 } } },
+      {
+        id: 'honest',
+        text: '«Пиши як є»', effects: { stats: { understanding: 2, bonds: -1 } },
+        outcome: {
+          text: 'Ти сказав «пиши як є». Він написав і потім три дні не розмовляв із тобою.',
+        },
+      },
       {
         id: 'dont',
         text: 'Сказати, що це не твоя справа',
         effects: { stats: { energy: 1, bonds: -1 } },
+        outcome: {
+          text: 'Ти сказав, що це не твоя справа. Він більше не питав — ні в тебе, ні в когось іншого.',
+        },
       },
     ],
   },
@@ -520,17 +756,27 @@ export const TEST_CARDS: Card[] = [
         id: 'laugh',
         text: 'Посміятися й повторити те саме',
         effects: { stats: { bonds: 2, energy: 1, health: -1 } },
+        outcome: {
+          text: 'Ти посміявся й повторив те саме. Каска стала двома предметами назавжди.',
+        },
       },
       {
         id: 'protocol',
         text: 'Придумати, як прати нормально',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { health: 1, supplies: -1, bonds: 1 }, flags: { knows_laundry: true } },
+        outcome: {
+          text: 'Ти придумав прати в пакеті з теплою водою. Через тиждень так робило півнамету.',
+          voice: 'Дрібниця, яку згадають через місяць без тебе.',
+        },
       },
       {
         id: 'ignore',
         text: 'Не звертати уваги',
         effects: { stats: { health: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти не звертав уваги. Ноги почали боліти раніше за інших.',
+        },
       },
     ],
   },
@@ -547,16 +793,26 @@ export const TEST_CARDS: Card[] = [
         id: 'count',
         text: 'Рахувати й запам\'ятовувати',
         effects: { stats: { understanding: 2, energy: -2 }, skills: { survival: 1 }, flags: { counted_fire: true } },
+        outcome: {
+          text: 'Ти рахував секунди між розривами й записав вісім. Потім дізнався, що по цих секундах можна визначити позицію.',
+          voice: 'У блокноті лишився рядок: «1-2-3-4-5… близько».',
+        },
       },
       {
         id: 'calm',
         text: 'Заспокоїти хлопця поруч',
         effects: { stats: { bonds: 2, health: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти поклав руку хлопцеві на спину й говорив щось безглузде. Він перестав трястись. Ти — ні.',
+        },
       },
       {
         id: 'freeze',
         text: 'Завмерти й не рухатись',
         effects: { stats: { energy: -3, health: -1 } },
+        outcome: {
+          text: 'Ти не рухався. Усе закінчилось, а ти ще лежав довго після того, як усі встали.',
+        },
       },
     ],
   },
@@ -572,17 +828,26 @@ export const TEST_CARDS: Card[] = [
         id: 'share_spot',
         text: 'Пустити сусіда на свою суху половину',
         effects: { stats: { bonds: 2, health: -1, energy: -1 }, flags: { shared_trench: true } },
+        outcome: {
+          text: 'Ти подвинувся, і він сів у воду, але поруч. Уночі він двічі сказав «дякую» в темряву, де ти не міг зробити вигляд, що не чув.',
+        },
       },
       {
         id: 'keep',
         text: 'Залишити собі сухе',
         effects: { stats: { health: 1, bonds: -1, trust: -1 } },
+        outcome: {
+          text: 'Ти залишив сухе собі. Ніхто нічого не сказав — це було найгірше.',
+        },
       },
       {
         id: 'drain',
         text: 'Разом прокопати водовідвід',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { bonds: 2, health: 1, energy: -2 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ви прокопали рівчак, і вода пішла. Наступного дня він забився, і ви прокопали знову.',
+        },
       },
     ],
   },
@@ -598,17 +863,27 @@ export const TEST_CARDS: Card[] = [
         id: 'drink',
         text: 'Випити відразу',
         effects: { stats: { health: 1, energy: 1, supplies: -1 } },
+        outcome: {
+          text: 'Ти випив усе й одразу. Спрага повернулась через годину, сильніша.',
+        },
       },
       {
         id: 'boil',
         text: 'Назбирати з калюжі й прокип\'ятити',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { supplies: 2, health: -1, energy: -2 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Калюжа була калюжею. Ти кип\\\'ятив її двадцять хвилин і пив, не дивлячись.',
+          voice: 'Смак не питають, коли справа йде про ковток.',
+        },
       },
       {
         id: 'warn',
         text: 'Сказати хлопцям, що води мало',
         effects: { stats: { bonds: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти сказав хлопцям, і вони вдячно закивали. Ніхто не пішов по воду. Ніхто не поділився своєю.',
+        },
       },
     ],
   },
@@ -625,16 +900,25 @@ export const TEST_CARDS: Card[] = [
         id: 'say',
         text: 'Сказати вголос, що він загинув',
         effects: { stats: { understanding: 2, bonds: 1, energy: -2 }, flags: { said_he_died: true } },
+        outcome: {
+          text: 'Ти сказав це вголос, і всі замовкли. Хтось дописав його ім\\\'я на дошці в бліндажі.',
+        },
       },
       {
         id: 'silent',
         text: 'Мовчати разом з усіма',
         effects: { stats: { trust: 1, understanding: -1, bonds: 1 } },
+        outcome: {
+          text: 'Усі мовчали. Увечері його речі склали в мішок і винесли за намет.',
+        },
       },
       {
         id: 'letter',
         text: 'Почати писати лист його мамі',
         effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } },
+        outcome: {
+          text: 'Ти почав писати й застряг на другому реченні. Згорнув аркуш і поклав у нагрудну кишеню — ближче.',
+        },
       },
     ],
   },
@@ -678,16 +962,25 @@ export const TEST_CARDS: Card[] = [
         id: 'believe',
         text: 'Сказати, що це добре для морального духу',
         effects: { stats: { trust: 2, understanding: -2 } },
+        outcome: {
+          text: 'Ти сказав це вголос, і хтось подякував. На фото ти усміхався переконливіше за інших.',
+        },
       },
       {
         id: 'count',
         text: 'Порахувати, скільки людей на фото',
         effects: { stats: { understanding: 2, energy: -1 }, flags: { counted_photo: true } },
+        outcome: {
+          text: 'Ти порахував двадцять шість людей на фото. Через місяць серед них було вже дев\\\'ятнадцять.',
+        },
       },
       {
         id: 'turn_off',
         text: 'Відвернутися в момент зйомки',
         effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+        outcome: {
+          text: 'Ти відвернувся, і кадр вийшов з розмитим плечем. Начальство помітило. Хтось із хлопців — теж.',
+        },
       },
     ],
   },
@@ -704,17 +997,26 @@ export const TEST_CARDS: Card[] = [
         id: 'remember',
         text: 'Перепитати й повторити вголос',
         effects: { skills: { survival: 1 }, stats: { understanding: 1, bonds: 1 } },
+        outcome: {
+          text: 'Ти повторив її слова вголос, і вона вперше всміхнулась. Потім змусила тебе повторити ще раз.',
+        },
       },
       {
         id: 'mock',
         text: '«Та я й так знаю»',
         effects: { stats: { bonds: -1, trust: 1, understanding: -1 } },
+        outcome: {
+          text: '«Та я й так знаю» — ти знав, що це неправда, ще до того, як рот закрився.',
+        },
       },
       {
         id: 'ask_supplies',
         text: 'Запитати, скільки джгутів реально є',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { knows_jgut_count: true } },
+        outcome: {
+          text: 'Оля подивилась на тебе довго й сказала цифру, яку знали троє в роті. Тепер — четверо.',
+        },
       },
     ],
   },
@@ -730,16 +1032,25 @@ export const TEST_CARDS: Card[] = [
         id: 'rest',
         text: 'Попросити відпочинок, навіть якщо це «не по-чоловічому»',
         effects: { stats: { energy: 3, trust: -1 } },
+        outcome: {
+          text: 'Ти попросив відпочинок і отримав. Хтось подивився косо, але хтось і подумав зробити так само.',
+        },
       },
       {
         id: 'hold',
         text: 'Триматися далі',
         effects: { stats: { health: -2, trust: 1, energy: 1 } },
+        outcome: {
+          text: 'Ти тримався. Тіло не трималося. Руки тремтіли до кінця дня.',
+        },
       },
       {
         id: 'help',
         text: 'Допомогти хлопцеві поруч заснути хоч на годину',
         effects: { stats: { bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти поклав йому голову на своє плече, і він проспав сімнадцять хвилин. Потім сказав, що це був найкращий сон за місяць.',
+        },
       },
     ],
   },
@@ -757,17 +1068,26 @@ export const TEST_CARDS: Card[] = [
         text: 'Заплатити',
         requires: { statAtLeast: { supplies: 4 } },
         effects: { stats: { supplies: -4, health: 1, trust: -1 }, flags: { who_paid: true } },
+        outcome: {
+          text: 'Гроші взяли й про переведення більше не згадували.',
+        },
       },
       {
         id: 'refuse',
         text: 'Відмовитись',
         effects: { stats: { understanding: 1, bonds: 1, trust: -1 } },
+        outcome: {
+          text: 'Ти відмовився впевнено. Він записав щось у свій блокнот. Той блокнот бачили інші.',
+        },
       },
       {
         id: 'report',
         text: 'Написати рапорт',
         requires: { skillAtLeast: { system: 2 } },
         effects: { stats: { trust: -3, understanding: 2, bonds: -1 }, flags: { reported: true } },
+        outcome: {
+          text: 'Ти написав рапорт, і його знищили десь у штабі. Але хтось устиг прочитати.',
+        },
       },
     ],
   },
@@ -783,16 +1103,25 @@ export const TEST_CARDS: Card[] = [
         id: 'split',
         text: 'Розділити по-чесному',
         effects: { stats: { supplies: 2, bonds: 2, energy: 1 } },
+        outcome: {
+          text: 'Розділили чесно: шоколадки по шматку, носки — тому, у кого ноги вже червоні. Ніхто не сперечався.',
+        },
       },
       {
         id: 'keep',
         text: 'Забрати собі, бо ти гірше забезпечений',
         effects: { stats: { supplies: 3, bonds: -2, trust: 1 } },
+        outcome: {
+          text: 'Ти забрав собі. Сусід дивився на тебе, поки ти їв, і не відводив очей.',
+        },
       },
       {
         id: 'write_back',
         text: 'Записати адресу волонтерів, щоб подякувати',
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } },
+        outcome: {
+          text: 'Ти записав адресу волонтерів на папері, який потім знайшов у брюках. Вони так і не отримали відповіді.',
+        },
       },
     ],
   },
@@ -808,17 +1137,26 @@ export const TEST_CARDS: Card[] = [
         id: 'agree',
         text: 'Погодитись — це прикриття',
         effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } },
+        outcome: {
+          text: 'Ти погодився. Прикриття працювало рівно до того дня, коли хлопці перестали говорити при тобі.',
+        },
       },
       {
         id: 'refuse',
         text: 'Відмовитись прямо',
         effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+        outcome: {
+          text: 'Ти відмовився прямо, і він усміхнувся. Це було найгірше — він не розсердився.',
+        },
       },
       {
         id: 'pretend',
         text: 'Погодитись і не робити нічого',
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } },
+        outcome: {
+          text: 'Ти погодився й нічого не робив. Він питав двічі, потім перестав. Хтось із хлопців здогадався, хтось — ні.',
+        },
       },
     ],
   },
@@ -837,16 +1175,25 @@ export const TEST_CARDS: Card[] = [
         id: 'admit',
         text: 'Сказати, що почав це й шкодує',
         effects: { stats: { bonds: 2, trust: -2, understanding: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти сказав, що почав це й шкодує. Хтось кивнув. Ніхто не підійшов.',
+        },
       },
       {
         id: 'double',
         text: 'Доносити ще, щоб уже не було чого втрачати',
         effects: { stats: { trust: 2, bonds: -3, understanding: -2 } },
+        outcome: {
+          text: 'Ти доносив далі, і з кожним доносом людей навколо ставало менше. Це виявилось простіше, ніж ти думав.',
+        },
       },
       {
         id: 'silent',
         text: 'Жити з цим мовчки',
         effects: { stats: { energy: -2, bonds: -1, understanding: 1 } },
+        outcome: {
+          text: 'Ти жив із цим мовчки. Увечері ти ловив себе на тому, що слухаєш розмови біля намету.',
+        },
       },
     ],
   },
@@ -862,16 +1209,25 @@ export const TEST_CARDS: Card[] = [
         id: 'pose',
         text: 'Позувати разом з усіма',
         effects: { stats: { bonds: 2, energy: 1 } },
+        outcome: {
+          text: 'Фото вийшло гарним — усі на ньому були ще живі.',
+        },
       },
       {
         id: 'refuse',
         text: 'Відмовитись',
         effects: { stats: { understanding: 1, bonds: -1 } },
+        outcome: {
+          text: 'Ти відмовився, і хтось буркнув, що ти «як не свій». Кадр зробили без тебе.',
+        },
       },
       {
         id: 'send',
         text: 'Попросити, щоб надіслали мамі',
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } },
+        outcome: {
+          text: 'Ти попросив надіслати мамі. Вона повісила фото над столом, і його бачили всі сусіди.',
+        },
       },
     ],
   },
@@ -887,16 +1243,25 @@ export const TEST_CARDS: Card[] = [
         id: 'dry',
         text: 'Висушити бодай шкарпетки над буржуйкою',
         effects: { stats: { health: 1, energy: -1, supplies: -1 } },
+        outcome: {
+          text: 'Ти висушив шкарпетки над буржуйкою, і намет зачув паленим. Але ноги відійшли.',
+        },
       },
       {
         id: 'swap',
         text: 'Попросити в когось запасні',
         effects: { stats: { health: 2, bonds: -1, supplies: -1 } },
+        outcome: {
+          text: 'Хтось дав запасні. Мокрі ти повісив на спину. Він сказав, що це нічого, і забрав їх назад через тиждень.',
+        },
       },
       {
         id: 'endure',
         text: 'Терпіти',
         effects: { stats: { health: -2, energy: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти терпів. Медсестра дивилась на ноги й мовчала, і це мовчання було найкращим, що вона могла дати.',
+        },
       },
     ],
   },
@@ -912,17 +1277,26 @@ export const TEST_CARDS: Card[] = [
         id: 'stand',
         text: 'Стояти й відпрацьовувати',
         effects: { skills: { drill: 1 }, stats: { energy: -3, trust: 1 } },
+        outcome: {
+          text: 'Ти стояв о третій ночі й відпрацьовував до кінця. Сержант подякував. Ноги відмовили вранці.',
+        },
       },
       {
         id: 'tell',
         text: 'Сказати сержантові, що це шкодить',
         effects: { stats: { trust: -2, bonds: 1, understanding: 1 } },
+        outcome: {
+          text: 'Ти сказав, що це шкодить. Сержант відповів: «Це і є служба». Хтось із хлопців запам\\\'ятав, хтось — ні.',
+        },
       },
       {
         id: 'fake',
         text: 'Зробити вигляд, що виконуєш',
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { trust: 1, understanding: 1, energy: -1 }, flags: { learnt_fake: true } },
+        outcome: {
+          text: 'Ти робив вигляд, і ніхто не помітив. Через тиждень так робило вже троє.',
+        },
       },
     ],
   },
@@ -938,17 +1312,26 @@ export const TEST_CARDS: Card[] = [
         id: 'own',
         text: 'Взяти собі одну — у тебе ниє коліно',
         effects: { stats: { health: 2, bonds: -2 } },
+        outcome: {
+          text: 'Ти взяв пігулку, і коліно відпустило на шість годин. Хтось побачив.',
+        },
       },
       {
         id: 'give',
         text: 'Віддати тому, кому гірше',
         effects: { stats: { bonds: 3, energy: -1 } },
+        outcome: {
+          text: 'Ти віддав тому, кому гірше. Він потім сказав, що це було «занадто» — і що він не забуде.',
+        },
       },
       {
         id: 'ask_olia',
         text: 'Спитати Олю, кому справді потрібно',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 2, health: -1 }, flags: { knows_triage: true } },
+        outcome: {
+          text: 'Оля подивилась на тебе так, ніби ти нарешті сказав щось правильне, і назвала ім\\\'я.',
+        },
       },
     ],
   },
@@ -966,13 +1349,25 @@ export const TEST_CARDS: Card[] = [
         id: 'return',
         text: 'Віддати спальник назад',
         effects: { stats: { health: -2, bonds: 3, energy: -1 } },
+        outcome: {
+          text: 'Ти віддав спальник назад. Уночі він кашляв менше, ти — більше. Уранці він сказав, що не просив.',
+        },
       },
-      { id: 'keep', text: 'Залишити собі', effects: { stats: { health: 1, bonds: -2 } } },
+      {
+        id: 'keep',
+        text: 'Залишити собі', effects: { stats: { health: 1, bonds: -2 } },
+        outcome: {
+          text: 'Ти залишив спальник собі. Він не сказав нічого, і це було гірше за будь-яку образу.',
+        },
+      },
       {
         id: 'find',
         text: 'Знайти ще щось тепле на сусідній позиції',
         requires: { skillAtLeast: { survival: 2 } },
         effects: { stats: { supplies: 1, bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти знайшов на сусідній позиції старий бушлат. Приніс два. Тепер кашляли обидва, але спали тепліше.',
+        },
       },
     ],
   },
@@ -988,17 +1383,26 @@ export const TEST_CARDS: Card[] = [
         id: 'help',
         text: 'Допомогти написати коротко й чесно',
         effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { letters_help: true } },
+        outcome: {
+          text: 'Ви написали коротко й чесно: три речення, жодного пафосу. Він перечитав і сказав, що це перший лист, який він не соромиться.',
+        },
       },
       {
         id: 'joke',
         text: 'Сказати, що пошта все одно не дійде',
         effects: { stats: { understanding: 1, bonds: -1 } },
+        outcome: {
+          text: 'Ти сказав, що пошта не дійде, і він засміявся. Потім поклав листи в кишеню й більше не діставав.',
+        },
       },
       {
         id: 'send',
         text: 'Знайти того, хто виїде на ротацію, і передати',
         requires: { skillAtLeast: { people: 2 } },
         effects: { stats: { bonds: 3, supplies: -1 } },
+        outcome: {
+          text: 'Ти знайшов хлопця, що виїжджав на ротацію, і передав три листи. Два дійшли. Третій — ні.',
+        },
       },
     ],
   },
@@ -1015,17 +1419,26 @@ export const TEST_CARDS: Card[] = [
         id: 'write',
         text: 'Записати цю думку в блокнот',
         effects: { stats: { understanding: 3, energy: -1 } },
+        outcome: {
+          text: 'Ти записав думку в блокнот і закреслив. Потім розкреслив назад.',
+        },
       },
       {
         id: 'suppress',
         text: 'Наказати собі не думати про це',
         effects: { stats: { understanding: -2, trust: 1, health: -1 } },
+        outcome: {
+          text: 'Ти наказав собі не думати. Це працювало до вечора.',
+        },
       },
       {
         id: 'share_doubt',
         text: 'Сказати Толікові',
         requires: { flagTrue: ['tolko_honest'] },
         effects: { stats: { understanding: 2, bonds: 2 }, flags: { doubt_shared: true } },
+        outcome: {
+          text: 'Толік вислухав і сказав: «Я думаю так само. Просто не пишу». Ви сиділи ще годину й мовчали.',
+        },
       },
     ],
   },
@@ -1042,17 +1455,26 @@ export const TEST_CARDS: Card[] = [
         id: 'accept',
         text: 'Погодитись',
         effects: { stats: { understanding: 1, bonds: 1, health: -1 }, flags: { commander_trusts: true } },
+        outcome: {
+          text: 'Ти погодився, і він потиснув руку. Хтось побачив. Тепер від тебе чекають не подвигів, а рішень.',
+        },
       },
       {
         id: 'refuse',
         text: 'Відмовитись — відповідальність не потрібна',
         effects: { stats: { trust: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти відмовився. Він не наполягав, але більше не приходив.',
+        },
       },
       {
         id: 'ask_plan',
         text: 'Запитати, у чому план полягає насправді',
         requires: { skillAtLeast: { system: 2 } },
         effects: { stats: { understanding: 3, bonds: 1 }, flags: { knows_plan: true } },
+        outcome: {
+          text: 'Він розповів план, і план був поганий. Але він був, і це вже було більше, ніж у всіх інших.',
+        },
       },
     ],
   },
@@ -1069,16 +1491,25 @@ export const TEST_CARDS: Card[] = [
         id: 'condemn',
         text: 'Підтримати розмову про зраду',
         effects: { stats: { trust: 1, understanding: -2, bonds: -1 } },
+        outcome: {
+          text: 'Ти сказав те, що від тебе чекали. Хтось кивнув, хтось подивився вбік.',
+        },
       },
       {
         id: 'silence',
         text: 'Мовчати',
         effects: { stats: { understanding: 1, trust: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти мовчав, і це запам\\\'ятали більше, ніж будь-які слова.',
+        },
       },
       {
         id: 'understand',
         text: 'Сказати, що розумієш їх',
         effects: { stats: { understanding: 2, bonds: 1, trust: -1 }, flags: { spoke_for_them: true } },
+        outcome: {
+          text: 'Ти сказав, що розумієш їх. Розмова закінчилась. Хтось відтоді уникав твого погляду.',
+        },
       },
     ],
   },
@@ -1094,17 +1525,26 @@ export const TEST_CARDS: Card[] = [
         id: 'believe',
         text: 'Повірити й розповісти хлопцям',
         effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } },
+        outcome: {
+          text: 'Ти розповів хлопцям, і ніч стала безсонною для всіх. Уранці писар заперечив власні слова.',
+        },
       },
       {
         id: 'dismiss',
         text: 'Відмахнутися',
         effects: { stats: { understanding: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти відмахнувся, і писар образився. Він розповідав це ще трьом.',
+        },
       },
       {
         id: 'check',
         text: 'Перевірити через знайомого в штабі',
         requires: { skillAtLeast: { system: 2 } },
         effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } },
+        outcome: {
+          text: 'Ти перевірив через знайомого в штабі. Той відповів одним словом: «Правда». І попросив не згадувати його імені.',
+        },
       },
     ],
   },
@@ -1120,17 +1560,26 @@ export const TEST_CARDS: Card[] = [
         id: 'stay',
         text: 'Лишитись на позиції',
         effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } },
+        outcome: {
+          text: 'Ти залишився, і уламок лишився з тобою. Ногу тягнуло при кожному кроці.',
+        },
       },
       {
         id: 'evac',
         text: 'Дозволити відправити себе в тил',
         effects: { stats: { health: 3, trust: -2, understanding: 1 } },
+        outcome: {
+          text: 'Тебе відправили в тил. У дорозі ти тричі питав, скільки людей лишилось на позиції.',
+        },
       },
       {
         id: 'self_help',
         text: 'Обробити сам, як учила Оля',
         requires: { flagTrue: ['knows_jgut_count'] },
         effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ти обробив рану сам, як учила Оля. Вийшло гірше, ніж у неї, але краще, ніж нічого.',
+        },
       },
     ],
   },
@@ -1146,16 +1595,25 @@ export const TEST_CARDS: Card[] = [
         id: 'sing',
         text: 'Підспівувати',
         effects: { stats: { bonds: 2, energy: 1, understanding: 1 } },
+        outcome: {
+          text: 'Ти підспівував тихо, щоб не чули. Хтось почув і підспівав гучніше.',
+        },
       },
       {
         id: 'listen',
         text: 'Слухати й дивитися на обличчя',
         effects: { stats: { understanding: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти слухав і дивився на обличчя. Половину з них ти бачив уперше в темряві.',
+        },
       },
       {
         id: 'ask',
         text: 'Запитати хлопця, де він це чув',
         effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } },
+        outcome: {
+          text: 'Він замислився й відповів: «Від діда». Потім заспівав ще раз, повільніше.',
+        },
       },
     ],
   },
@@ -1172,17 +1630,26 @@ export const TEST_CARDS: Card[] = [
         id: 'reply',
         text: 'Відповісти зараз, поки є зв\'язок',
         effects: { stats: { bonds: 3, energy: -2 } },
+        outcome: {
+          text: 'Ти відповів, поки був зв\\\'язок. Писав коротко, закреслив три рази.',
+        },
       },
       {
         id: 'later',
         text: 'Відкласти — зараз не до цього',
         effects: { stats: { energy: 1, bonds: -2, understanding: -1 } },
+        outcome: {
+          text: 'Ти відклав, і зв\\\'язок зник до вечора. Потім ти забув, а потім було соромно згадати.',
+        },
       },
       {
         id: 'send_money',
         text: 'Спробувати передати трохи грошей',
         requires: { statAtLeast: { supplies: 3 } },
         effects: { stats: { supplies: -3, bonds: 3, trust: -1 } },
+        outcome: {
+          text: 'Ти спробував передати гроші. Вони не дійшли, і ти так і не дізнався, де осіли.',
+        },
       },
     ],
   },
@@ -1198,16 +1665,25 @@ export const TEST_CARDS: Card[] = [
         id: 'teach',
         text: 'Навчити того, що знаєш',
         effects: { skills: { people: 1 }, stats: { bonds: 2, understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти навчив його всього, що знав, за два дні. Він записував. Це був твій найкращий спадок.',
+        },
       },
       {
         id: 'warn',
         text: 'Попередити, що тут ніхто не знає всього',
         effects: { stats: { understanding: 2, bonds: 1 } },
+        outcome: {
+          text: 'Ти сказав, що тут ніхто не знає всього. Він зрозумів це через три дні, сам.',
+        },
       },
       {
         id: 'mock',
         text: 'Посміятися з його впевненості',
         effects: { stats: { bonds: -2, energy: 1 } },
+        outcome: {
+          text: 'Ти посміявся з його впевненості. Він замовк і більше не питав.',
+        },
       },
     ],
   },
@@ -1223,17 +1699,26 @@ export const TEST_CARDS: Card[] = [
         id: 'stay_awake',
         text: 'Стояти до кінця, хоч би що',
         effects: { stats: { health: -2, energy: -2, trust: 2 }, flags: { held_watch: true } },
+        outcome: {
+          text: 'Ти стояв до кінця. Ніч минула тихо, і це найгірше, що могло статись із безсонням.',
+        },
       },
       {
         id: 'micro_sleep',
         text: 'Дрімнути хвилин на десять',
         effects: { stats: { energy: 2, trust: -1, health: -1 } },
+        outcome: {
+          text: 'Ти дрімнув на десять хвилин. Прокинувся від власного храпу. Нічого не сталось.',
+        },
       },
       {
         id: 'share',
         text: 'Домовитись із сусідом по черзі',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 2, energy: 1, trust: -1 } },
+        outcome: {
+          text: 'Ви домовились: він перший, ти другий. Він розбудив тебе на п\\\'ять хвилин пізніше, ніж обіцяв.',
+        },
       },
     ],
   },
@@ -1249,16 +1734,25 @@ export const TEST_CARDS: Card[] = [
         id: 'hope',
         text: 'Вірити в хороший варіант',
         effects: { stats: { energy: 2, understanding: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти сказав, що буде краще. Хлопці повірили — не тому, що ти переконав, а тому, що їм було треба.',
+        },
       },
       {
         id: 'realistic',
         text: 'Сказати хлопцям, що обидва варіанти погані по-своєму',
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти сказав, що обидва варіанти погані по-своєму. Хтось подякував за чесність. Хтось не розмовляв до ранку.',
+        },
       },
       {
         id: 'silence',
         text: 'Не втручатись',
         effects: { stats: { energy: 1 } },
+        outcome: {
+          text: 'Ти не втручався. Спір закінчився сам, але щось між хлопцями змінилось.',
+        },
       },
     ],
   },
@@ -1274,16 +1768,25 @@ export const TEST_CARDS: Card[] = [
         id: 'ask',
         text: 'Поговорити з ним віч-на-віч',
         effects: { stats: { understanding: 2, bonds: 1, supplies: -1 } },
+        outcome: {
+          text: 'Ви поговорили віч-на-віч, і він повернув. Не одразу, але повернув.',
+        },
       },
       {
         id: 'public',
         text: 'Сказати при всіх',
         effects: { stats: { bonds: -3, trust: 1, supplies: 1 } },
+        outcome: {
+          text: 'Ти сказав при всіх. Він повернув і більше ніколи не сідав поруч.',
+        },
       },
       {
         id: 'pretend',
         text: 'Зробити вигляд, що не помітив',
         effects: { stats: { bonds: 2, supplies: -1, understanding: 1 } },
+        outcome: {
+          text: 'Ти зробив вигляд, що не помітив. Через тиждень зникло щось інше.',
+        },
       },
     ],
   },
@@ -1301,16 +1804,25 @@ export const TEST_CARDS: Card[] = [
         id: 'rage',
         text: 'Сказати вголос, що це безглуздо',
         effects: { stats: { understanding: 3, trust: -3, bonds: 1, energy: -2 } },
+        outcome: {
+          text: 'Ти кричав у порожній бліндаж, і ніхто не заперечив. Хтось плакав тихіше за тебе.',
+        },
       },
       {
         id: 'teach_others',
         text: 'Передати його науку далі',
         effects: { skills: { survival: 1, people: 1 }, stats: { bonds: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти показав трьом те, що показував Толік. Один із них згадає це через місяць.',
+        },
       },
       {
         id: 'shut',
         text: 'Закритись',
         effects: { stats: { energy: -1, bonds: -2, understanding: 1 } },
+        outcome: {
+          text: 'Ти закрився. Наступного ранку ти не пам\\\'ятав, що відповідав на питання.',
+        },
       },
     ],
   },
@@ -1329,16 +1841,25 @@ export const TEST_CARDS: Card[] = [
         id: 'hold',
         text: 'Тримати',
         effects: { stats: { health: -2, trust: 2 }, flags: { held_post: true } },
+        outcome: {
+          text: 'Ти тримав позицію. Нічого не сталось, і саме тому це здавалось перемогою.',
+        },
       },
       {
         id: 'dig',
         text: 'Поглибити окоп, поки є час',
         effects: { stats: { energy: -2, health: 1, supplies: -1 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ти поглибив окоп на пів метра й накрив його гіллям. За годину підмога так і не прийшла, а окоп став кращим.',
+        },
       },
       {
         id: 'gather',
         text: 'Зібрати хлопців і поговорити, що робити, якщо тихо не стане',
         effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { last_talk: true } },
+        outcome: {
+          text: 'Ти зібрав хлопців і сказав те, що всі й так думали. Говорили пів години. Домовились про найпростіше: не бігти навмання.',
+        },
       },
     ],
   },
@@ -1355,16 +1876,25 @@ export const TEST_CARDS: Card[] = [
         id: 'joke',
         text: '«Що ми добре копали»',
         effects: { stats: { energy: 1, bonds: 1, understanding: 1 }, flags: { joke_epitaph: true } },
+        outcome: {
+          text: 'Хтось усміхнувся вперше за добу. Потім сказав: «Копали ми справді добре».',
+        },
       },
       {
         id: 'honest',
         text: '«Що ми не хотіли тут бути»',
         effects: { stats: { understanding: 2, bonds: 1, energy: -1 }, flags: { honest_epitaph: true } },
+        outcome: {
+          text: '«Що ми не хотіли тут бути» — і всі кивнули. Ніхто не сказав, що це неправда.',
+        },
       },
       {
         id: 'nothing',
         text: '«Нічого. Не скажуть»',
         effects: { stats: { understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти сказав, що нічого не скажуть. Хтось довго мовчав, потім: «Скажуть те, що самі придумають».',
+        },
       },
     ],
   },
@@ -1381,16 +1911,25 @@ export const TEST_CARDS: Card[] = [
         text: 'Висунутися й перевірити',
         requires: { skillAtLeast: { survival: 1 } },
         effects: { stats: { health: -1, understanding: 2, energy: -1 }, flags: { checked_out: true } },
+        outcome: {
+          text: 'Ти висунувся й побачив порожнечу. Нічого. Ти не повірив і висунувся ще раз.',
+        },
       },
       {
         id: 'wait',
         text: 'Чекати наказ',
         effects: { stats: { energy: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти чекав наказ. Наказ прийшов на двадцять хвилин пізніше, ніж був потрібен.',
+        },
       },
       {
         id: 'talk_down',
         text: 'Заспокоїти тих, хто хоче бігти',
         effects: { stats: { bonds: 2, understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти говорив тихо й спокійно, і двоє не побігли. Третій побіг.',
+        },
       },
     ],
   },
@@ -1406,16 +1945,25 @@ export const TEST_CARDS: Card[] = [
         id: 'remember',
         text: 'Згадати все, що було вдома',
         effects: { stats: { bonds: 2, understanding: 2, energy: -1 } },
+        outcome: {
+          text: 'Ти згадав кухню, кран, шкарпетки на батареї. Дрібниці виявились найважчими.',
+        },
       },
       {
         id: 'pray',
         text: 'Молитися, хоч і не віриш',
         effects: { stats: { energy: 1, understanding: -1, trust: 1 } },
+        outcome: {
+          text: 'Ти молився, хоч і не вірив. Це виявилось не дурним — просто ні до кого.',
+        },
       },
       {
         id: 'prepare',
         text: 'Приготуватися',
         effects: { stats: { health: 1, energy: -1 }, skills: { survival: 1 } },
+        outcome: {
+          text: 'Ти перевірив зброю, воду, край окопу. Далі можна було тільки чекати.',
+        },
       },
     ],
   },
@@ -1432,16 +1980,25 @@ export const TEST_CARDS: Card[] = [
         id: 'ready',
         text: 'Приготуватися й дивитися прямо',
         effects: { stats: { understanding: 1, bonds: 1 } },
+        outcome: {
+          text: 'Ти дивився прямо. Тіло тремтіло окремо від тебе.',
+        },
       },
       {
         id: 'hide',
         text: 'Залягти на дно окопу',
         effects: { stats: { health: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти заляг на дно й накрив голову. Звук став глухішим, і це допомогло.',
+        },
       },
       {
         id: 'comfort',
         text: 'Прикрити хлопця поруч',
         effects: { stats: { bonds: 2, health: -2 } },
+        outcome: {
+          text: 'Ти прикрив хлопця поруч собою. Він цього не бачив.',
+        },
       },
     ],
   },
@@ -1457,16 +2014,25 @@ export const TEST_CARDS: Card[] = [
         id: 'pass',
         text: 'Передати далі, не затягнувшись',
         effects: { stats: { bonds: 2, health: -1 } },
+        outcome: {
+          text: 'Ти передав далі, не затягнувшись. Хтось сказав, що це по-дурному. Хтось — що правильно.',
+        },
       },
       {
         id: 'puff',
         text: 'Затягнутись раз',
         effects: { stats: { energy: 1, health: -1, bonds: 1 } },
+        outcome: {
+          text: 'Ти затягнувся раз і віддав. Смак був гіркий, як усе того дня.',
+        },
       },
       {
         id: 'talk',
         text: 'Сказати, що це безглуздо, і почати розмову',
         effects: { stats: { understanding: 2, bonds: 1 } },
+        outcome: {
+          text: 'Ти сказав, що це безглуздо, і почалась розмова про дім. Вона тривала до темряви.',
+        },
       },
     ],
   },
@@ -1482,17 +2048,26 @@ export const TEST_CARDS: Card[] = [
         id: 'lie',
         text: 'Обіцяти',
         effects: { stats: { bonds: 2, understanding: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти пообіцяв. Він повірив, і це було найкраще, що ти міг зробити того вечора.',
+        },
       },
       {
         id: 'honest',
         text: 'Сказати, що не можеш обіцяти',
         effects: { stats: { understanding: 2, bonds: -1 } },
+        outcome: {
+          text: 'Ти сказав, що не можеш обіцяти. Він довго мовчав, потім подякував.',
+        },
       },
       {
         id: 'other',
         text: 'Пообіцяти сказати інше — те, що буде правдою',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } },
+        outcome: {
+          text: 'Ти пообіцяв сказати його мамі, що він був нормальним. Це було правдою.',
+        },
       },
     ],
   },
@@ -1508,16 +2083,25 @@ export const TEST_CARDS: Card[] = [
         id: 'eat',
         text: 'З\'їсти свою частину',
         effects: { stats: { health: 1, energy: 1, supplies: -1 } },
+        outcome: {
+          text: 'Ти з\\\'їв свою частину й довго сидів із порожньою мискою.',
+        },
       },
       {
         id: 'give',
         text: 'Віддати свою частину',
         effects: { stats: { bonds: 3, health: -1, energy: -1 } },
+        outcome: {
+          text: 'Ти віддав свою частину. Він їв і не дивився на тебе.',
+        },
       },
       {
         id: 'thanks',
         text: 'Подякувати вголос',
         effects: { stats: { bonds: 1, understanding: 2 } },
+        outcome: {
+          text: 'Ти подякував уголос. Кухар зніяковів і сказав: «Та годі».',
+        },
       },
     ],
   },
@@ -1534,16 +2118,25 @@ export const TEST_CARDS: Card[] = [
         id: 'truth',
         text: 'Сказати правду — може, востаннє',
         effects: { stats: { bonds: 2, understanding: 2, energy: -2 } },
+        outcome: {
+          text: 'Ти сказав правду. Мама плакала, і ти чув це, а не уявляв.',
+        },
       },
       {
         id: 'lie',
         text: 'Сказати, що все добре',
         effects: { stats: { bonds: 1, understanding: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти сказав, що все добре. Вона повірила, і ти надовго запам\\\'ятав її голос.',
+        },
       },
       {
         id: 'silent',
         text: 'Слухати й мовчати',
         effects: { stats: { bonds: 3, energy: -2 } },
+        outcome: {
+          text: 'Ти слухав і мовчав. Вона говорила про город двадцять хвилин.',
+        },
       },
     ],
   },
@@ -1559,16 +2152,25 @@ export const TEST_CARDS: Card[] = [
         id: 'join',
         text: 'Долучитись до планування',
         effects: { stats: { bonds: 2, energy: 2, understanding: -1 } },
+        outcome: {
+          text: 'Ти долучився й сказав те, що думав. План став трохи кращим.',
+        },
       },
       {
         id: 'honest',
         text: 'Сказати, що не варто',
         effects: { stats: { understanding: 2, bonds: -2, energy: -1 } },
+        outcome: {
+          text: 'Ти сказав, що не варто. Тебе вислухали й зробили по-своєму.',
+        },
       },
       {
         id: 'listen',
         text: 'Слухати й нічого не казати',
         effects: { stats: { understanding: 1, energy: 1 } },
+        outcome: {
+          text: 'Ти слухав і нічого не казав. Це теж було рішення.',
+        },
       },
     ],
   },
@@ -1585,16 +2187,25 @@ export const TEST_CARDS: Card[] = [
         text: 'Спробувати полагодити',
         requires: { skillAtLeast: { system: 1 } },
         effects: { stats: { understanding: 2, energy: -2 }, skills: { system: 1 }, flags: { fixed_radio: true } },
+        outcome: {
+          text: 'Ти полагодив його на двадцять хвилин. Цього вистачило для однієї передачі.',
+        },
       },
       {
         id: 'assume',
         text: 'Вирішити, що нас виключили',
         effects: { stats: { understanding: 2, bonds: -1, trust: -2 } },
+        outcome: {
+          text: 'Ти вирішив, що вас виключили. Далі все робили так, ніби це правда.',
+        },
       },
       {
         id: 'not_tell',
         text: 'Не казати хлопцям',
         effects: { stats: { bonds: -1, energy: -1, understanding: -1 } },
+        outcome: {
+          text: 'Ти не сказав хлопцям. Вони дізнались самі.',
+        },
       },
     ],
   },
@@ -1612,16 +2223,25 @@ export const TEST_CARDS: Card[] = [
         id: 'keep_close',
         text: 'Носити ближче до тіла',
         effects: { stats: { bonds: 2, energy: 1, understanding: 1 } },
+        outcome: {
+          text: 'Ти носив фото ближче до тіла. Воно стерлось по краях.',
+        },
       },
       {
         id: 'give',
         text: 'Віддати хлопцеві, який виходить',
         effects: { stats: { bonds: 3, supplies: -1 }, flags: { photo_passed: true } },
+        outcome: {
+          text: 'Ти віддав хлопцеві, який виходив. Він сказав, що передасть.',
+        },
       },
       {
         id: 'burn',
         text: 'Спалити, щоб не шкодило',
         effects: { stats: { understanding: 2, bonds: -2 } },
+        outcome: {
+          text: 'Ти спалив його. Попіл закопав.',
+        },
       },
     ],
   },
@@ -1641,16 +2261,25 @@ export const TEST_CARDS: Card[] = [
         id: 'names',
         text: 'Написати всі імена, включно з тими, кого вже немає',
         effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } },
+        outcome: {
+          text: 'Ти написав усі імена, включно з тими, кого вже немає. Лист вийшов довгим.',
+        },
       },
       {
         id: 'short',
         text: 'Написати тільки своє',
         effects: { stats: { understanding: 1, bonds: -1, energy: 1 } },
+        outcome: {
+          text: 'Ти написав тільки своє. Вийшло коротко й нечесно.',
+        },
       },
       {
         id: 'nothing',
         text: 'Не відповідати',
         effects: {},
+        outcome: {
+          text: 'Ти не відповів. Через місяць пакунки перестали приходити.',
+        },
       },
     ],
   },
@@ -1668,16 +2297,25 @@ export const TEST_CARDS: Card[] = [
         id: 'count',
         text: 'Порахувати й запам\'ятати',
         effects: { stats: { understanding: 3, energy: -2 }, flags: { knows_seven: true } },
+        outcome: {
+          text: 'Ти порахував і запам\\\'ятав. Цифра лишилась із тобою.',
+        },
       },
       {
         id: 'tell',
         text: 'Сказати іншим правду про «штурмову»',
         effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+        outcome: {
+          text: 'Ти сказав іншим правду. Хтось подякував, хтось не повірив.',
+        },
       },
       {
         id: 'silence',
         text: 'Не згадувати',
         effects: { stats: { energy: 1, understanding: -1 } },
+        outcome: {
+          text: 'Ти не згадував. Це нічого не змінило.',
+        },
       },
     ],
   },
@@ -1695,17 +2333,26 @@ export const TEST_CARDS: Card[] = [
         id: 'give',
         text: 'Дати йому щось — будь-що',
         effects: { stats: { trust: 2, bonds: -3, understanding: -1 } },
+        outcome: {
+          text: 'Ти дав йому щось — будь-що. Він записав і пішов.',
+        },
       },
       {
         id: 'refuse',
         text: 'Сказати, що нічого немає',
         effects: { stats: { trust: -2, bonds: 2, understanding: 1 } },
+        outcome: {
+          text: 'Ти сказав, що нічого немає. Він не повірив, але пішов.',
+        },
       },
       {
         id: 'turn',
         text: 'Сказати, що передумав',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 1, trust: -1 }, flags: { informer_out: true } },
+        outcome: {
+          text: 'Ти сказав, що передумав. Він усміхнувся й пішов.',
+        },
       },
     ],
   },
@@ -1723,16 +2370,25 @@ export const TEST_CARDS: Card[] = [
         id: 'say',
         text: 'Сказати йому те, що обіцяв',
         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { promise_kept: true } },
+        outcome: {
+          text: 'Ти сказав йому те, що обіцяв. Він слухав і не перебивав.',
+        },
       },
       {
         id: 'now',
         text: 'Відкласти — не час',
         effects: { stats: { energy: 1, bonds: -2 } },
+        outcome: {
+          text: 'Ти відклав. Потім було пізно.',
+        },
       },
       {
         id: 'write',
         text: 'Записати, щоб не забути',
         effects: { stats: { understanding: 2, energy: -1 }, flags: { promise_written: true } },
+        outcome: {
+          text: 'Ти записав. Папір переживе вас обох.',
+        },
       },
     ],
   },
@@ -1750,17 +2406,26 @@ export const TEST_CARDS: Card[] = [
         id: 'tell_all',
         text: 'Сказати всім',
         effects: { stats: { understanding: 3, bonds: 2, trust: -3 } },
+        outcome: {
+          text: 'Ти сказав усім. Хтось подякував, хтось злякався.',
+        },
       },
       {
         id: 'tell_few',
         text: 'Сказати тільки тим, кому довіряєш',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { understanding: 2, bonds: 2, energy: -1 }, flags: { told_withdraw: true } },
+        outcome: {
+          text: 'Ти сказав тільки тим, кому довіряв. Троє знали.',
+        },
       },
       {
         id: 'keep',
         text: 'Носити це сам',
         effects: { stats: { understanding: 2, energy: -3, bonds: -1 } },
+        outcome: {
+          text: 'Ти носив це сам. Це важило більше за зброю.',
+        },
       },
     ],
   },
@@ -1778,16 +2443,25 @@ export const TEST_CARDS: Card[] = [
         id: 'look',
         text: 'Дивитися довго',
         effects: { stats: { understanding: 3, bonds: 1, energy: -1 }, flags: { saw_names: true } },
+        outcome: {
+          text: 'Ти дивився довго. Потім поклав назад.',
+        },
       },
       {
         id: 'pass',
         text: 'Показати хлопцям',
         effects: { stats: { bonds: 3, understanding: 1, energy: -1 } },
+        outcome: {
+          text: 'Ти показав хлопцям. Хтось упізнав ім\\\'я.',
+        },
       },
       {
         id: 'hide',
         text: 'Сховати',
         effects: { stats: { energy: 1, understanding: -1 } },
+        outcome: {
+          text: 'Ти сховав. Так було простіше.',
+        },
       },
     ],
   },
@@ -1806,16 +2480,25 @@ export const TEST_CARDS: Card[] = [
         id: 'feed',
         text: 'Віддати йому частину пайки',
         effects: { stats: { bonds: 2, supplies: -2, health: -1 } },
+        outcome: {
+          text: 'Пес більше не боявся тебе. Він приходив щодня.',
+        },
       },
       {
         id: 'name',
         text: 'Дати йому ім\'я',
         effects: { stats: { bonds: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти дав йому ім\\\'я. Через тиждень він гавкав на всіх, крім тебе.',
+        },
       },
       {
         id: 'drive',
         text: 'Прогнати, поки не прив\'язались',
         effects: { stats: { understanding: 1, bonds: -2, energy: 1 } },
+        outcome: {
+          text: 'Ти прогнав його. Він повертався тричі.',
+        },
       },
     ],
   },
@@ -1831,16 +2514,25 @@ export const TEST_CARDS: Card[] = [
         id: 'listen',
         text: 'Слухати',
         effects: { stats: { understanding: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти слухав і не перебивав. Історія була довга й погано закінчувалась.',
+        },
       },
       {
         id: 'joke',
         text: 'Жартувати, що нічого не змінилось',
         effects: { stats: { understanding: 1, bonds: 2, trust: -1 } },
+        outcome: {
+          text: 'Ти пожартував, що нічого не змінилось. Ніхто не засміявся.',
+        },
       },
       {
         id: 'compare',
         text: 'Порівняти, що писали тоді й що пишуть зараз',
         effects: { stats: { understanding: 3, energy: -1 }, skills: { system: 1 } },
+        outcome: {
+          text: 'Ти порівняв і зрозумів, що різниця тільки в ціні квитка.',
+        },
       },
     ],
   },
@@ -1856,16 +2548,25 @@ export const TEST_CARDS: Card[] = [
         id: 'drink',
         text: 'Випити',
         effects: { stats: { energy: 2, bonds: 1 } },
+        outcome: {
+          text: 'Ти випив, і стало тепліше на п\\\'ять хвилин.',
+        },
       },
       {
         id: 'share',
         text: 'Налити всім',
         effects: { stats: { bonds: 2, energy: 1, supplies: -1 } },
+        outcome: {
+          text: 'Ти налив усім. Чайник спорожнів швидше, ніж закипів.',
+        },
       },
       {
         id: 'skip',
         text: 'Відмовитись',
         effects: { stats: { health: 1 } },
+        outcome: {
+          text: 'Ти відмовився. Хтось почав пропонувати вдруге.',
+        },
       },
     ],
   },
@@ -1881,16 +2582,25 @@ export const TEST_CARDS: Card[] = [
         id: 'split',
         text: 'Розборонити',
         effects: { stats: { bonds: 1, energy: -2, understanding: 1 } },
+        outcome: {
+          text: 'Ти розборонив. Обидва лишились незадоволені.',
+        },
       },
       {
         id: 'truth',
         text: 'Сказати, хто справді винен',
         effects: { stats: { understanding: 2, bonds: -3, trust: 1 } },
+        outcome: {
+          text: 'Ти сказав, хто винен. Це було правдою й найгіршим, що можна сказати.',
+        },
       },
       {
         id: 'leave',
         text: 'Піти, поки не втягнули',
         effects: { stats: { energy: 1, bonds: -1 } },
+        outcome: {
+          text: 'Ти пішов. Крики чути було ще довго.',
+        },
       },
     ],
   },
@@ -1907,17 +2617,26 @@ export const TEST_CARDS: Card[] = [
         id: 'give',
         text: 'Віддати йому щось своє',
         effects: { stats: { supplies: -2, bonds: 3 } },
+        outcome: {
+          text: 'Ти віддав своє. Він сказав, що це найкращий день народження з часів дитинства.',
+        },
       },
       {
         id: 'sing',
         text: 'Заспівати «Многая літа» якомога гірше',
         effects: { stats: { bonds: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти заспівав якомога гірше. Сміялись усі, навіть ті, хто не хотів.',
+        },
       },
       {
         id: 'word',
         text: 'Просто сказати щось справжнє',
         requires: { skillAtLeast: { people: 1 } },
         effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { said_real_thing: true } },
+        outcome: {
+          text: 'Ти сказав щось просте й справжнє. Він промовчав і відвернувся.',
+        },
       },
     ],
   },
@@ -1933,16 +2652,25 @@ export const TEST_CARDS: Card[] = [
         id: 'write',
         text: 'Писати щодня',
         effects: { stats: { understanding: 3, energy: -2 }, flags: { keeps_diary: true } },
+        outcome: {
+          text: 'Ти писав щодня. Зошит закінчився через два місяці.',
+        },
       },
       {
         id: 'burn',
         text: 'Спалити зошит — небезпечно',
         effects: { stats: { understanding: -2, trust: 2, energy: 1 } },
+        outcome: {
+          text: 'Ти спалив зошит. Попіл розвіяв над окопом.',
+        },
       },
       {
         id: 'show',
         text: 'Показати комусь близькому',
         effects: { stats: { understanding: 2, bonds: 2, trust: -1 }, flags: { diary_shown: true } },
+        outcome: {
+          text: 'Ти показав комусь близькому. Він читав довго й нічого не сказав.',
+        },
       },
     ],
   },
