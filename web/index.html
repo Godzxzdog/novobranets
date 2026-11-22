@@ -15,9 +15,11 @@
     --good: #7e9b62;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root { --accent: #e0b04a; --accent-rgb: 224,176,74; --fog-rgb: 176,160,120; --ka: #e0b04a; }
   html, body {
     margin: 0; padding: 0; height: 100%;
-    background: var(--bg); color: var(--ink);
+    background: radial-gradient(ellipse 90% 38% at 50% 0%, rgba(var(--accent-rgb), .13), transparent 72%), var(--bg);
+    background-attachment: fixed; color: var(--ink);
     font-family: "Georgia", "Times New Roman", serif;
     overscroll-behavior: none;
   }
@@ -41,7 +43,8 @@
   .stat .fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--dim); transition: height .3s ease; }
   .stat .label { font-family: ui-monospace, monospace; font-size: 9px; color: var(--dim); letter-spacing: .04em; }
   .stat .val { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ink); }
-  .stat.pair .fill { background: var(--good); }
+  .stat .fill { opacity: .9; }
+  .stat .bar { box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
   .stat .delta {
     position: absolute; top: -14px; left: 0; right: 0; text-align: center;
     font-family: ui-monospace, monospace; font-size: 11px; font-weight: 600;
@@ -60,17 +63,21 @@
 
   main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px 0; }
   .card {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
-    padding: 22px 20px; font-size: 18px; line-height: 1.55;
-    min-height: 190px; display: flex; align-items: center;
-    animation: in .22s ease-out;
+    background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--ka); border-radius: 4px;
+    font-size: 18px; line-height: 1.55; overflow: hidden; display: block;
+    animation: in .32s ease-out; box-shadow: 0 10px 34px -18px rgba(var(--accent-rgb), .45);
   }
+  .card-body { padding: 18px 20px 22px; }
+  .scene { position: relative; height: 104px; background: #111; }
+  .scene svg.scenery { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .scene .kind, .scene .tod {
+    position: absolute; top: 8px; font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .12em;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 2px; background: rgba(10,10,8,.55); backdrop-filter: blur(2px);
+  }
+  .scene .kind { left: 10px; color: var(--ka); border: 1px solid var(--ka); }
+  .scene .tod { right: 10px; color: #cfc9b4; }
   @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   .card.leaving, main.leaving { opacity: 0; transform: translateY(-8px); transition: opacity .16s, transform .16s; }
-  .card .kind {
-    position: absolute; font-family: ui-monospace, monospace; font-size: 9px;
-    color: var(--dim); letter-spacing: .1em; text-transform: uppercase;
-  }
   .card .lead {
     font-family: ui-monospace, monospace; font-size: 10px; line-height: 1.5;
     color: #9d967c; border-bottom: 1px solid var(--line);
@@ -84,7 +91,9 @@
     border-radius: 3px; padding: 13px 14px; cursor: pointer;
     transition: background .15s, border-color .15s;
   }
-  button.opt:hover { background: #282619; border-color: #4a4634; }
+  button.opt:hover { background: #282619; border-color: var(--accent); }
+  .options button.opt { animation: in .38s ease-out both; animation-delay: calc(var(--i, 0) * 80ms + 120ms); }
+  button.opt .opt-text { display: block; }
   button.opt:active { transform: scale(.995); }
   button.opt.locked { color: #555244; border-style: dashed; cursor: not-allowed; }
   button.opt .hint { display: block; font-size: 11px; color: var(--dim); margin-top: 5px; font-family: ui-monospace, monospace; }
@@ -101,6 +110,7 @@
   .branch { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; margin-bottom: 8px; border-left: 2px solid #e0b04a; font-size: 13px; }
   .branch .arrow { font-family: ui-monospace, monospace; font-size: 10px; color: var(--dim); }
 
+<<<<<<< HEAD
   /* Краєвид під карткою: силуети, що задають місце дії. */
   .scenery-wrap {
     margin: 12px -16px -12px; opacity: .85;
@@ -110,6 +120,8 @@
   }
   .scenery-wrap svg { height: 74px; }
 
+=======
+>>>>>>> d95bf45 (Add extra cards for phases 1 to 5, enhancing gameplay with new choices and narrative depth)
   /* «Погода» вибору: маленькі стовпчики напрямку показників. */
   button.opt { position: relative; }
   button.opt .weather {
@@ -185,8 +197,8 @@
   .fog { position: fixed; inset: -25%; pointer-events: none; z-index: 0; opacity: .3; transition: opacity 2.4s ease; will-change: transform; }
   .fog1 {
     background:
-      radial-gradient(ellipse 55% 40% at 30% 40%, rgba(150,156,138,.55), transparent 70%),
-      radial-gradient(ellipse 50% 35% at 78% 72%, rgba(130,138,124,.5), transparent 70%);
+      radial-gradient(ellipse 55% 40% at 30% 40%, rgba(var(--fog-rgb),.55), transparent 70%),
+      radial-gradient(ellipse 50% 35% at 78% 72%, rgba(var(--fog-rgb),.45), transparent 70%);
     animation: drift1 70s ease-in-out infinite alternate;
   }
   .fog2 {

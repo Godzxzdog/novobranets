@@ -107,3 +107,46 @@ test('графік: порожньо без даних, SVG із даними, �
   assert.equal(scissorsPoint(never), null);
   assert.match(chartCaption(never), /Довіра так і лишилась/);
 });
+
+import { optionWeatherSvg, cardScenerySvg, themeFor, timeOfDay } from '../web/visuals.js';
+import { EXTRA_CARDS } from '../data/extra-cards.ts';
+
+test('«погода» варіанта ховає те, чого герой ще не розуміє, і не показує чисел', () => {
+  const stats = { health: -2, trust: 3, bonds: 1, understanding: 2 };
+  const blind = optionWeatherSvg('c', 'o', stats, 0);
+  const sees = optionWeatherSvg('c', 'o', stats, 6);
+  assert.ok(!/Довіра/.test(blind), 'довіра прихована при розумінні 0');
+  assert.ok(/Довіра: зросте/.test(sees));
+  assert.ok(/Здоров’я: впаде/.test(blind), 'тіло видно завжди');
+  assert.ok(!/[+-]\d/.test(sees), 'у підказках немає чисел');
+});
+
+test('сцена картки детермінована, залежить від фази й часу доби', () => {
+  const a = cardScenerySvg('x', 'event', { phase: 2, decisions: 3 });
+  assert.equal(a, cardScenerySvg('x', 'event', { phase: 2, decisions: 3 }));
+  assert.notEqual(a, cardScenerySvg('x', 'event', { phase: 4, decisions: 3 }));
+  assert.notEqual(a, cardScenerySvg('x', 'event', { phase: 2, decisions: 6 }));
+  assert.match(a, /^<svg[\s\S]*<\/svg>$/);
+  assert.equal(timeOfDay(0), 'dawn');
+  assert.equal(timeOfDay(7), 'night');
+  assert.equal(themeFor(99).name, 'кінець');
+});
+
+test('усі додаткові картки трапляються у випадкових забігах', () => {
+  const seen = new Set<string>();
+  for (let i = 0; i < 400; i += 1) {
+    const run = new Run({ seed: `extra${i}`, content: { cards: TEST_CARDS, endings: TEST_ENDINGS } });
+    let n = 0;
+    while (run.state.status === 'running' && n < 200) {
+      const card = run.draw();
+      if (!card) break;
+      seen.add(card.id);
+      const opts = run.availableOptions();
+      run.choose(opts[Math.floor(((i * 7 + n * 13) % 97) / 97 * opts.length)]!.id);
+      n += 1;
+    }
+  }
+  const missing = EXTRA_CARDS.filter((c) => !seen.has(c.id)).map((c) => c.id);
+  assert.deepEqual(missing, []);
+  assert.equal(EXTRA_CARDS.length, 24);
+});

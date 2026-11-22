@@ -1,8 +1,9 @@
-// Контент MVP: 84 картки, 8 фіналів.
+// Контент MVP: 106 карток, 9 фіналів (24 додаткові — у extra-cards.ts).
 // Тон: чорна іронія без пафосу; вигадані люди й частини; без рахунку вбитих.
 // Структура за ТЗ: 5 фаз, показники 0..10, навички 0..3, прапорці для наскрізних ліній.
 
 import type { Card, Ending } from '../src/types.ts';
+import { EXTRA_CARDS } from './extra-cards.ts';
 
 export const TEST_CARDS: Card[] = [
   // ─────────────────────────── ФАЗА 1: дім, повістка, військкомат ───────────────────────────
@@ -3147,3 +3148,6 @@ export const TEST_ENDINGS: Ending[] = [
     requires: { flagTrue: ['keeps_diary'], statAtLeast: { understanding: 6 } },
   },
 ];
+
+// Додаткові картки з окремого файлу.
+TEST_CARDS.push(...EXTRA_CARDS);

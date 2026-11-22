@@ -1,6 +1,6 @@
 # Дерево подій
 
-Генерується з контенту: `npm run tree`. Інтерактивна картинка з усіма 76 картками — [event-tree.html](event-tree.html).
+Генерується з контенту: `npm run tree`. Інтерактивна картинка з усіма 106 картками — [event-tree.html](event-tree.html).
 
 - **Товста стрілка** — `next`: вибір гарантовано веде до події (іноді через N днів).
 - **Тонка** — вчинок відкриває картку (`requires.flagTrue`).
@@ -13,6 +13,8 @@
 flowchart LR
   subgraph F1["Фаза 1"]
     call_queue["call.queue<br/><small>Черга у військкоматі. Хтось п…</small>"]
+    call_neighbor["call.neighbor<br/><small>Сусід з третього поверху зупи…</small>"]
+    call_last_evening["call.last_evening<br/><small>Останній вечір. Мама накрила…</small>"]
   end
   subgraph F2["Фаза 2"]
     phase2_sapper["phase2.sapper<br/><small>Толік, сапер із третьої роти,…</small>"]
@@ -57,4 +59,5 @@ flowchart LR
   phase3_medic -.->|"відкриває: Обробити сам, як учил…"| phase4_wound
   phase5_promises ==>|"Пообіцяти сказати інше — те… · +3 дн."| line_kept_promise
   line_volunteers_thanks ==>|"Написати всі імена, включно… · +4 дн."| line_named_photo
+  call_neighbor ==>|"Розповісти мамі · +1 дн."| call_last_evening
 ```
