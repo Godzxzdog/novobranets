@@ -90,10 +90,6 @@ export interface OutcomeScene {
   text: string;
   /** Необов'язковий рядок-«голос» — думка героя або чужа фраза. */
   voice?: string;
-  /** Ідентифікатор фото з data/photos.ts. */
-  photo?: string;
-  /** Підпис під фото (для alt і для совісті). */
-  photoCaption?: string;
 }
 
 export type CardKind = 'event' | 'routine' | 'person' | 'system' | 'final';
@@ -125,9 +121,22 @@ export interface Card {
   after?: string[];
   /** Короткий опис ситуації, що веде до картки (для UI-підказки «що було раніше»). */
   lead?: string;
-  /** Фото сцени з data/photos.ts. */
-  photo?: string;
-  photoCaption?: string;
+  /**
+   * Пам'ять рішень: картка згадує те, що гравець зробив раніше.
+   * `flag` — прапорець, який ставив той вибір; `line` — що саме згадати.
+   * Якщо прапорця немає, картка показується без цього рядка.
+   */
+  echo?: CardEcho | CardEcho[];
+}
+
+/** Рядок-спогад у картці: «ти колись сказав про коліно…». */
+export interface CardEcho {
+  /** Прапорець або id картки, після якої лишився слід. */
+  flag: string;
+  /** Текст спогаду. Може містити {name}. */
+  line: string;
+  /** Показувати лише якщо це останній такий слід (для кількох гілок). */
+  weight?: number;
 }
 
 export type EndingKind = 'accident' | 'system' | 'sacrifice' | 'escape' | 'quiet';
@@ -142,9 +151,6 @@ export interface Ending {
   requires?: Condition;
   /** Вага при виборі серед доступних. */
   weight?: number;
-  /** Фото фіналу з data/photos.ts. */
-  photo?: string;
-  photoCaption?: string;
 }
 
 /** «Директор долі»: параметри неминучості. */

@@ -245,11 +245,24 @@ export class Run {
     if (!card.phase.includes(s.phase)) return false;
     if (card.once && (s.seenCards[card.id] ?? 0) > 0) return false;
     if (!meetsCondition(card.requires, s.stats, s.skills, s.flags, s.phase, s.day)) return false;
+    // Картка-спогад без жодного сліду в минулому не має сенсу.
+    if (card.echo && !this.echoLines(card).length) return false;
     // Картка без жодного доступного варіанта — не показуємо.
     const any = card.options.some((o) =>
       meetsCondition(o.requires, s.stats, s.skills, s.flags, s.phase, s.day),
     );
     return any;
+  }
+
+  /**
+   * Рядки-спогади для картки: ті прапорці, які справді стоять.
+   * Порожньо — картка показується як звичайна, без згадки минулого.
+   */
+  echoLines(card: Card): string[] {
+    const echoes = card.echo
+      ? Array.isArray(card.echo) ? card.echo : [card.echo]
+      : [];
+    return echoes.filter((e) => this.state.flags?.[e.flag]).map((e) => e.line);
   }
 
   private weightedPick(pool: Card[]): Card {

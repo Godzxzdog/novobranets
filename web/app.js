@@ -88,11 +88,14 @@ function render() {
   const isContinuation = !!(link && card.id !== link.id
     && ((card.follows ?? []).includes(link.id) || (card.after ?? []).includes(link.id)));
   const lead = isContinuation ? (card.lead ?? `Після: ${link.text.slice(0, 60)}…`) : null;
+  // Пам'ять рішень: картка може згадати те, що ти зробив раніше.
+  const echoes = run.echoLines(card);
 
   elMain.innerHTML = `
     <div class="card">
       <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
       ${lead ? `<div class="lead">${isContinuation ? '↳ ' : ''}${escapeHtml(lead)}</div>` : ''}
+      ${echoes.map((l) => `<div class="echo">${escapeHtml(l)}</div>`).join('')}
       <div>${escapeHtml(card.text)}</div>
     </div>
     <div class="options">
