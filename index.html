@@ -568,9 +568,19 @@ var Run = class {
     if (!id) return void 0;
     return this.config.content.endings.find((e) => e.id === id);
   }
-  /** Знімок для збереження/тестів. */
+  /** Знімок для збереження/тестів: справжня копія, без спільних посилань. */
   snapshot() {
-    return JSON.parse(JSON.stringify(this.state));
+    const s = this.state;
+    return {
+      ...s,
+      stats: { ...s.stats },
+      skills: { ...s.skills },
+      flags: { ...s.flags },
+      seenCards: { ...s.seenCards },
+      journal: s.journal.map((j) => ({ ...j })),
+      lastOutcome: s.lastOutcome ? { ...s.lastOutcome } : void 0,
+      pending: s.pending ? { cardId: s.pending.cardId, options: [...s.pending.options] } : void 0
+    };
   }
   /** Перевірка цілісності стану (для автотестів). */
   validate() {
