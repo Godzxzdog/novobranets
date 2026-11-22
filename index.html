@@ -163,9 +163,9 @@ var DEFAULT_DIRECTOR = {
   safeUntilDay: 20,
   inevitabilityStartsDay: 30,
   hardEndDay: 60,
-  baseFatalChance: 0.02,
-  rampPerDay: 0.015,
-  maxFatalChance: 0.55
+  baseFatalChance: 0.012,
+  rampPerDay: 0.01,
+  maxFatalChance: 0.32
 };
 
 // src/conditions.ts
@@ -386,6 +386,9 @@ var Run = class {
         }
       }
     }
+    if ((option.effects?.stats?.health ?? 0) < 0) {
+      s.recentHurt = (s.recentHurt ?? 0) + 1;
+    }
     s.journal.push({ day: s.day, cardId: card.id, optionId, text: option.text });
     s.decisions += 1;
     s.pending = void 0;
@@ -466,9 +469,13 @@ var Run = class {
       (e) => meetsCondition(e.requires, s.stats, s.skills, s.flags, s.phase, s.day)
     );
     const byKind = eligible.filter((e) => {
-      if (reason === "wounds") return e.kind === "accident" || e.kind === "quiet";
+      if (reason === "wounds") return e.kind === "accident";
+      if (reason === "accident" && e.kind === "accident") {
+        return e.id === "ending.wounds" ? hurtByOwnChoice(s) : true;
+      }
       if (reason === "hardend") return e.kind === "system";
       if (reason === "accident") return e.kind === "accident";
+      if (reason === "exhausted") return e.kind === "quiet" || e.kind === "system";
       return true;
     });
     const pool = byKind.length > 0 ? byKind : eligible;
@@ -505,9 +512,13 @@ var Run = class {
     return errors;
   }
 };
+function hurtByOwnChoice(state) {
+  return (state.recentHurt ?? 0) > 0;
+}
 
 // data/test-content.ts
 var TEST_CARDS = [
+  // ─────────────────────────── ФАЗА 1: дім, повістка, військкомат ───────────────────────────
   {
     id: "call.paper",
     kind: "event",
@@ -572,6 +583,161 @@ var TEST_CARDS = [
     ]
   },
   {
+    id: "call.bag",
+    kind: "routine",
+    phase: [1],
+    text: "\u0417\u0431\u0438\u0440\u0430\u0454\u0448 \u0441\u0443\u043C\u043A\u0443. \u041C\u0430\u043C\u0430 \u043C\u043E\u0432\u0447\u043A\u0438 \u043A\u043B\u0430\u0434\u0435 \u0442\u0443\u0434\u0438 \u0437\u0430\u0439\u0432\u0443 \u043F\u0430\u0440\u0443 \u0448\u043A\u0430\u0440\u043F\u0435\u0442\u043E\u043A \u0456 \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0443. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0449\u043E \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0443 \u0442\u043E\u0431\u0456 \u043D\u0435 \u0434\u0430\u0434\u0443\u0442\u044C \u0434\u043E\u043D\u0435\u0441\u0442\u0438.",
+    options: [
+      { id: "take", text: "\u0412\u0437\u044F\u0442\u0438 \u0432\u0441\u0435 \u0439 \u043D\u0435 \u0441\u043F\u0435\u0440\u0435\u0447\u0430\u0442\u0438\u0441\u044F", effects: { stats: { supplies: 2, bonds: 1, energy: -1 } } },
+      {
+        id: "leave_sweet",
+        text: "\u041B\u0438\u0448\u0438\u0442\u0438 \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0443 \u0457\u0439 \u2014 \u043D\u0430 \u0447\u0430\u0439",
+        effects: { stats: { bonds: 2, supplies: -1 }, flags: { left_sweet: true } }
+      },
+      {
+        id: "pack_smart",
+        text: "\u041F\u0435\u0440\u0435\u043F\u0430\u043A\u0443\u0432\u0430\u0442\u0438 \u0441\u0430\u043C: \u043B\u0456\u043A\u0438, \u0448\u043D\u0443\u0440\u043A\u0438, \u0441\u0456\u043B\u044C",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { supplies: 3, energy: -1 }, skills: { survival: 1 } }
+      }
+    ]
+  },
+  {
+    id: "call.busstop",
+    kind: "person",
+    phase: [1],
+    once: true,
+    character: "\u0421\u0443\u0441\u0456\u0434 \u0434\u044F\u0434\u044C\u043A\u043E \u0413\u0440\u0438\u0448\u0430",
+    text: "\u0414\u044F\u0434\u044C\u043A\u043E \u0413\u0440\u0438\u0448\u0430 \u0437 \u0442\u0440\u0435\u0442\u044C\u043E\u0433\u043E \u043F\u043E\u0432\u0435\u0440\u0445\u0443 \u0432\u0438\u0445\u043E\u0434\u0438\u0442\u044C \u043D\u0430 \u0431\u0430\u043B\u043A\u043E\u043D \u0456 \u043A\u0430\u0436\u0435 \u0432\u043D\u0438\u0437 \u0442\u0435, \u0449\u043E \u043A\u0430\u0437\u0430\u0432 \u0443\u0441\u0456\u043C: \xAB\u042F \u0432 \u0410\u0444\u0433\u0430\u043D\u0456 \u0431\u0443\u0432. \u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0431\u0456\u0439\u0441\u044F, \u0433\u043E\u043B\u043E\u0432\u043D\u0435 \u2014 \u043D\u0435 \u0432\u0438\u0441\u043E\u0432\u0443\u0439\u0441\u044F\xBB.",
+    options: [
+      { id: "listen", text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u043A\u0438\u0432\u0430\u0442\u0438", effects: { stats: { understanding: 1, energy: 1 } } },
+      {
+        id: "ask_what",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0449\u043E \u0432\u0456\u043D \u043C\u0430\u0454 \u043D\u0430 \u0443\u0432\u0430\u0437\u0456",
+        effects: { stats: { understanding: 2, bonds: 1 }, skills: { survival: 1 } }
+      },
+      {
+        id: "walk",
+        text: "\u041F\u0456\u0442\u0438, \u043D\u0435 \u0434\u043E\u0441\u043B\u0443\u0445\u0430\u0432\u0448\u0438",
+        effects: { stats: { energy: 1, trust: -1 } }
+      }
+    ]
+  },
+  {
+    // Відкривається в наступних фазах, якщо пробував піти з черги.
+    id: "call.tried_to_leave_after",
+    kind: "system",
+    phase: [3, 4],
+    once: true,
+    requires: { flagTrue: ["tried_to_leave"] },
+    text: "\u0423 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430\u0445 \u0445\u0442\u043E\u0441\u044C \u0434\u043E\u043F\u0438\u0441\u0430\u0432 \u043F\u0440\u0438\u043C\u0456\u0442\u043A\u0443: \xAB\u0441\u0445\u0438\u043B\u044C\u043D\u0438\u0439 \u0434\u043E \u0443\u0445\u0438\u043B\u0435\u043D\u043D\u044F\xBB. \u0422\u0438 \u0431\u0430\u0447\u0438\u0448 \u0446\u0435 \u0432\u0438\u043F\u0430\u0434\u043A\u043E\u0432\u043E, \u043A\u043E\u043B\u0438 \u043F\u0456\u0434\u043F\u0438\u0441\u0443\u044E\u0442\u044C \u0432\u0456\u0434\u043F\u0443\u0441\u0442\u043A\u0443 \u2014 \u0442\u043E\u0431\u0456 \u0432\u0456\u0434\u043C\u043E\u0432\u043B\u044F\u044E\u0442\u044C.",
+    options: [
+      {
+        id: "prove",
+        text: "\u0414\u043E\u0432\u043E\u0434\u0438\u0442\u0438, \u0449\u043E \u0446\u0435 \u0434\u0430\u0432\u043D\u043E \u0439 \u043D\u0435 \u0442\u0430\u043A",
+        effects: { stats: { trust: -1, energy: -2, understanding: 1 }, flags: { proved_himself: true } }
+      },
+      {
+        id: "swallow",
+        text: "\u041F\u0440\u043E\u043A\u043E\u0432\u0442\u043D\u0443\u0442\u0438 \u0439 \u043F\u0456\u0442\u0438",
+        effects: { stats: { understanding: 2, bonds: 1, trust: 1 } }
+      },
+      {
+        id: "find_who",
+        text: "\u0421\u043F\u0438\u0442\u0430\u0442\u0438, \u0445\u0442\u043E \u0441\u0430\u043C\u0435 \u0446\u0435 \u043D\u0430\u043F\u0438\u0441\u0430\u0432",
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_pisets: true } }
+      }
+    ]
+  },
+  {
+    id: "call.farewell",
+    kind: "event",
+    phase: [1],
+    once: true,
+    text: "\u0412\u0435\u0447\u0456\u0440 \u043F\u0435\u0440\u0435\u0434 \u0432\u0456\u0434'\u0457\u0437\u0434\u043E\u043C. \u041C\u0430\u043C\u0430 \u0432\u0438\u0439\u0448\u043B\u0430 \u043D\u0430 \u043A\u0443\u0445\u043D\u044E \u0439 \u0442\u0430\u043C \u0441\u0442\u043E\u0457\u0442\u044C. \u0422\u0438 \u0447\u0443\u0454\u0448, \u044F\u043A \u0432\u043E\u0434\u0430 \u0437 \u043A\u0440\u0430\u043D\u0430 \u0442\u0435\u0447\u0435 \u043D\u0430\u0434\u0442\u043E \u0434\u043E\u0432\u0433\u043E.",
+    options: [
+      { id: "go", text: "\u041F\u0456\u0442\u0438 \u043D\u0430 \u043A\u0443\u0445\u043D\u044E \u0439 \u043E\u0431\u0456\u0439\u043D\u044F\u0442\u0438", effects: { stats: { bonds: 3, energy: -1 } } },
+      {
+        id: "call_sister",
+        text: "\u0417\u0430\u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0443\u0432\u0430\u0442\u0438 \u0441\u0435\u0441\u0442\u0440\u0456, \u044F\u043A\u0430 \u043D\u0435 \u043F\u0440\u0438\u0457\u0445\u0430\u043B\u0430",
+        effects: { stats: { bonds: 1, understanding: 1 } }
+      },
+      {
+        id: "not_say",
+        text: "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438 \u2014 \u0442\u0430\u043A \u043B\u0435\u0433\u0448\u0435",
+        effects: { stats: { bonds: -2, energy: 1, understanding: -1 } }
+      }
+    ]
+  },
+  {
+    id: "call.queue_old",
+    kind: "person",
+    phase: [1],
+    text: "\u041F\u0435\u0440\u0435\u0434 \u0442\u043E\u0431\u043E\u044E \u0432 \u0447\u0435\u0440\u0437\u0456 \u0441\u0442\u043E\u0457\u0442\u044C \u0447\u043E\u043B\u043E\u0432\u0456\u043A \u0440\u043E\u043A\u0456\u0432 \u043F'\u044F\u0442\u0434\u0435\u0441\u044F\u0442\u0438 \u0439 \u0442\u0440\u0438\u043C\u0430\u0454 \u043F\u043E\u0432\u0456\u0441\u0442\u043A\u0443 \u0434\u0432\u043E\u043C\u0430 \u0440\u0443\u043A\u0430\u043C\u0438, \u043D\u0456\u0431\u0438 \u0432\u043E\u043D\u0430 \u043C\u043E\u0436\u0435 \u0432\u0438\u0440\u0432\u0430\u0442\u0438\u0441\u044C.",
+    options: [
+      {
+        id: "ask_years",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0447\u0438 \u0432\u0456\u043D \u0443\u0436\u0435 \u0441\u043B\u0443\u0436\u0438\u0432",
+        effects: { stats: { understanding: 2, bonds: 1 } }
+      },
+      {
+        id: "silence",
+        text: "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043F\u0438\u0442\u0430\u0442\u0438",
+        effects: { stats: { energy: 1 } }
+      },
+      {
+        id: "swap_place",
+        text: "\u041F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u0438 \u0439\u043E\u0433\u043E \u0432\u043F\u0435\u0440\u0435\u0434",
+        effects: { stats: { bonds: 2, energy: -1 } }
+      }
+    ]
+  },
+  {
+    id: "call.street",
+    kind: "event",
+    phase: [1],
+    text: "\u0414\u043E\u0440\u043E\u0433\u043E\u044E \u0434\u043E \u0432\u0456\u0439\u0441\u044C\u043A\u043A\u043E\u043C\u0430\u0442\u0443 \u043F\u043E\u0432\u0437 \u043F\u0440\u043E\u0445\u043E\u0434\u044F\u0442\u044C \u0434\u0432\u043E\u0454 \u0437 \u043F\u0430\u043A\u0435\u0442\u0430\u043C\u0438. \u041E\u0434\u0438\u043D \u043A\u0430\u0436\u0435 \u0434\u0440\u0443\u0433\u043E\u043C\u0443: \xAB\u041D\u0435 \u043D\u0430\u0448\u0430 \u0432\u0456\u0439\u043D\u0430\xBB. \u0422\u043E\u0439 \u043A\u0438\u0432\u0430\u0454. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0434\u0438\u0432\u0438\u0442\u044C\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435.",
+    options: [
+      {
+        id: "agree",
+        text: "\u041F\u043E\u0434\u0443\u043C\u0430\u0442\u0438, \u0449\u043E \u0432\u0456\u043D \u043C\u0430\u0454 \u0440\u0430\u0446\u0456\u044E",
+        effects: { stats: { understanding: 2, trust: -1, energy: -1 } }
+      },
+      {
+        id: "angry",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0449\u043E\u0441\u044C \u0443 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C",
+        effects: { stats: { energy: -2, bonds: -1, trust: 1 } }
+      },
+      {
+        id: "ignore",
+        text: "\u0417\u0440\u043E\u0431\u0438\u0442\u0438 \u0432\u0438\u0433\u043B\u044F\u0434, \u0449\u043E \u043D\u0435 \u0447\u0443\u0432",
+        effects: { stats: { energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "call.toilet",
+    kind: "routine",
+    phase: [1],
+    text: "\u0422\u0443\u0430\u043B\u0435\u0442 \u0443 \u0432\u0456\u0439\u0441\u044C\u043A\u043A\u043E\u043C\u0430\u0442\u0456 \u043D\u0435 \u043C\u0430\u0454 \u0434\u0432\u0435\u0440\u0435\u0439. \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u043A\u0430\u0436\u0435: \xAB\u041F\u0440\u0438\u0432\u0438\u043A\u0430\u0439\u0442\u0435\xBB. \u041F\u0435\u0440\u0448\u0456 \u0442\u0440\u0438 \u0434\u043D\u0456 \u0446\u0435 \u0437\u0434\u0430\u0454\u0442\u044C\u0441\u044F \u043D\u0430\u0439\u0431\u0456\u043B\u044C\u0448\u043E\u044E \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u043E\u044E.",
+    options: [
+      { id: "joke", text: "\u0416\u0430\u0440\u0442\u0443\u0432\u0430\u0442\u0438 \u0437 \u0446\u044C\u043E\u0433\u043E", effects: { stats: { bonds: 2, energy: -1 } } },
+      {
+        id: "fix",
+        text: "\u0417\u043D\u0430\u0439\u0442\u0438 \u0448\u043C\u0430\u0442\u043E\u043A \u0431\u0440\u0435\u0437\u0435\u043D\u0442\u0443 \u0439 \u043F\u043E\u0432\u0456\u0441\u0438\u0442\u0438",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { bonds: 2, supplies: -1, trust: -1 }, flags: { fixed_toilet: true } }
+      },
+      {
+        id: "endure",
+        text: "\u0421\u0442\u0438\u0441\u043D\u0443\u0442\u0438 \u0437\u0443\u0431\u0438 \u0439 \u0442\u0435\u0440\u043F\u0456\u0442\u0438",
+        effects: { stats: { energy: -1, trust: 1 } }
+      }
+    ]
+  },
+  // ─────────────────────────── ФАЗА 2: навчання, перший колектив ───────────────────────────
+  {
     id: "phase2.bus",
     kind: "event",
     phase: [2],
@@ -585,8 +751,8 @@ var TEST_CARDS = [
       },
       {
         id: "share",
-        text: "\u0420\u043E\u0437\u0434\u0430\u0442\u0438 \u0441\u0432\u043E\u0457 \u043F\u0438\u0440\u0456\u0436\u043A\u0438 \u0441\u0443\u0441\u0456\u0434\u0430\u043C",
-        effects: { stats: { supplies: -2, bonds: 2 } }
+        text: "\u0420\u043E\u0437\u0434\u0430\u0442\u0438 \u0442\u0435, \u0449\u043E \u0432\u0437\u044F\u0432 \u0456\u0437 \u0434\u043E\u043C\u0443",
+        effects: { stats: { bonds: 3, supplies: -2 } }
       },
       {
         id: "sleep",
@@ -666,6 +832,7 @@ var TEST_CARDS = [
     id: "phase2.split",
     kind: "system",
     phase: [2, 3],
+    once: true,
     text: "\u041F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A \u0431\u0443\u0434\u0443\u0454 \u0440\u043E\u0442\u0443. \u041A\u0430\u0436\u0435: \xAB\u0425\u0442\u043E \u0445\u043E\u0447\u0435 \u0432 \u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443 \u2014 \u043A\u0440\u043E\u043A \u0443\u043F\u0435\u0440\u0435\u0434\xBB. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0440\u0443\u0445\u0430\u0454\u0442\u044C\u0441\u044F. \u0412\u0456\u043D \u043E\u0431\u0438\u0440\u0430\u0454 \u0441\u0430\u043C.",
     options: [
       {
@@ -679,34 +846,212 @@ var TEST_CARDS = [
         effects: { stats: { trust: -2, understanding: 1, energy: -1 } }
       },
       {
-        id: "ask_where",
-        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u043A\u0443\u0434\u0438 \u0441\u0430\u043C\u0435 \u0439 \u043D\u0430 \u0441\u043A\u0456\u043B\u044C\u043A\u0438",
+        id: "ask",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u0437\u0430 \u044F\u043A\u0438\u043C \u043F\u0440\u0438\u043D\u0446\u0438\u043F\u043E\u043C \u043E\u0431\u0438\u0440\u0430\u044E\u0442\u044C",
         requires: { skillAtLeast: { system: 1 } },
-        effects: { stats: { trust: -1, understanding: 2 }, flags: { asked_orders: true } }
+        effects: { stats: { understanding: 2, trust: -1 }, flags: { knows_selection: true } }
       }
     ]
   },
   {
+    id: "phase2.commander_orders",
+    kind: "system",
+    phase: [2, 3],
+    text: "\u041D\u043E\u0432\u0438\u0439 \u043D\u0430\u043A\u0430\u0437: \u0449\u043E\u0434\u0435\u043D\u043D\u0430 \u043C\u0443\u0448\u0442\u0440\u0430 \u043D\u0430 \u043F\u043B\u0430\u0446\u0443, \u043F\u043E\u043F\u0440\u0438 \u043C\u043E\u0440\u043E\u0437. \xAB\u0421\u043E\u043B\u0434\u0430\u0442 \u043C\u0430\u0454 \u0432\u0438\u0433\u043B\u044F\u0434\u0430\u0442\u0438 \u0441\u043E\u043B\u0434\u0430\u0442\u043E\u043C\xBB.",
+    options: [
+      {
+        id: "attend",
+        text: "\u0421\u0443\u043C\u043B\u0456\u043D\u043D\u043E \u0445\u043E\u0434\u0438\u0442\u0438",
+        effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } }
+      },
+      {
+        id: "skip",
+        text: "\u041F\u0440\u043E\u043F\u0443\u0441\u043A\u0430\u0442\u0438 \u043F\u0456\u0434 \u043F\u0440\u0438\u0432\u043E\u0434\u043E\u043C \u043D\u0430\u0440\u044F\u0434\u0456\u0432",
+        effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } }
+      },
+      {
+        id: "pointless",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u043D\u0430\u0432\u0456\u0449\u043E \u0446\u0435 \u0432 \u043E\u043A\u043E\u043F\u0456",
+        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.hazing",
+    kind: "system",
+    phase: [2],
+    once: true,
+    text: "\xAB\u0414\u0456\u0434\u0456\u0432\u0449\u0438\u043D\u0430\xBB \u0432 \u043D\u043E\u0432\u043E\u043C\u0443 \u0432\u0438\u0433\u043B\u044F\u0434\u0456: \u043D\u043E\u0432\u0430\u0447\u043A\u0430\u043C \u2014 \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438, \u0441\u0442\u0430\u0440\u0448\u0438\u043C \u2014 \u043D\u0456\u0447\u043E\u0433\u043E. \u041E\u0434\u0438\u043D \u0456\u0437 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u0456\u0432 \u043D\u0430\u0437\u0438\u0432\u0430\u0454 \u0446\u0435 \xAB\u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F\u043C\u0438\xBB.",
+    options: [
+      {
+        id: "obey",
+        text: "\u041F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438 \u0431\u0435\u0437 \u0441\u043B\u0456\u0432",
+        effects: { stats: { trust: 1, energy: -2 } }
+      },
+      {
+        id: "stand",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u043D\u0435 \u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F, \u0430 \u0431\u0435\u0437\u043B\u0430\u0434",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
+      },
+      {
+        id: "trade",
+        text: "\u0414\u043E\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C: \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u044E, \u0430\u043B\u0435 \u0437\u0430 \u0445\u0430\u0440\u0447\u0456",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.weapon",
+    kind: "routine",
+    phase: [2],
+    text: "\u0422\u043E\u0431\u0456 \u0432\u0438\u0434\u0430\u044E\u0442\u044C \u0430\u0432\u0442\u043E\u043C\u0430\u0442. \u0412\u0456\u043D \u0441\u0442\u0430\u0440\u0438\u0439, \u0432\u0430\u0436\u043A\u0438\u0439 \u0456, \u0437\u0434\u0430\u0454\u0442\u044C\u0441\u044F, \u043F\u0430\u043C'\u044F\u0442\u0430\u0454 \u0431\u0456\u043B\u044C\u0448\u0435, \u043D\u0456\u0436 \u0442\u0438. \u0421\u0435\u0440\u0436\u0430\u043D\u0442 \u043A\u0430\u0436\u0435: \xAB\u0426\u0435 \u0442\u0432\u0456\u0439 \u043D\u0430\u0439\u043A\u0440\u0430\u0449\u0438\u0439 \u0434\u0440\u0443\u0433\xBB.",
+    options: [
+      {
+        id: "clean",
+        text: "\u0420\u043E\u0437\u0456\u0431\u0440\u0430\u0442\u0438, \u043F\u043E\u0447\u0438\u0441\u0442\u0438\u0442\u0438, \u0437\u0456\u0431\u0440\u0430\u0442\u0438",
+        effects: { skills: { drill: 1, survival: 1 }, stats: { energy: -1, health: -1 } }
+      },
+      {
+        id: "name",
+        text: "\u0414\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0456\u043C'\u044F, \u0449\u043E\u0431 \u043D\u0435 \u0431\u043E\u044F\u0442\u0438\u0441\u044F",
+        effects: { stats: { energy: 1, bonds: 1, understanding: -1 } }
+      },
+      {
+        id: "ask_clean",
+        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u0430 \u043F\u043E\u043A\u0430\u0437\u0430\u0442\u0438, \u044F\u043A \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { skills: { drill: 1 }, stats: { trust: 1, energy: -1 }, flags: { knows_weapon: true } }
+      }
+    ]
+  },
+  {
+    id: "phase2.hole",
+    kind: "event",
+    phase: [2],
+    text: "\u041F\u0435\u0440\u0448\u0430 \u043D\u0456\u0447 \u0443 \u043F\u043E\u043B\u0456. \u0422\u0438 \u0440\u0438\u0454\u0448 \xAB\u043E\u043A\u043E\u043F\xBB \u0456 \u0440\u043E\u0437\u0443\u043C\u0456\u0454\u0448, \u0449\u043E \u0446\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u044F\u043C\u0430. \u041B\u043E\u043F\u0430\u0442\u0430 \u043A\u043E\u0440\u043E\u0442\u043A\u0430, \u0437\u0435\u043C\u043B\u044F \u2014 \u044F\u043A \u043A\u0430\u043C\u0456\u043D\u044C.",
+    options: [
+      { id: "dig", text: "\u041A\u043E\u043F\u0430\u0442\u0438 \u0434\u043E \u0441\u0432\u0456\u0442\u0430\u043D\u043A\u0443", effects: { stats: { energy: -3, health: -1 }, skills: { survival: 1 } } },
+      {
+        id: "mask",
+        text: "\u0417\u0430\u043A\u043E\u043F\u0430\u0442\u0438 \u0442\u0440\u043E\u0445\u0438 \u0439 \u0437\u0430\u043C\u0430\u0441\u043A\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { energy: -1, supplies: -1, understanding: 1 } }
+      },
+      {
+        id: "help",
+        text: "\u041A\u043E\u043F\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0456\u0437 \u0441\u0443\u0441\u0456\u0434\u043E\u043C \u2014 \u043F\u043E\u0432\u0456\u043B\u044C\u043D\u0456\u0448\u0435, \u0430\u043B\u0435 \u0432\u0434\u0432\u043E\u0445",
+        effects: { stats: { bonds: 2, energy: -2 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.test_song",
+    kind: "event",
+    phase: [2],
+    text: "\u041F\u043E\u043B\u0456\u0442\u0440\u0443\u043A \u043F\u0438\u0442\u0430\u0454, \u0445\u0442\u043E \u0437\u043D\u0430\u0454 \u0434\u0440\u0443\u0433\u0438\u0439 \u043A\u0443\u043F\u043B\u0435\u0442. \u0423\u0441\u0456 \u0434\u0438\u0432\u043B\u044F\u0442\u044C\u0441\u044F \u0432 \u0437\u0435\u043C\u043B\u044E. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0430\u043B\u0435 \u0440\u043E\u0437\u0443\u043C\u0456\u0454\u0448, \u0449\u043E \u0441\u043A\u0430\u0436\u0435\u0448.",
+    options: [
+      { id: "sing", text: "\u0417\u0430\u0441\u043F\u0456\u0432\u0430\u0442\u0438", effects: { stats: { trust: 2, bonds: -1, energy: -1 } } },
+      {
+        id: "mumble",
+        text: "\u041F\u0440\u043E\u0431\u0443\u0431\u043E\u043D\u0456\u0442\u0438 \u0449\u043E\u0441\u044C \u0441\u0445\u043E\u0436\u0435",
+        effects: { stats: { trust: 1, understanding: -1 } }
+      },
+      {
+        id: "silent",
+        text: "\u041C\u043E\u0432\u0447\u0430\u0442\u0438, \u044F\u043A \u0443\u0441\u0456",
+        effects: { stats: { bonds: 2, trust: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.letters_home",
+    kind: "routine",
+    phase: [2, 3],
+    text: "\u0425\u043B\u043E\u043F\u0446\u0456 \u043F\u0438\u0448\u0443\u0442\u044C \u043B\u0438\u0441\u0442\u0438 \u0434\u043E\u0434\u043E\u043C\u0443. \u041E\u0434\u0438\u043D \u043F\u0438\u0442\u0430\u0454, \u0449\u043E \u043F\u0438\u0441\u0430\u0442\u0438, \u044F\u043A\u0449\u043E \u043D\u0430\u0441\u043F\u0440\u0430\u0432\u0434\u0456 \u043D\u0456\u0447\u043E\u0433\u043E \u0434\u043E\u0431\u0440\u043E\u0433\u043E \u043D\u0435\u043C\u0430\u0454.",
+    options: [
+      {
+        id: "teach",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438, \u044F\u043A \u043F\u0438\u0441\u0430\u0442\u0438 \u043F\u0440\u043E \u0434\u0440\u0456\u0431\u043D\u0435",
+        effects: { stats: { bonds: 2, understanding: 1, energy: -1 }, flags: { taught_letters: true } }
+      },
+      { id: "honest", text: "\xAB\u041F\u0438\u0448\u0438 \u044F\u043A \u0454\xBB", effects: { stats: { understanding: 2, bonds: -1 } } },
+      {
+        id: "dont",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u043D\u0435 \u0442\u0432\u043E\u044F \u0441\u043F\u0440\u0430\u0432\u0430",
+        effects: { stats: { energy: 1, bonds: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.socks",
+    kind: "routine",
+    phase: [2, 3],
+    text: "\u041F\u0440\u0430\u043D\u043D\u044F. \u0421\u0443\u0441\u0456\u0434 \u043F\u043E \u043D\u0430\u043C\u0435\u0442\u0443 \u043C\u0438\u0454 \u0448\u043A\u0430\u0440\u043F\u0435\u0442\u043A\u0438 \u0432 \u043A\u0430\u0441\u043A\u0443. \u0422\u0438 \u0431\u0430\u0447\u0438\u0448 \u0446\u0435 \u0439 \u0440\u043E\u0437\u0443\u043C\u0456\u0454\u0448, \u0449\u043E \u0442\u0435\u043F\u0435\u0440 \u043A\u0430\u0441\u043A\u0430 \u2014 \u0446\u0435 \u043D\u0430\u0437\u0430\u0432\u0436\u0434\u0438 \u0434\u0432\u0430 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u0438.",
+    options: [
+      {
+        id: "laugh",
+        text: "\u041F\u043E\u0441\u043C\u0456\u044F\u0442\u0438\u0441\u044F \u0439 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u0438 \u0442\u0435 \u0441\u0430\u043C\u0435",
+        effects: { stats: { bonds: 2, energy: 1, health: -1 } }
+      },
+      {
+        id: "protocol",
+        text: "\u041F\u0440\u0438\u0434\u0443\u043C\u0430\u0442\u0438, \u044F\u043A \u043F\u0440\u0430\u0442\u0438 \u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u043E",
+        requires: { skillAtLeast: { survival: 1 } },
+        effects: { stats: { health: 1, supplies: -1, bonds: 1 }, flags: { knows_laundry: true } }
+      },
+      {
+        id: "ignore",
+        text: "\u041D\u0435 \u0437\u0432\u0435\u0440\u0442\u0430\u0442\u0438 \u0443\u0432\u0430\u0433\u0438",
+        effects: { stats: { health: -1, energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase2.first_fire",
+    kind: "event",
+    phase: [2, 3],
+    once: true,
+    text: "\u041F\u0435\u0440\u0448\u0438\u0439 \u043E\u0431\u0441\u0442\u0440\u0456\u043B. \u0423\u0441\u0456 \u043B\u0435\u0436\u0430\u0442\u044C. \u0425\u0442\u043E\u0441\u044C \u0447\u0438\u0442\u0430\u0454 \u043C\u043E\u043B\u0438\u0442\u0432\u0443, \u044F\u043A\u0443 \u043D\u0435 \u0437\u043D\u0430\u0454. \u0422\u0438 \u0440\u0430\u043F\u0442\u043E\u043C \u0440\u0430\u0445\u0443\u0454\u0448 \u0441\u0435\u043A\u0443\u043D\u0434\u0438 \u043C\u0456\u0436 \u0440\u043E\u0437\u0440\u0438\u0432\u0430\u043C\u0438.",
+    options: [
+      {
+        id: "count",
+        text: "\u0420\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0439 \u0437\u0430\u043F\u0430\u043C'\u044F\u0442\u043E\u0432\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { understanding: 2, energy: -2 }, skills: { survival: 1 }, flags: { counted_fire: true } }
+      },
+      {
+        id: "calm",
+        text: "\u0417\u0430\u0441\u043F\u043E\u043A\u043E\u0457\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F \u043F\u043E\u0440\u0443\u0447",
+        effects: { stats: { bonds: 2, health: -1, energy: -1 } }
+      },
+      {
+        id: "freeze",
+        text: "\u0417\u0430\u0432\u043C\u0435\u0440\u0442\u0438 \u0439 \u043D\u0435 \u0440\u0443\u0445\u0430\u0442\u0438\u0441\u044C",
+        effects: { stats: { energy: -3, health: -1 } }
+      }
+    ]
+  },
+  // ─────────────────────────── ФАЗА 3: окоп, вода, втрати ───────────────────────────
+  {
     id: "phase3.trench",
     kind: "event",
     phase: [3],
-    text: "\u0422\u0432\u0456\u0439 \u043E\u043A\u043E\u043F \u0433\u043B\u0438\u0431\u0448\u0438\u0439 \u0437\u0430 \u0441\u0443\u0441\u0456\u0434\u0441\u044C\u043A\u0438\u0439 \u043D\u0430 \u043B\u043E\u043F\u0430\u0442\u0443. \u0421\u0443\u0441\u0456\u0434 \u043A\u0430\u0436\u0435, \u0449\u043E \u0442\u043E\u0431\u0456 \u043F\u0440\u043E\u0441\u0442\u043E \u043F\u043E\u0449\u0430\u0441\u0442\u0438\u043B\u043E \u0437 \u043C\u0456\u0441\u0446\u0435\u043C. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u043D\u043E\u0447\u0435\u0439 \u0439\u043E\u0433\u043E \u043A\u043E\u043F\u0430\u0432.",
+    text: "\u0422\u0432\u0456\u0439 \u043E\u043A\u043E\u043F \u0437\u0430\u043B\u0438\u0432\u0430\u0454 \u0432\u043E\u0434\u0430. \u0421\u0443\u0441\u0456\u0434\u043D\u0456\u0439 \u2014 \u0442\u0435\u0436. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u0440\u043E\u043F\u043E\u043D\u0443\u0454 \u0434\u043E\u043F\u043E\u043C\u043E\u0433\u0442\u0438, \u0430\u043B\u0435 \u0432\u0441\u0456 \u0434\u0438\u0432\u043B\u044F\u0442\u044C\u0441\u044F.",
     options: [
       {
         id: "share_spot",
-        text: "\u0417\u0430\u043F\u0440\u043E\u0441\u0438\u0442\u0438 \u0441\u0443\u0441\u0456\u0434\u0430 \u043F\u0435\u0440\u0435\u0441\u0438\u0434\u0456\u0442\u0438 \u043E\u0431\u0441\u0442\u0440\u0456\u043B \u0440\u0430\u0437\u043E\u043C",
+        text: "\u041F\u0443\u0441\u0442\u0438\u0442\u0438 \u0441\u0443\u0441\u0456\u0434\u0430 \u043D\u0430 \u0441\u0432\u043E\u044E \u0441\u0443\u0445\u0443 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0443",
         effects: { stats: { bonds: 2, health: -1, energy: -1 }, flags: { shared_trench: true } }
       },
       {
         id: "keep",
-        text: "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438",
-        effects: { stats: { health: 1, bonds: -1 } }
+        text: "\u0417\u0430\u043B\u0438\u0448\u0438\u0442\u0438 \u0441\u043E\u0431\u0456 \u0441\u0443\u0445\u0435",
+        effects: { stats: { health: 1, bonds: -1, trust: -1 } }
       },
       {
-        id: "teach",
-        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438, \u044F\u043A \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E \u043A\u043E\u043F\u0430\u0442\u0438",
+        id: "drain",
+        text: "\u0420\u0430\u0437\u043E\u043C \u043F\u0440\u043E\u043A\u043E\u043F\u0430\u0442\u0438 \u0432\u043E\u0434\u043E\u0432\u0456\u0434\u0432\u0456\u0434",
         requires: { skillAtLeast: { survival: 1 } },
-        effects: { stats: { bonds: 2, energy: -2 }, skills: { people: 1 } }
+        effects: { stats: { bonds: 2, health: 1, energy: -2 }, skills: { survival: 1 } }
       }
     ]
   },
@@ -714,23 +1059,23 @@ var TEST_CARDS = [
     id: "phase3.water",
     kind: "routine",
     phase: [3, 4],
-    text: "\u0412\u043E\u0434\u0430 \u0432 \u0431\u0430\u043A\u043B\u0430\u0437\u0456 \u043F\u0430\u0445\u043D\u0435 \u043C\u0435\u0442\u0430\u043B\u043E\u043C. \u0423\u0441\u0456 \u043F\u2019\u044E\u0442\u044C. \u0422\u0438 \u0437\u0433\u0430\u0434\u0443\u0454\u0448, \u0449\u043E \u043A\u0430\u0437\u0430\u0432 \u0422\u043E\u043B\u0456\u043A \u043F\u0440\u043E \u0432\u043E\u0434\u0443 \u0437 \u0432\u0456\u0434\u0441\u0442\u0456\u0439\u043D\u0438\u043A\u0456\u0432.",
+    text: "\u0412\u043E\u0434\u0430 \u0432 \u043A\u0430\u043D\u0456\u0441\u0442\u0440\u0456 \u0437\u0430\u043A\u0456\u043D\u0447\u0443\u0454\u0442\u044C\u0441\u044F. \u041E\u0441\u0442\u0430\u043D\u043D\u0456\u0439 \u043A\u043E\u0432\u0442\u043E\u043A \u2014 \u0456 \u0442\u0440\u0435\u0431\u0430 \u0439\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 \u0432\u0456\u0434\u043A\u0440\u0438\u0442\u0443 \u0434\u0456\u043B\u044F\u043D\u043A\u0443 \u0434\u043E \u043A\u043E\u043B\u043E\u0434\u044F\u0437\u044F.",
     options: [
       {
         id: "drink",
-        text: "\u041F\u0438\u0442\u0438, \u0431\u043E \u0445\u043E\u0447\u0435\u0442\u044C\u0441\u044F",
-        effects: { stats: { health: -1, energy: 1 } }
+        text: "\u0412\u0438\u043F\u0438\u0442\u0438 \u0432\u0456\u0434\u0440\u0430\u0437\u0443",
+        effects: { stats: { health: 1, energy: 1, supplies: -1 } }
       },
       {
         id: "boil",
-        text: "\u041F\u0440\u043E\u043A\u0438\u043F\u2019\u044F\u0442\u0438\u0442\u0438 \u043D\u0430 \u0431\u0443\u0440\u0436\u0443\u0439\u0446\u0456",
+        text: "\u041D\u0430\u0437\u0431\u0438\u0440\u0430\u0442\u0438 \u0437 \u043A\u0430\u043B\u044E\u0436\u0456 \u0439 \u043F\u0440\u043E\u043A\u0438\u043F'\u044F\u0442\u0438\u0442\u0438",
         requires: { skillAtLeast: { survival: 1 } },
-        effects: { stats: { health: 1, supplies: -1, energy: -1 } }
+        effects: { stats: { supplies: 2, health: -1, energy: -2 }, skills: { survival: 1 } }
       },
       {
         id: "warn",
-        text: "\u041F\u043E\u043F\u0435\u0440\u0435\u0434\u0438\u0442\u0438 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F",
-        effects: { stats: { bonds: 1, trust: -1, understanding: 1 } }
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C, \u0449\u043E \u0432\u043E\u0434\u0438 \u043C\u0430\u043B\u043E",
+        effects: { stats: { bonds: 2, energy: 1 } }
       }
     ]
   },
@@ -739,22 +1084,48 @@ var TEST_CARDS = [
     kind: "event",
     phase: [3, 4],
     once: true,
-    text: "\u0423\u043D\u043E\u0447\u0456 \xAB\u043F\u0440\u0438\u043B\u0456\u0442\xBB \u0437\u0430\u0431\u0438\u0440\u0430\u0454 \u0441\u0443\u0441\u0456\u0434\u043D\u0456\u0439 \u0431\u043B\u0456\u043D\u0434\u0430\u0436. \u0423\u0440\u0430\u043D\u0446\u0456 \u043D\u0430 \u0442\u043E\u043C\u0443 \u043C\u0456\u0441\u0446\u0456 \u0437\u0431\u0438\u0440\u0430\u044E\u0442\u044C \u0440\u0435\u0447\u0456. \u0425\u0442\u043E\u0441\u044C \u043F\u0438\u0442\u0430\u0454, \u0447\u0438\u044F \u0446\u0435 \u043A\u0443\u0440\u0442\u043A\u0430. \u0422\u0438 \u0432\u043F\u0456\u0437\u043D\u0430\u0454\u0448 \u043A\u0443\u0440\u0442\u043A\u0443.",
+    text: "\u0423\u0440\u0430\u043D\u0446\u0456 \u0445\u043B\u043E\u043F\u0446\u044F \u0437 \u0441\u0443\u0441\u0456\u0434\u043D\u044C\u043E\u0433\u043E \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043D\u0435\u043C\u0430\u0454. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0437\u043D\u0430\u0454, \u0449\u043E \u043A\u0430\u0437\u0430\u0442\u0438. \u0425\u0442\u043E\u0441\u044C \u043A\u0430\u0436\u0435: \xAB\u042F \u0439\u043E\u0433\u043E \u0431\u0430\u0447\u0438\u0432 \u0443\u0432\u0435\u0447\u0435\u0440\u0456\xBB. \u0429\u0435 \u0445\u0442\u043E\u0441\u044C: \xAB\u042F \u0442\u0435\u0436\xBB.",
     options: [
       {
         id: "say",
-        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0447\u0438\u044F \u0446\u0435",
-        effects: { stats: { bonds: 2, understanding: 1, energy: -2 }, journal: "\u0421\u043A\u0430\u0437\u0430\u0432, \u0447\u0438\u044F \u0431\u0443\u043B\u0430 \u043A\u0443\u0440\u0442\u043A\u0430." }
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441, \u0449\u043E \u0432\u0456\u043D \u0437\u0430\u0433\u0438\u043D\u0443\u0432",
+        effects: { stats: { understanding: 2, bonds: 1, energy: -2 }, flags: { said_he_died: true } }
       },
       {
         id: "silent",
-        text: "\u041F\u0440\u043E\u043C\u043E\u0432\u0447\u0430\u0442\u0438",
-        effects: { stats: { understanding: -1, energy: -1, bonds: -1 } }
+        text: "\u041C\u043E\u0432\u0447\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0437 \u0443\u0441\u0456\u043C\u0430",
+        effects: { stats: { trust: 1, understanding: -1, bonds: 1 } }
       },
       {
         id: "letter",
-        text: "\u0417\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0442\u0438 \u0456\u043C\u2019\u044F, \u0449\u043E\u0431 \u043F\u043E\u0442\u0456\u043C \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0440\u0456\u0434\u043D\u0438\u043C",
-        effects: { stats: { bonds: 1, understanding: 2 }, flags: { will_write_letter: true } }
+        text: "\u041F\u043E\u0447\u0430\u0442\u0438 \u043F\u0438\u0441\u0430\u0442\u0438 \u043B\u0438\u0441\u0442 \u0439\u043E\u0433\u043E \u043C\u0430\u043C\u0456",
+        effects: { stats: { bonds: 3, energy: -2 }, flags: { will_write_letter: true } }
+      }
+    ]
+  },
+  {
+    // Відкривається в наступних фазах, якщо почав писати.
+    id: "phase3.letter_followup",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["will_write_letter"] },
+    text: "\u0422\u043E\u0439 \u043B\u0438\u0441\u0442 \u0434\u043E\u0441\u0456 \u043D\u0435 \u0434\u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0439. \u0412\u0456\u043D \u043B\u0435\u0436\u0438\u0442\u044C \u0443 \u043D\u0430\u0433\u0440\u0443\u0434\u043D\u0456\u0439 \u043A\u0438\u0448\u0435\u043D\u0456 \u0439 \u043F\u0430\u0445\u043D\u0435 \u0442\u0432\u043E\u0457\u043C \u043F\u043E\u0442\u043E\u043C, \u0430 \u043D\u0435 \u0447\u0443\u0436\u0438\u043C \u0436\u0438\u0442\u0442\u044F\u043C.",
+    options: [
+      {
+        id: "finish",
+        text: "\u0414\u043E\u043F\u0438\u0441\u0430\u0442\u0438 \u0439 \u0432\u0456\u0434\u0434\u0430\u0442\u0438",
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { letter_sent: true }, journal: "\u0414\u043E\u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442." }
+      },
+      {
+        id: "burn",
+        text: "\u0421\u043F\u0430\u043B\u0438\u0442\u0438",
+        effects: { stats: { understanding: 1, bonds: -2, health: -1 } }
+      },
+      {
+        id: "keep",
+        text: "\u041D\u043E\u0441\u0438\u0442\u0438 \u0434\u0430\u043B\u0456, \u043F\u043E\u043A\u0438 \u0449\u043E \u0454 \u043A\u043E\u043B\u0438",
+        effects: { stats: { energy: -1, understanding: 1 } }
       }
     ]
   },
@@ -762,22 +1133,22 @@ var TEST_CARDS = [
     id: "phase3.propaganda",
     kind: "system",
     phase: [3, 4],
-    text: "\u0423 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456 \u043F\u043E \u0440\u0430\u0446\u0456\u0457 \u043F\u0435\u0440\u0435\u0434\u0430\u044E\u0442\u044C \u0437\u0432\u0435\u0434\u0435\u043D\u043D\u044F. \u0426\u0438\u0444\u0440\u0438 \u0432\u0442\u0440\u0430\u0442 \xAB\u0432\u043E\u0440\u043E\u0433\u0430\xBB \u0437\u0432\u0443\u0447\u0430\u0442\u044C \u0442\u0430\u043A \u0443\u043F\u0435\u0432\u043D\u0435\u043D\u043E, \u0449\u043E \u0445\u043E\u0447\u0435\u0442\u044C\u0441\u044F \u043F\u043E\u0432\u0456\u0440\u0438\u0442\u0438. \u0425\u0442\u043E\u0441\u044C \u043F\u043E\u0440\u0443\u0447 \u0442\u0438\u0445\u043E \u0440\u0430\u0445\u0443\u0454 \u043D\u0430 \u043F\u0430\u043B\u044C\u0446\u044F\u0445.",
+    text: "\u041F\u0440\u0438\u0457\u0436\u0434\u0436\u0430\u0454 \xAB\u043F\u0440\u0435\u0441\u0430\xBB. \u041F\u0440\u043E\u0441\u0438\u0442\u044C \u0441\u0444\u043E\u0442\u043E\u0433\u0440\u0430\u0444\u0443\u0432\u0430\u0442\u0438\u0441\u044F \u0437 \u0443\u0441\u043C\u0456\u0448\u043A\u043E\u044E. \u0425\u0442\u043E\u0441\u044C \u0443\u0441\u043C\u0456\u0445\u0430\u0454\u0442\u044C\u0441\u044F. \u0422\u0438 \u0434\u0443\u043C\u0430\u0454\u0448, \u043A\u043E\u043C\u0443 \u043F\u043E\u0442\u0456\u043C \u043F\u043E\u043A\u0430\u0436\u0443\u0442\u044C \u0446\u0435 \u0444\u043E\u0442\u043E.",
     options: [
       {
         id: "believe",
-        text: "\u041F\u043E\u0432\u0456\u0440\u0438\u0442\u0438, \u0445\u043E\u0447 \u043D\u0430 \u0445\u0432\u0438\u043B\u0438\u043D\u0443",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u0434\u043E\u0431\u0440\u0435 \u0434\u043B\u044F \u043C\u043E\u0440\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0434\u0443\u0445\u0443",
         effects: { stats: { trust: 2, understanding: -2 } }
       },
       {
         id: "count",
-        text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0456\u0437 \u0441\u0443\u0441\u0456\u0434\u043E\u043C",
-        effects: { stats: { understanding: 2, trust: -1, bonds: 1 } }
+        text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438, \u0441\u043A\u0456\u043B\u044C\u043A\u0438 \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u0444\u043E\u0442\u043E",
+        effects: { stats: { understanding: 2, energy: -1 }, flags: { counted_photo: true } }
       },
       {
         id: "turn_off",
-        text: "\u0412\u0438\u043C\u043A\u043D\u0443\u0442\u0438 \u0440\u0430\u0446\u0456\u044E",
-        effects: { stats: { trust: -1, energy: 1 } }
+        text: "\u0412\u0456\u0434\u0432\u0435\u0440\u043D\u0443\u0442\u0438\u0441\u044F \u0432 \u043C\u043E\u043C\u0435\u043D\u0442 \u0437\u0439\u043E\u043C\u043A\u0438",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
       }
     ]
   },
@@ -833,6 +1204,7 @@ var TEST_CARDS = [
     id: "phase3.bribe",
     kind: "system",
     phase: [3, 4],
+    once: true,
     text: "\u0422\u0438\u043B\u043E\u0432\u0438\u0439 \u043F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A \u043F\u0440\u043E\u043F\u043E\u043D\u0443\u0454 \xAB\u0432\u0438\u0440\u0456\u0448\u0438\u0442\u0438 \u043F\u0438\u0442\u0430\u043D\u043D\u044F\xBB \u0437 \u043F\u0435\u0440\u0435\u0432\u0435\u0434\u0435\u043D\u043D\u044F\u043C \u0443 \u0434\u0440\u0443\u0433\u0438\u0439 \u0435\u0448\u0435\u043B\u043E\u043D. \u0426\u0456\u043D\u0430 \u2014 \u0442\u0440\u0438 \u0442\u0438\u0441\u044F\u0447\u0456 \u0439 \u043C\u043E\u0432\u0447\u0430\u043D\u043D\u044F.",
     options: [
       {
@@ -854,6 +1226,174 @@ var TEST_CARDS = [
       }
     ]
   },
+  {
+    id: "phase3.food_ration",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u041F\u0430\u043A\u0443\u043D\u043E\u043A \u0432\u0456\u0434 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432. \u0422\u0440\u0438 \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0438, \u0434\u0432\u0430 \u043D\u043E\u0441\u043A\u0438 \u0439 \u0437\u0430\u043F\u0438\u0441\u043A\u0430 \xAB\u0422\u0440\u0438\u043C\u0430\u0439\u0442\u0435\u0441\u044C, \u0445\u043B\u043E\u043F\u0446\u0456\xBB. \u041D\u043E\u0441\u043A\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456.",
+    options: [
+      {
+        id: "split",
+        text: "\u0420\u043E\u0437\u0434\u0456\u043B\u0438\u0442\u0438 \u043F\u043E-\u0447\u0435\u0441\u043D\u043E\u043C\u0443",
+        effects: { stats: { supplies: 2, bonds: 2, energy: 1 } }
+      },
+      {
+        id: "keep",
+        text: "\u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0441\u043E\u0431\u0456, \u0431\u043E \u0442\u0438 \u0433\u0456\u0440\u0448\u0435 \u0437\u0430\u0431\u0435\u0437\u043F\u0435\u0447\u0435\u043D\u0438\u0439",
+        effects: { stats: { supplies: 3, bonds: -2, trust: 1 } }
+      },
+      {
+        id: "write_back",
+        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0430\u0434\u0440\u0435\u0441\u0443 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432, \u0449\u043E\u0431 \u043F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.coward",
+    kind: "system",
+    phase: [3, 4],
+    text: "\u041A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043F\u0440\u043E\u043F\u043E\u043D\u0443\u0454 \u0442\u043E\u0431\u0456 \u0441\u0442\u0430\u0442\u0438 \u0439\u043E\u0433\u043E \xAB\u043E\u0447\u0438\u043C\u0430\xBB: \u0434\u043E\u043D\u043E\u0441\u0438\u0442\u0438, \u0445\u0442\u043E \u0449\u043E \u043A\u0430\u0436\u0435 \u043F\u0440\u043E \u043D\u0430\u043A\u0430\u0437\u0438. \u041E\u0431\u0456\u0446\u044F\u0454 \xAB\u043F\u0440\u0438\u043A\u0440\u0438\u0442\u0442\u044F\xBB.",
+    options: [
+      {
+        id: "agree",
+        text: "\u041F\u043E\u0433\u043E\u0434\u0438\u0442\u0438\u0441\u044C \u2014 \u0446\u0435 \u043F\u0440\u0438\u043A\u0440\u0438\u0442\u0442\u044F",
+        effects: { stats: { trust: 3, bonds: -3, understanding: -2 }, flags: { informer: true } }
+      },
+      {
+        id: "refuse",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C \u043F\u0440\u044F\u043C\u043E",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
+      },
+      {
+        id: "pretend",
+        text: "\u041F\u043E\u0433\u043E\u0434\u0438\u0442\u0438\u0441\u044C \u0456 \u043D\u0435 \u0440\u043E\u0431\u0438\u0442\u0438 \u043D\u0456\u0447\u043E\u0433\u043E",
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: -1, understanding: 2, energy: -1 }, flags: { fake_informer: true } }
+      }
+    ]
+  },
+  {
+    // Прапорець informer має наслідки.
+    id: "phase4.informer_after",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["informer"] },
+    text: "\u0425\u043B\u043E\u043F\u0446\u0456 \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u043B\u0438 \u0433\u043E\u0432\u043E\u0440\u0438\u0442\u0438 \u043F\u0440\u0438 \u0442\u043E\u0431\u0456. \u041F\u043E\u043C\u0456\u0442\u0438\u0432 \u043D\u0435 \u0432\u0456\u0434\u0440\u0430\u0437\u0443. \u0425\u0442\u043E\u0441\u044C \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u0432 \u0441\u0456\u0434\u0430\u0442\u0438 \u043F\u043E\u0440\u0443\u0447 \u2014 \u0442\u0435\u0436 \u043D\u0435 \u0432\u0456\u0434\u0440\u0430\u0437\u0443.",
+    options: [
+      {
+        id: "admit",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043F\u043E\u0447\u0430\u0432 \u0446\u0435 \u0439 \u0448\u043A\u043E\u0434\u0443\u0454",
+        effects: { stats: { bonds: 2, trust: -2, understanding: 2, energy: -1 } }
+      },
+      {
+        id: "double",
+        text: "\u0414\u043E\u043D\u043E\u0441\u0438\u0442\u0438 \u0449\u0435, \u0449\u043E\u0431 \u0443\u0436\u0435 \u043D\u0435 \u0431\u0443\u043B\u043E \u0447\u043E\u0433\u043E \u0432\u0442\u0440\u0430\u0447\u0430\u0442\u0438",
+        effects: { stats: { trust: 2, bonds: -3, understanding: -2 } }
+      },
+      {
+        id: "silent",
+        text: "\u0416\u0438\u0442\u0438 \u0437 \u0446\u0438\u043C \u043C\u043E\u0432\u0447\u043A\u0438",
+        effects: { stats: { energy: -2, bonds: -1, understanding: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.photo",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u0425\u0442\u043E\u0441\u044C \u043F\u0440\u0438\u043D\u0456\u0441 \u0444\u043E\u0442\u043E\u0430\u043F\u0430\u0440\u0430\u0442. \u0425\u043B\u043E\u043F\u0446\u0456 \u0445\u043E\u0447\u0443\u0442\u044C \u0444\u043E\u0442\u043E \xAB\u043D\u0430 \u043F\u0430\u043C'\u044F\u0442\u044C\xBB. \u0422\u0438 \u0434\u0443\u043C\u0430\u0454\u0448, \u043A\u043E\u043C\u0443 \u0446\u0435 \u0444\u043E\u0442\u043E \u043F\u043E\u0442\u0456\u043C \u043F\u043E\u043A\u0430\u0437\u0443\u0432\u0430\u0442\u0438.",
+    options: [
+      {
+        id: "pose",
+        text: "\u041F\u043E\u0437\u0443\u0432\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0437 \u0443\u0441\u0456\u043C\u0430",
+        effects: { stats: { bonds: 2, energy: 1 } }
+      },
+      {
+        id: "refuse",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: -1 } }
+      },
+      {
+        id: "send",
+        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438, \u0449\u043E\u0431 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043B\u0438 \u043C\u0430\u043C\u0456",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.rot",
+    kind: "event",
+    phase: [3, 4],
+    text: "\u0412\u0437\u0443\u0442\u0442\u044F \u0440\u043E\u0437\u043C\u043E\u043A\u043B\u043E \u0439 \u0443\u0436\u0435 \u043D\u0435 \u0441\u043E\u0445\u043D\u0435. \u041D\u043E\u0433\u0438 \u0432 \u043A\u0432\u043E\u043B\u0456. \u041C\u0435\u0434\u0441\u0435\u0441\u0442\u0440\u0430 \u043A\u0430\u0436\u0435: \xAB\u041F\u043E\u043A\u0438 \u043D\u0435 \u0447\u043E\u0440\u043D\u0456 \u2014 \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435\xBB.",
+    options: [
+      {
+        id: "dry",
+        text: "\u0412\u0438\u0441\u0443\u0448\u0438\u0442\u0438 \u0431\u043E\u0434\u0430\u0439 \u0448\u043A\u0430\u0440\u043F\u0435\u0442\u043A\u0438 \u043D\u0430\u0434 \u0431\u0443\u0440\u0436\u0443\u0439\u043A\u043E\u044E",
+        effects: { stats: { health: 1, energy: -1, supplies: -1 } }
+      },
+      {
+        id: "swap",
+        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438 \u0432 \u043A\u043E\u0433\u043E\u0441\u044C \u0437\u0430\u043F\u0430\u0441\u043D\u0456",
+        effects: { stats: { health: 2, bonds: -1, supplies: -1 } }
+      },
+      {
+        id: "endure",
+        text: "\u0422\u0435\u0440\u043F\u0456\u0442\u0438",
+        effects: { stats: { health: -2, energy: -1, trust: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase3.drill_hard",
+    kind: "system",
+    phase: [3],
+    text: "\u0420\u0430\u043F\u0442\u043E\u0432\u0438\u0439 \xAB\u043D\u0430\u0432\u0447\u0430\u043B\u044C\u043D\u0438\u0439 \u043F\u0456\u0434\u0439\u043E\u043C\xBB \u043E \u0442\u0440\u0435\u0442\u0456\u0439 \u043D\u043E\u0447\u0456. \u0425\u0442\u043E\u0441\u044C \u0437\u0430\u0441\u0438\u043D\u0430\u0454 \u0441\u0442\u043E\u044F\u0447\u0438. \u0421\u0435\u0440\u0436\u0430\u043D\u0442 \u043A\u0440\u0438\u0447\u0438\u0442\u044C, \u0449\u043E \xAB\u0446\u0435 \u0456 \u0454 \u043F\u0435\u0440\u0435\u0432\u0456\u0440\u043A\u0430\xBB.",
+    options: [
+      {
+        id: "stand",
+        text: "\u0421\u0442\u043E\u044F\u0442\u0438 \u0439 \u0432\u0456\u0434\u043F\u0440\u0430\u0446\u044C\u043E\u0432\u0443\u0432\u0430\u0442\u0438",
+        effects: { skills: { drill: 1 }, stats: { energy: -3, trust: 1 } }
+      },
+      {
+        id: "tell",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u043E\u0432\u0456, \u0449\u043E \u0446\u0435 \u0448\u043A\u043E\u0434\u0438\u0442\u044C",
+        effects: { stats: { trust: -2, bonds: 1, understanding: 1 } }
+      },
+      {
+        id: "fake",
+        text: "\u0417\u0440\u043E\u0431\u0438\u0442\u0438 \u0432\u0438\u0433\u043B\u044F\u0434, \u0449\u043E \u0432\u0438\u043A\u043E\u043D\u0443\u0454\u0448",
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { trust: 1, understanding: 1, energy: -1 }, flags: { learnt_fake: true } }
+      }
+    ]
+  },
+  {
+    id: "phase3.medicine",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u0423 \u043C\u0435\u0434\u043F\u0443\u043D\u043A\u0442\u0456 \u043B\u0438\u0448\u0438\u043B\u043E\u0441\u044C \u0442\u0440\u0438 \u043F\u0456\u0433\u0443\u043B\u043A\u0438 \u0432\u0456\u0434 \u0431\u043E\u043B\u044E. \u041E\u043B\u044F \u043A\u0430\u0436\u0435: \xAB\u0420\u0435\u0430\u043B\u044C\u043D\u0438\u0445 \u043F\u0440\u0435\u0442\u0435\u043D\u0434\u0435\u043D\u0442\u0456\u0432 \u2014 \u0448\u0435\u0441\u0442\u0435\u0440\u043E\xBB.",
+    options: [
+      {
+        id: "own",
+        text: "\u0412\u0437\u044F\u0442\u0438 \u0441\u043E\u0431\u0456 \u043E\u0434\u043D\u0443 \u2014 \u0443 \u0442\u0435\u0431\u0435 \u043D\u0438\u0454 \u043A\u043E\u043B\u0456\u043D\u043E",
+        effects: { stats: { health: 2, bonds: -2 } }
+      },
+      {
+        id: "give",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0442\u043E\u043C\u0443, \u043A\u043E\u043C\u0443 \u0433\u0456\u0440\u0448\u0435",
+        effects: { stats: { bonds: 3, energy: -1 } }
+      },
+      {
+        id: "ask_olia",
+        text: "\u0421\u043F\u0438\u0442\u0430\u0442\u0438 \u041E\u043B\u044E, \u043A\u043E\u043C\u0443 \u0441\u043F\u0440\u0430\u0432\u0434\u0456 \u043F\u043E\u0442\u0440\u0456\u0431\u043D\u043E",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 2, health: -1 }, flags: { knows_triage: true } }
+      }
+    ]
+  },
+  // ─────────────────────────── ФАЗА 4: холод, сумніви, люди ───────────────────────────
   {
     id: "phase4.cold",
     kind: "event",
@@ -902,6 +1442,7 @@ var TEST_CARDS = [
     id: "phase4.doubt",
     kind: "event",
     phase: [4, 5],
+    once: true,
     text: "\u0423\u043D\u043E\u0447\u0456, \u043A\u043E\u043B\u0438 \u0432\u0441\u0456 \u0441\u043F\u043B\u044F\u0442\u044C, \u0442\u0438 \u043B\u043E\u0432\u0438\u0448 \u0441\u0435\u0431\u0435 \u043D\u0430 \u0434\u0443\u043C\u0446\u0456: \xAB\u0410 \u0449\u043E, \u044F\u043A \u043D\u0430\u0441 \u0442\u0443\u0442 \u0443\u0437\u0430\u0433\u0430\u043B\u0456 \u043D\u0435\u043C\u0430\u0454 \u043F\u0440\u0438\u0447\u0438\u043D\u0438 \u0442\u0440\u0438\u043C\u0430\u0442\u0438?\xBB \u041F\u043E\u0442\u0456\u043C \u0437\u0433\u0430\u0434\u0443\u0454\u0448, \u0449\u043E \u0437\u0430 \u0446\u044E \u0434\u0443\u043C\u043A\u0443 \u0442\u0438 \u0432\u0436\u0435 \u043A\u043E\u043C\u0443\u0441\u044C \u043D\u0435 \u0434\u043E\u0432\u0456\u0440\u044F\u0454\u0448.",
     options: [
       {
@@ -952,7 +1493,7 @@ var TEST_CARDS = [
     kind: "event",
     phase: [4, 5],
     once: true,
-    text: "\u0414\u0432\u043E\u0454 \u0437 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043F\u0456\u0448\u043B\u0438 \u0432\u043D\u043E\u0447\u0456. \u0423\u0440\u0430\u043D\u0446\u0456 \u0446\u0435 \u043D\u0430\u0437\u0438\u0432\u0430\u044E\u0442\u044C \xAB\u0437\u0440\u0430\u0434\u043E\u044E\xBB. \u0422\u0438 \u0441\u0430\u043C \u0434\u0443\u043C\u0430\u0432 \u043F\u0440\u043E \u0446\u0435 \u0434\u0435\u0432\u2019\u044F\u0442\u044C \u043D\u043E\u0447\u0435\u0439.",
+    text: "\u0414\u0432\u043E\u0454 \u0437 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043F\u0456\u0448\u043B\u0438 \u0432\u043D\u043E\u0447\u0456. \u0423\u0440\u0430\u043D\u0446\u0456 \u0446\u0435 \u043D\u0430\u0437\u0438\u0432\u0430\u044E\u0442\u044C \xAB\u0437\u0440\u0430\u0434\u043E\u044E\xBB. \u0422\u0438 \u0441\u0430\u043C \u0434\u0443\u043C\u0430\u0432 \u043F\u0440\u043E \u0446\u0435 \u0434\u0435\u0432'\u044F\u0442\u044C \u043D\u043E\u0447\u0435\u0439.",
     options: [
       {
         id: "condemn",
@@ -971,6 +1512,221 @@ var TEST_CARDS = [
       }
     ]
   },
+  {
+    id: "phase4.gossip",
+    kind: "person",
+    phase: [4, 5],
+    text: "\u0422\u0438\u043B\u043E\u0432\u0438\u0439 \u043F\u0438\u0441\u0430\u0440 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0434\u0430\u0454, \u0449\u043E \xAB\u043D\u0430\u0433\u043E\u0440\u0456\xBB \u0432\u0436\u0435 \u0432\u0441\u0435 \u0432\u0438\u0440\u0456\u0448\u0435\u043D\u043E \u0439 \u043D\u0430\u0441 \u0437\u0430\u043B\u0438\u0448\u0438\u043B\u0438 \u044F\u043A \u043F\u0440\u0438\u043C\u0430\u043D\u043A\u0443. \u0412\u0456\u043D \u043A\u0430\u0436\u0435 \u0446\u0435 \u0437 \u0433\u043E\u0440\u0434\u0456\u0441\u0442\u044E.",
+    options: [
+      {
+        id: "believe",
+        text: "\u041F\u043E\u0432\u0456\u0440\u0438\u0442\u0438 \u0439 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0441\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
+        effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } }
+      },
+      {
+        id: "dismiss",
+        text: "\u0412\u0456\u0434\u043C\u0430\u0445\u043D\u0443\u0442\u0438\u0441\u044F",
+        effects: { stats: { understanding: -1, energy: 1 } }
+      },
+      {
+        id: "check",
+        text: "\u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 \u0437\u043D\u0430\u0439\u043E\u043C\u043E\u0433\u043E \u0432 \u0448\u0442\u0430\u0431\u0456",
+        requires: { skillAtLeast: { system: 2 } },
+        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.wound",
+    kind: "event",
+    phase: [4, 5],
+    text: "\u0423\u043B\u0430\u043C\u043E\u043A \u0437\u0430\u0439\u0448\u043E\u0432 \u0443 \u0441\u0442\u0435\u0433\u043D\u043E. \u041E\u043B\u044F \u043A\u0430\u0436\u0435, \u0449\u043E \u0434\u0456\u0439\u0434\u0435 \u0439 \u0442\u0430\u043A. \u041A\u0430\u0436\u0435 \u0446\u0435 \u0448\u0432\u0438\u0434\u0448\u0435 \u0441\u043E\u0431\u0456.",
+    options: [
+      {
+        id: "stay",
+        text: "\u041B\u0438\u0448\u0438\u0442\u0438\u0441\u044C \u043D\u0430 \u043F\u043E\u0437\u0438\u0446\u0456\u0457",
+        effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } }
+      },
+      {
+        id: "evac",
+        text: "\u0414\u043E\u0437\u0432\u043E\u043B\u0438\u0442\u0438 \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u0438\u0442\u0438 \u0441\u0435\u0431\u0435 \u0432 \u0442\u0438\u043B",
+        effects: { stats: { health: 3, trust: -2, understanding: 1 } }
+      },
+      {
+        id: "self_help",
+        text: "\u041E\u0431\u0440\u043E\u0431\u0438\u0442\u0438 \u0441\u0430\u043C, \u044F\u043A \u0443\u0447\u0438\u043B\u0430 \u041E\u043B\u044F",
+        requires: { flagTrue: ["knows_jgut_count"] },
+        effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.quiet_evening",
+    kind: "routine",
+    phase: [4, 5],
+    text: "\u0422\u0438\u0445\u0438\u0439 \u0432\u0435\u0447\u0456\u0440. \u0425\u0442\u043E\u0441\u044C \u0434\u0456\u0441\u0442\u0430\u0454 \u0433\u0456\u0442\u0430\u0440\u0443 \u0439 \u0433\u0440\u0430\u0454 \u043F\u0456\u0441\u043D\u044E, \u044F\u043A\u0443 \u0432\u0441\u0456 \u0437\u043D\u0430\u044E\u0442\u044C, \u0430\u043B\u0435 \u043D\u0435 \u043F\u0430\u043C'\u044F\u0442\u0430\u044E\u0442\u044C, \u0437\u0432\u0456\u0434\u043A\u0438.",
+    options: [
+      {
+        id: "sing",
+        text: "\u041F\u0456\u0434\u0441\u043F\u0456\u0432\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } }
+      },
+      {
+        id: "listen",
+        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u043D\u0430 \u043E\u0431\u043B\u0438\u0447\u0447\u044F",
+        effects: { stats: { understanding: 2, energy: 1 } }
+      },
+      {
+        id: "ask",
+        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F, \u0434\u0435 \u0432\u0456\u043D \u0446\u0435 \u0447\u0443\u0432",
+        effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } }
+      }
+    ]
+  },
+  {
+    id: "phase4.home_news",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    text: "\u0421\u0435\u0441\u0442\u0440\u0430 \u043F\u0438\u0448\u0435, \u0449\u043E \u0432 \u043C\u0456\u0441\u0442\u0456 \u0437\u0430\u043A\u0440\u0438\u043B\u0438 \u0448\u043A\u043E\u043B\u0443 \u0439 \u043F\u0435\u0440\u0435\u0432\u0435\u043B\u0438 \u0457\u0457 \u043A\u043B\u0430\u0441 \u0443 \u043F\u0456\u0434\u0432\u0430\u043B. \u041F\u0440\u043E\u0441\u0438\u0442\u044C \xAB\u043D\u0435 \u043F\u0435\u0440\u0435\u0436\u0438\u0432\u0430\u0442\u0438\xBB.",
+    options: [
+      {
+        id: "reply",
+        text: "\u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438 \u0437\u0430\u0440\u0430\u0437, \u043F\u043E\u043A\u0438 \u0454 \u0437\u0432'\u044F\u0437\u043E\u043A",
+        effects: { stats: { bonds: 3, energy: -2 } }
+      },
+      {
+        id: "later",
+        text: "\u0412\u0456\u0434\u043A\u043B\u0430\u0441\u0442\u0438 \u2014 \u0437\u0430\u0440\u0430\u0437 \u043D\u0435 \u0434\u043E \u0446\u044C\u043E\u0433\u043E",
+        effects: { stats: { energy: 1, bonds: -2, understanding: -1 } }
+      },
+      {
+        id: "send_money",
+        text: "\u0421\u043F\u0440\u043E\u0431\u0443\u0432\u0430\u0442\u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0442\u0438 \u0442\u0440\u043E\u0445\u0438 \u0433\u0440\u043E\u0448\u0435\u0439",
+        requires: { statAtLeast: { supplies: 3 } },
+        effects: { stats: { supplies: -3, bonds: 3, trust: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.replacement",
+    kind: "person",
+    phase: [4, 5],
+    text: "\u041F\u0440\u0438\u0439\u0448\u043E\u0432 \xAB\u043C\u043E\u043B\u043E\u0434\u0438\u0439\xBB \u2014 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u044C \u0440\u043E\u043A\u0456\u0432 \u0456 \u0432\u043F\u0435\u0432\u043D\u0435\u043D\u0456\u0441\u0442\u044C, \u0449\u043E \u0432\u0456\u043D \u0437\u043D\u0430\u0454 \u0432\u0441\u0435. \u0414\u0438\u0432\u0438\u0442\u044C\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435, \u044F\u043A \u043D\u0430 \u0441\u0442\u0430\u0440\u0438\u043A\u0430.",
+    options: [
+      {
+        id: "teach",
+        text: "\u041D\u0430\u0432\u0447\u0438\u0442\u0438 \u0442\u043E\u0433\u043E, \u0449\u043E \u0437\u043D\u0430\u0454\u0448",
+        effects: { skills: { people: 1 }, stats: { bonds: 2, understanding: 1, energy: -1 } }
+      },
+      {
+        id: "warn",
+        text: "\u041F\u043E\u043F\u0435\u0440\u0435\u0434\u0438\u0442\u0438, \u0449\u043E \u0442\u0443\u0442 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u0437\u043D\u0430\u0454 \u0432\u0441\u044C\u043E\u0433\u043E",
+        effects: { stats: { understanding: 2, bonds: 1 } }
+      },
+      {
+        id: "mock",
+        text: "\u041F\u043E\u0441\u043C\u0456\u044F\u0442\u0438\u0441\u044F \u0437 \u0439\u043E\u0433\u043E \u0432\u043F\u0435\u0432\u043D\u0435\u043D\u043E\u0441\u0442\u0456",
+        effects: { stats: { bonds: -2, energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.night_watch",
+    kind: "routine",
+    phase: [4, 5],
+    text: "\u0422\u0432\u043E\u044F \u0437\u043C\u0456\u043D\u0430 \u043D\u0430 \u0441\u043F\u043E\u0441\u0442\u0435\u0440\u0435\u0436\u0435\u043D\u043D\u0456. \u041C\u0456\u043D\u0443\u0441 \u0434\u0435\u0441\u044F\u0442\u044C, \u043D\u0456\u0447, \u0442\u0438\u0448\u0430. \u0425\u043E\u0447\u0435\u0442\u044C\u0441\u044F \u0441\u043F\u0430\u0442\u0438 \u0442\u0430\u043A, \u0449\u043E \u0431\u043E\u043B\u044F\u0447\u0435.",
+    options: [
+      {
+        id: "stay_awake",
+        text: "\u0421\u0442\u043E\u044F\u0442\u0438 \u0434\u043E \u043A\u0456\u043D\u0446\u044F, \u0445\u043E\u0447 \u0431\u0438 \u0449\u043E",
+        effects: { stats: { health: -2, energy: -2, trust: 2 }, flags: { held_watch: true } }
+      },
+      {
+        id: "micro_sleep",
+        text: "\u0414\u0440\u0456\u043C\u043D\u0443\u0442\u0438 \u0445\u0432\u0438\u043B\u0438\u043D \u043D\u0430 \u0434\u0435\u0441\u044F\u0442\u044C",
+        effects: { stats: { energy: 2, trust: -1, health: -1 } }
+      },
+      {
+        id: "share",
+        text: "\u0414\u043E\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C \u0456\u0437 \u0441\u0443\u0441\u0456\u0434\u043E\u043C \u043F\u043E \u0447\u0435\u0440\u0437\u0456",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 2, energy: 1, trust: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.rumours",
+    kind: "system",
+    phase: [4, 5],
+    text: "\u0425\u043E\u0434\u044F\u0442\u044C \u0447\u0443\u0442\u043A\u0438, \u0449\u043E \u0441\u043A\u043E\u0440\u043E \xAB\u0432\u0441\u0435 \u0437\u0430\u043A\u0456\u043D\u0447\u0438\u0442\u044C\u0441\u044F\xBB. \u041E\u0434\u043D\u0456 \u043A\u0430\u0436\u0443\u0442\u044C \u2014 \u0434\u043E\u0431\u0440\u0435, \u0456\u043D\u0448\u0456 \u2014 \u0449\u043E \u0442\u043E\u0434\u0456 \u043D\u0430\u0441 \u0442\u043E\u0447\u043D\u043E \u043D\u0435 \u0437\u0430\u0431\u0435\u0440\u0443\u0442\u044C.",
+    options: [
+      {
+        id: "hope",
+        text: "\u0412\u0456\u0440\u0438\u0442\u0438 \u0432 \u0445\u043E\u0440\u043E\u0448\u0438\u0439 \u0432\u0430\u0440\u0456\u0430\u043D\u0442",
+        effects: { stats: { energy: 2, understanding: -1, trust: 1 } }
+      },
+      {
+        id: "realistic",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C, \u0449\u043E \u043E\u0431\u0438\u0434\u0432\u0430 \u0432\u0430\u0440\u0456\u0430\u043D\u0442\u0438 \u043F\u043E\u0433\u0430\u043D\u0456 \u043F\u043E-\u0441\u0432\u043E\u0454\u043C\u0443",
+        effects: { stats: { understanding: 2, bonds: 1, energy: -1 } }
+      },
+      {
+        id: "silence",
+        text: "\u041D\u0435 \u0432\u0442\u0440\u0443\u0447\u0430\u0442\u0438\u0441\u044C",
+        effects: { stats: { energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.stolen",
+    kind: "event",
+    phase: [4, 5],
+    text: "\u0423 \u0442\u0435\u0431\u0435 \u0437\u043D\u0438\u043A\u043B\u0438 \u0441\u0443\u0445\u0430\u0440\u0456. \u0425\u0442\u043E\u0441\u044C \u0457\u0445 \u0443\u0437\u044F\u0432. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0445\u0442\u043E \u2014 \u0432\u0456\u043D \u043D\u0435 \u0457\u0432 \u0442\u0440\u0438 \u0434\u043D\u0456.",
+    options: [
+      {
+        id: "ask",
+        text: "\u041F\u043E\u0433\u043E\u0432\u043E\u0440\u0438\u0442\u0438 \u0437 \u043D\u0438\u043C \u0432\u0456\u0447-\u043D\u0430-\u0432\u0456\u0447",
+        effects: { stats: { understanding: 2, bonds: 1, supplies: -1 } }
+      },
+      {
+        id: "public",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u043F\u0440\u0438 \u0432\u0441\u0456\u0445",
+        effects: { stats: { bonds: -3, trust: 1, supplies: 1 } }
+      },
+      {
+        id: "pretend",
+        text: "\u0417\u0440\u043E\u0431\u0438\u0442\u0438 \u0432\u0438\u0433\u043B\u044F\u0434, \u0449\u043E \u043D\u0435 \u043F\u043E\u043C\u0456\u0442\u0438\u0432",
+        effects: { stats: { bonds: 2, supplies: -1, understanding: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase4.tolko_dies",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["tolko_honest"] },
+    text: "\u0422\u043E\u043B\u0456\u043A\u0430 \u0431\u0456\u043B\u044C\u0448\u0435 \u043D\u0435\u043C\u0430\u0454. \u0421\u0430\u043C\u0435 \u0439\u043E\u0433\u043E, \u0442\u043E\u0433\u043E, \u0445\u0442\u043E \u0432\u0447\u0438\u0432 \u0442\u0435\u0431\u0435 \u0441\u0438\u0434\u0456\u0442\u0438 \u0432 \u043E\u043A\u043E\u043F\u0456. \u0422\u0438 \u0441\u0438\u0434\u0438\u0448 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E. \u0406 \u043D\u0456\u043A\u043E\u0433\u043E \u0446\u0435 \u043D\u0435 \u0432\u0440\u044F\u0442\u0443\u0432\u0430\u043B\u043E.",
+    options: [
+      {
+        id: "rage",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441, \u0449\u043E \u0446\u0435 \u0431\u0435\u0437\u0433\u043B\u0443\u0437\u0434\u043E",
+        effects: { stats: { understanding: 3, trust: -3, bonds: 1, energy: -2 } }
+      },
+      {
+        id: "teach_others",
+        text: "\u041F\u0435\u0440\u0435\u0434\u0430\u0442\u0438 \u0439\u043E\u0433\u043E \u043D\u0430\u0443\u043A\u0443 \u0434\u0430\u043B\u0456",
+        effects: { skills: { survival: 1, people: 1 }, stats: { bonds: 2, energy: -1 } }
+      },
+      {
+        id: "shut",
+        text: "\u0417\u0430\u043A\u0440\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { energy: -1, bonds: -2, understanding: 1 } }
+      }
+    ]
+  },
+  // ─────────────────────────── ФАЗА 5: тиша, останній пост, вітер ───────────────────────────
   {
     id: "phase5.lastpost",
     kind: "event",
@@ -1016,76 +1772,6 @@ var TEST_CARDS = [
         id: "nothing",
         text: "\xAB\u041D\u0456\u0447\u043E\u0433\u043E. \u041D\u0435 \u0441\u043A\u0430\u0436\u0443\u0442\u044C\xBB",
         effects: { stats: { understanding: 1, energy: -1 } }
-      }
-    ]
-  },
-  {
-    id: "phase2.commander_orders",
-    kind: "system",
-    phase: [2, 3],
-    text: "\u041D\u043E\u0432\u0438\u0439 \u043D\u0430\u043A\u0430\u0437: \u0449\u043E\u0434\u0435\u043D\u043D\u0430 \u043C\u0443\u0448\u0442\u0440\u0430 \u043D\u0430 \u043F\u043B\u0430\u0446\u0443, \u043F\u043E\u043F\u0440\u0438 \u043C\u043E\u0440\u043E\u0437. \xAB\u0421\u043E\u043B\u0434\u0430\u0442 \u043C\u0430\u0454 \u0432\u0438\u0433\u043B\u044F\u0434\u0430\u0442\u0438 \u0441\u043E\u043B\u0434\u0430\u0442\u043E\u043C\xBB.",
-    options: [
-      {
-        id: "attend",
-        text: "\u0421\u0443\u043C\u043B\u0456\u043D\u043D\u043E \u0445\u043E\u0434\u0438\u0442\u0438",
-        effects: { skills: { drill: 1 }, stats: { health: -1, energy: -1, trust: 1 } }
-      },
-      {
-        id: "skip",
-        text: "\u041F\u0440\u043E\u043F\u0443\u0441\u043A\u0430\u0442\u0438 \u043F\u0456\u0434 \u043F\u0440\u0438\u0432\u043E\u0434\u043E\u043C \u043D\u0430\u0440\u044F\u0434\u0456\u0432",
-        effects: { stats: { trust: -1, energy: 1 }, skills: { system: 1 } }
-      },
-      {
-        id: "pointless",
-        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438, \u043D\u0430\u0432\u0456\u0449\u043E \u0446\u0435 \u0432 \u043E\u043A\u043E\u043F\u0456",
-        effects: { stats: { trust: -2, understanding: 2, bonds: 1 } }
-      }
-    ]
-  },
-  {
-    id: "phase3.food_ration",
-    kind: "routine",
-    phase: [3, 4],
-    text: "\u041F\u0430\u043A\u0443\u043D\u043E\u043A \u0432\u0456\u0434 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432. \u0422\u0440\u0438 \u0448\u043E\u043A\u043E\u043B\u0430\u0434\u043A\u0438, \u0434\u0432\u0430 \u043D\u043E\u0441\u043A\u0438 \u0439 \u0437\u0430\u043F\u0438\u0441\u043A\u0430 \xAB\u0422\u0440\u0438\u043C\u0430\u0439\u0442\u0435\u0441\u044C, \u0445\u043B\u043E\u043F\u0446\u0456\xBB. \u041D\u043E\u0441\u043A\u0438 \u043E\u0434\u043D\u0430\u043A\u043E\u0432\u0456.",
-    options: [
-      {
-        id: "split",
-        text: "\u0420\u043E\u0437\u0434\u0456\u043B\u0438\u0442\u0438 \u043F\u043E-\u0447\u0435\u0441\u043D\u043E\u043C\u0443",
-        effects: { stats: { supplies: 2, bonds: 2, energy: 1 } }
-      },
-      {
-        id: "keep",
-        text: "\u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0441\u043E\u0431\u0456, \u0431\u043E \u0442\u0438 \u0433\u0456\u0440\u0448\u0435 \u0437\u0430\u0431\u0435\u0437\u043F\u0435\u0447\u0435\u043D\u0438\u0439",
-        effects: { stats: { supplies: 3, bonds: -2, trust: 1 } }
-      },
-      {
-        id: "write_back",
-        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0430\u0434\u0440\u0435\u0441\u0443 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432, \u0449\u043E\u0431 \u043F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438",
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { thanks_volunteers: true } }
-      }
-    ]
-  },
-  {
-    id: "phase4.wound",
-    kind: "event",
-    phase: [4, 5],
-    text: "\u0423\u043B\u0430\u043C\u043E\u043A \u0437\u0430\u0439\u0448\u043E\u0432 \u0443 \u0441\u0442\u0435\u0433\u043D\u043E. \u041E\u043B\u044F \u043A\u0430\u0436\u0435, \u0449\u043E \u0434\u0456\u0439\u0434\u0435 \u0439 \u0442\u0430\u043A. \u041A\u0430\u0436\u0435 \u0446\u0435 \u0448\u0432\u0438\u0434\u0448\u0435 \u0441\u043E\u0431\u0456.",
-    options: [
-      {
-        id: "stay",
-        text: "\u041B\u0438\u0448\u0438\u0442\u0438\u0441\u044C \u043D\u0430 \u043F\u043E\u0437\u0438\u0446\u0456\u0457",
-        effects: { stats: { health: -3, trust: 2, bonds: 1 }, flags: { wounded_stayed: true } }
-      },
-      {
-        id: "evac",
-        text: "\u0414\u043E\u0437\u0432\u043E\u043B\u0438\u0442\u0438 \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u0438\u0442\u0438 \u0441\u0435\u0431\u0435 \u0432 \u0442\u0438\u043B",
-        effects: { stats: { health: 3, trust: -2, understanding: 1 } }
-      },
-      {
-        id: "self_help",
-        text: "\u041E\u0431\u0440\u043E\u0431\u0438\u0442\u0438 \u0441\u0430\u043C, \u044F\u043A \u0443\u0447\u0438\u043B\u0430 \u041E\u043B\u044F",
-        requires: { flagTrue: ["knows_jgut_count"] },
-        effects: { stats: { health: -1, energy: -2 }, skills: { survival: 1 } }
       }
     ]
   },
@@ -1137,103 +1823,10 @@ var TEST_CARDS = [
     ]
   },
   {
-    id: "phase4.gossip",
-    kind: "person",
-    phase: [4, 5],
-    text: "\u0422\u0438\u043B\u043E\u0432\u0438\u0439 \u043F\u0438\u0441\u0430\u0440 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0434\u0430\u0454, \u0449\u043E \xAB\u043D\u0430\u0433\u043E\u0440\u0456\xBB \u0432\u0436\u0435 \u0432\u0441\u0435 \u0432\u0438\u0440\u0456\u0448\u0435\u043D\u043E \u0439 \u043D\u0430\u0441 \u0437\u0430\u043B\u0438\u0448\u0438\u043B\u0438 \u044F\u043A \u043F\u0440\u0438\u043C\u0430\u043D\u043A\u0443. \u0412\u0456\u043D \u043A\u0430\u0436\u0435 \u0446\u0435 \u0437 \u0433\u043E\u0440\u0434\u0456\u0441\u0442\u044E.",
-    options: [
-      {
-        id: "believe",
-        text: "\u041F\u043E\u0432\u0456\u0440\u0438\u0442\u0438 \u0439 \u0440\u043E\u0437\u043F\u043E\u0432\u0456\u0441\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
-        effects: { stats: { understanding: 2, bonds: -1, trust: -1 }, flags: { told_bait: true } }
-      },
-      {
-        id: "dismiss",
-        text: "\u0412\u0456\u0434\u043C\u0430\u0445\u043D\u0443\u0442\u0438\u0441\u044F",
-        effects: { stats: { understanding: -1, energy: 1 } }
-      },
-      {
-        id: "check",
-        text: "\u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 \u0437\u043D\u0430\u0439\u043E\u043C\u043E\u0433\u043E \u0432 \u0448\u0442\u0430\u0431\u0456",
-        requires: { skillAtLeast: { system: 2 } },
-        effects: { stats: { understanding: 2, supplies: -1 }, flags: { knows_bait: true } }
-      }
-    ]
-  },
-  {
-    id: "phase3.photo",
-    kind: "routine",
-    phase: [3, 4],
-    text: "\u0425\u0442\u043E\u0441\u044C \u043F\u0440\u0438\u043D\u0456\u0441 \u0444\u043E\u0442\u043E\u0430\u043F\u0430\u0440\u0430\u0442. \u0425\u043B\u043E\u043F\u0446\u0456 \u0445\u043E\u0447\u0443\u0442\u044C \u0444\u043E\u0442\u043E \xAB\u043D\u0430 \u043F\u0430\u043C\u2019\u044F\u0442\u044C\xBB. \u0422\u0438 \u0434\u0443\u043C\u0430\u0454\u0448, \u043A\u043E\u043C\u0443 \u0446\u0435 \u0444\u043E\u0442\u043E \u043F\u043E\u0442\u0456\u043C \u043F\u043E\u043A\u0430\u0437\u0443\u0432\u0430\u0442\u0438.",
-    options: [
-      {
-        id: "pose",
-        text: "\u041F\u043E\u0437\u0443\u0432\u0430\u0442\u0438 \u0440\u0430\u0437\u043E\u043C \u0437 \u0443\u0441\u0456\u043C\u0430",
-        effects: { stats: { bonds: 2, energy: 1 } }
-      },
-      {
-        id: "refuse",
-        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C",
-        effects: { stats: { understanding: 1, bonds: -1 } }
-      },
-      {
-        id: "send",
-        text: "\u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0438, \u0449\u043E\u0431 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043B\u0438 \u043C\u0430\u043C\u0456",
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { photo_to_mom: true } }
-      }
-    ]
-  },
-  {
-    id: "phase2.hazing",
-    kind: "system",
-    phase: [2],
-    text: "\xAB\u0414\u0456\u0434\u0456\u0432\u0449\u0438\u043D\u0430\xBB \u0432 \u043D\u043E\u0432\u043E\u043C\u0443 \u0432\u0438\u0433\u043B\u044F\u0434\u0456: \u043D\u043E\u0432\u0430\u0447\u043A\u0430\u043C \u2014 \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438, \u0441\u0442\u0430\u0440\u0448\u0438\u043C \u2014 \u043D\u0456\u0447\u043E\u0433\u043E. \u041E\u0434\u0438\u043D \u0456\u0437 \u0441\u0435\u0440\u0436\u0430\u043D\u0442\u0456\u0432 \u043D\u0430\u0437\u0438\u0432\u0430\u0454 \u0446\u0435 \xAB\u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F\u043C\u0438\xBB.",
-    options: [
-      {
-        id: "obey",
-        text: "\u041F\u0440\u0438\u0431\u0438\u0440\u0430\u0442\u0438 \u0431\u0435\u0437 \u0441\u043B\u0456\u0432",
-        effects: { stats: { trust: 1, energy: -2 } }
-      },
-      {
-        id: "stand",
-        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u043D\u0435 \u0442\u0440\u0430\u0434\u0438\u0446\u0456\u044F, \u0430 \u0431\u0435\u0437\u043B\u0430\u0434",
-        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
-      },
-      {
-        id: "trade",
-        text: "\u0414\u043E\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C: \u043F\u0440\u0438\u0431\u0438\u0440\u0430\u044E, \u0430\u043B\u0435 \u0437\u0430 \u0445\u0430\u0440\u0447\u0456",
-        requires: { skillAtLeast: { people: 1 } },
-        effects: { stats: { supplies: 2, trust: -1, bonds: 1 }, skills: { people: 1 } }
-      }
-    ]
-  },
-  {
-    id: "phase4.quiet_evening",
-    kind: "routine",
-    phase: [4, 5],
-    text: "\u0422\u0438\u0445\u0438\u0439 \u0432\u0435\u0447\u0456\u0440. \u0425\u0442\u043E\u0441\u044C \u0434\u0456\u0441\u0442\u0430\u0454 \u0433\u0456\u0442\u0430\u0440\u0443 \u0439 \u0433\u0440\u0430\u0454 \u043F\u0456\u0441\u043D\u044E, \u044F\u043A\u0443 \u0432\u0441\u0456 \u0437\u043D\u0430\u044E\u0442\u044C, \u0430\u043B\u0435 \u043D\u0435 \u043F\u0430\u043C\u2019\u044F\u0442\u0430\u044E\u0442\u044C, \u0437\u0432\u0456\u0434\u043A\u0438.",
-    options: [
-      {
-        id: "sing",
-        text: "\u041F\u0456\u0434\u0441\u043F\u0456\u0432\u0443\u0432\u0430\u0442\u0438",
-        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } }
-      },
-      {
-        id: "listen",
-        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u0434\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u043D\u0430 \u043E\u0431\u043B\u0438\u0447\u0447\u044F",
-        effects: { stats: { understanding: 2, energy: 1 } }
-      },
-      {
-        id: "ask",
-        text: "\u0417\u0430\u043F\u0438\u0442\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F, \u0434\u0435 \u0432\u0456\u043D \u0446\u0435 \u0447\u0443\u0432",
-        effects: { stats: { bonds: 1, understanding: 1 }, flags: { song_story: true } }
-      }
-    ]
-  },
-  {
     id: "phase5.final_wait",
     kind: "final",
     phase: [5],
+    once: true,
     text: "\u0414\u0435\u043D\u044C, \u044F\u043A\u0438\u0439 \u043D\u0435 \u043C\u0430\u0432 \u043D\u0430\u0441\u0442\u0430\u0442\u0438. \u041F\u043E\u0437\u0438\u0446\u0456\u044F \u0442\u0440\u0438\u043C\u0430\u0454\u0442\u044C\u0441\u044F, \u0430\u043B\u0435 \u043F\u0438\u043B \u0443 \u043F\u043E\u0432\u0456\u0442\u0440\u0456 \u0432\u0436\u0435 \u043D\u0435 \u043F\u0438\u043B.",
     options: [
       {
@@ -1252,6 +1845,467 @@ var TEST_CARDS = [
         effects: { stats: { bonds: 2, health: -2 } }
       }
     ]
+  },
+  {
+    id: "phase5.last_cigarette",
+    kind: "routine",
+    phase: [5],
+    text: "\u041E\u0441\u0442\u0430\u043D\u043D\u044F \u0446\u0438\u0433\u0430\u0440\u043A\u0430 \u043D\u0430 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F. \u0407\u0457 \u043F\u0443\u0441\u043A\u0430\u044E\u0442\u044C \u043F\u043E \u043A\u043E\u043B\u0443, \u0456 \u043A\u043E\u0436\u0435\u043D \u0440\u043E\u0431\u0438\u0442\u044C \u0432\u0438\u0433\u043B\u044F\u0434, \u0449\u043E \u043D\u0435 \u0445\u043E\u0447\u0435.",
+    options: [
+      {
+        id: "pass",
+        text: "\u041F\u0435\u0440\u0435\u0434\u0430\u0442\u0438 \u0434\u0430\u043B\u0456, \u043D\u0435 \u0437\u0430\u0442\u044F\u0433\u043D\u0443\u0432\u0448\u0438\u0441\u044C",
+        effects: { stats: { bonds: 2, health: -1 } }
+      },
+      {
+        id: "puff",
+        text: "\u0417\u0430\u0442\u044F\u0433\u043D\u0443\u0442\u0438\u0441\u044C \u0440\u0430\u0437",
+        effects: { stats: { energy: 1, health: -1, bonds: 1 } }
+      },
+      {
+        id: "talk",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0446\u0435 \u0431\u0435\u0437\u0433\u043B\u0443\u0437\u0434\u043E, \u0456 \u043F\u043E\u0447\u0430\u0442\u0438 \u0440\u043E\u0437\u043C\u043E\u0432\u0443",
+        effects: { stats: { understanding: 2, bonds: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.promises",
+    kind: "person",
+    phase: [5],
+    text: "\u0425\u043B\u043E\u043F\u0435\u0446\u044C \u043F\u0440\u043E\u0441\u0438\u0442\u044C \u043E\u0431\u0456\u0446\u044F\u043D\u043A\u0443: \xAB\u042F\u043A\u0449\u043E \u0437\u0456 \u043C\u043D\u043E\u044E \u0449\u043E \u2014 \u0441\u043A\u0430\u0436\u0438 \u043C\u0430\u043C\u0456, \u0449\u043E \u044F \u043D\u0435 \u0431\u043E\u044F\u0432\u0441\u044F\xBB. \u0422\u0438 \u0437\u043D\u0430\u0454\u0448, \u0449\u043E \u0446\u0435 \u043D\u0435\u043F\u0440\u0430\u0432\u0434\u0430.",
+    options: [
+      {
+        id: "lie",
+        text: "\u041E\u0431\u0456\u0446\u044F\u0442\u0438",
+        effects: { stats: { bonds: 2, understanding: -1, energy: 1 } }
+      },
+      {
+        id: "honest",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043D\u0435 \u043C\u043E\u0436\u0435\u0448 \u043E\u0431\u0456\u0446\u044F\u0442\u0438",
+        effects: { stats: { understanding: 2, bonds: -1 } }
+      },
+      {
+        id: "other",
+        text: "\u041F\u043E\u043E\u0431\u0456\u0446\u044F\u0442\u0438 \u0441\u043A\u0430\u0437\u0430\u0442\u0438 \u0456\u043D\u0448\u0435 \u2014 \u0442\u0435, \u0449\u043E \u0431\u0443\u0434\u0435 \u043F\u0440\u0430\u0432\u0434\u043E\u044E",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { true_promise: true } }
+      }
+    ]
+  },
+  {
+    id: "phase5.quiet_meal",
+    kind: "routine",
+    phase: [5],
+    text: "\u0412\u0435\u0447\u0435\u0440\u044F. \u0425\u0442\u043E\u0441\u044C \u0434\u0456\u0441\u0442\u0430\u0454 \u043E\u0441\u0442\u0430\u043D\u043D\u044E \u0431\u0430\u043D\u043A\u0443 \u0442\u0443\u0448\u043E\u043D\u043A\u0438 \u0439 \u0434\u0456\u043B\u0438\u0442\u044C \u043D\u0430 \u0432\u0441\u0456\u0445, \u0432\u043A\u043B\u044E\u0447\u043D\u043E \u0437 \u0442\u0438\u043C\u0438, \u0445\u0442\u043E \u0432\u0436\u0435 \u043D\u0435 \u0457\u0441\u0442\u044C.",
+    options: [
+      {
+        id: "eat",
+        text: "\u0417'\u0457\u0441\u0442\u0438 \u0441\u0432\u043E\u044E \u0447\u0430\u0441\u0442\u0438\u043D\u0443",
+        effects: { stats: { health: 1, energy: 1, supplies: -1 } }
+      },
+      {
+        id: "give",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0441\u0432\u043E\u044E \u0447\u0430\u0441\u0442\u0438\u043D\u0443",
+        effects: { stats: { bonds: 3, health: -1, energy: -1 } }
+      },
+      {
+        id: "thanks",
+        text: "\u041F\u043E\u0434\u044F\u043A\u0443\u0432\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441",
+        effects: { stats: { bonds: 1, understanding: 2 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.last_call",
+    kind: "event",
+    phase: [5],
+    once: true,
+    text: "\u0417\u0432'\u044F\u0437\u043E\u043A. \u041A\u0430\u0436\u0443\u0442\u044C, \u0449\u043E \xAB\u0437\u0430\u0432\u0442\u0440\u0430 \u0431\u0443\u0434\u0435 \u0432\u0430\u0436\u043A\u043E\xBB. \u041C\u0430\u043C\u0430 \u0432 \u0442\u0440\u0443\u0431\u0446\u0456 \u043F\u0438\u0442\u0430\u0454, \u0447\u0438 \u0442\u0438 \u0457\u0432.",
+    options: [
+      {
+        id: "truth",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u043F\u0440\u0430\u0432\u0434\u0443 \u2014 \u043C\u043E\u0436\u0435, \u0432\u043E\u0441\u0442\u0430\u043D\u043D\u0454",
+        effects: { stats: { bonds: 2, understanding: 2, energy: -2 } }
+      },
+      {
+        id: "lie",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u0432\u0441\u0435 \u0434\u043E\u0431\u0440\u0435",
+        effects: { stats: { bonds: 1, understanding: -1, energy: 1 } }
+      },
+      {
+        id: "silent",
+        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u043C\u043E\u0432\u0447\u0430\u0442\u0438",
+        effects: { stats: { bonds: 3, energy: -2 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.plan_after",
+    kind: "event",
+    phase: [5],
+    text: "\u0425\u0442\u043E\u0441\u044C \u043F\u043E\u0447\u0438\u043D\u0430\u0454 \u043F\u043B\u0430\u043D\u0443\u0432\u0430\u0442\u0438, \u0449\u043E \u0431\u0443\u0434\u0435 \u043F\u0456\u0441\u043B\u044F. \u0420\u0435\u043C\u043E\u043D\u0442 \u0443 \u0434\u0432\u043E\u0440\u0456, \u0440\u0438\u0431\u0430\u043B\u043A\u0430, \u0448\u0430\u0448\u043B\u0438\u043A\u0438. \u0423\u0441\u0456 \u0441\u043B\u0443\u0445\u0430\u044E\u0442\u044C.",
+    options: [
+      {
+        id: "join",
+        text: "\u0414\u043E\u043B\u0443\u0447\u0438\u0442\u0438\u0441\u044C \u0434\u043E \u043F\u043B\u0430\u043D\u0443\u0432\u0430\u043D\u043D\u044F",
+        effects: { stats: { bonds: 2, energy: 2, understanding: -1 } }
+      },
+      {
+        id: "honest",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043D\u0435 \u0432\u0430\u0440\u0442\u043E",
+        effects: { stats: { understanding: 2, bonds: -2, energy: -1 } }
+      },
+      {
+        id: "listen",
+        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438 \u0439 \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438",
+        effects: { stats: { understanding: 1, energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.broken_radio",
+    kind: "system",
+    phase: [5],
+    text: "\u0420\u0430\u0446\u0456\u044F \u043F\u0435\u0440\u0435\u0441\u0442\u0430\u043B\u0430 \u043F\u0440\u0438\u0439\u043C\u0430\u0442\u0438. \u041C\u043E\u0436\u0435, \u0441\u0435\u043B\u0430 \u0431\u0430\u0442\u0430\u0440\u0435\u044F, \u043C\u043E\u0436\u0435 \u2014 \u043F\u043E\u0437\u0438\u0446\u0456\u044E \u043F\u0440\u043E\u0441\u0442\u043E \u0432\u0438\u043A\u043B\u044E\u0447\u0438\u043B\u0438 \u0437\u0456 \u0441\u043F\u0438\u0441\u043A\u0456\u0432.",
+    options: [
+      {
+        id: "fix",
+        text: "\u0421\u043F\u0440\u043E\u0431\u0443\u0432\u0430\u0442\u0438 \u043F\u043E\u043B\u0430\u0433\u043E\u0434\u0438\u0442\u0438",
+        requires: { skillAtLeast: { system: 1 } },
+        effects: { stats: { understanding: 2, energy: -2 }, skills: { system: 1 }, flags: { fixed_radio: true } }
+      },
+      {
+        id: "assume",
+        text: "\u0412\u0438\u0440\u0456\u0448\u0438\u0442\u0438, \u0449\u043E \u043D\u0430\u0441 \u0432\u0438\u043A\u043B\u044E\u0447\u0438\u043B\u0438",
+        effects: { stats: { understanding: 2, bonds: -1, trust: -2 } }
+      },
+      {
+        id: "not_tell",
+        text: "\u041D\u0435 \u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
+        effects: { stats: { bonds: -1, energy: -1, understanding: -1 } }
+      }
+    ]
+  },
+  {
+    id: "phase5.photo_found",
+    kind: "routine",
+    phase: [5],
+    requires: { flagTrue: ["photo_to_mom"] },
+    once: true,
+    text: "\u0423 \u043A\u0438\u0448\u0435\u043D\u0456 \u2014 \u0442\u0435 \u0444\u043E\u0442\u043E. \u041C\u0430\u043B\u0430, \u0437\u0430\u043B\u0430\u043C\u0456\u043D\u043E\u0432\u0430\u043D\u0430, \u0437 \u043F\u043B\u044F\u043C\u043E\u044E \u0432\u0456\u0434 \u0434\u043E\u0449\u0443. \u041C\u0430\u043C\u0430 \u0439\u043E\u0433\u043E, \u043C\u0430\u0431\u0443\u0442\u044C, \u0442\u0430\u043A \u0456 \u043D\u0435 \u043E\u0442\u0440\u0438\u043C\u0430\u043B\u0430.",
+    options: [
+      {
+        id: "keep_close",
+        text: "\u041D\u043E\u0441\u0438\u0442\u0438 \u0431\u043B\u0438\u0436\u0447\u0435 \u0434\u043E \u0442\u0456\u043B\u0430",
+        effects: { stats: { bonds: 2, energy: 1, understanding: 1 } }
+      },
+      {
+        id: "give",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u0435\u0432\u0456, \u044F\u043A\u0438\u0439 \u0432\u0438\u0445\u043E\u0434\u0438\u0442\u044C",
+        effects: { stats: { bonds: 3, supplies: -1 }, flags: { photo_passed: true } }
+      },
+      {
+        id: "burn",
+        text: "\u0421\u043F\u0430\u043B\u0438\u0442\u0438, \u0449\u043E\u0431 \u043D\u0435 \u0448\u043A\u043E\u0434\u0438\u043B\u043E",
+        effects: { stats: { understanding: 2, bonds: -2 } }
+      }
+    ]
+  },
+  // ─────────────────────────── Наскрізні лінії: хто лишився, що з чиєї вини ───────────────────────────
+  {
+    id: "line.volunteers_thanks",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["thanks_volunteers"] },
+    text: "\u041F\u0440\u0438\u0439\u0448\u043B\u0430 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0432\u0456\u0434 \u0432\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0456\u0432. \u0414\u0438\u0442\u044F\u0447\u0438\u043C \u043F\u043E\u0447\u0435\u0440\u043A\u043E\u043C: \xAB\u0414\u044F\u043A\u0443\u0454\u043C\u043E, \u0449\u043E \u0432\u0438 \u0454. \u041D\u0430\u0434\u0456\u0448\u043B\u0456\u0442\u044C, \u0431\u0443\u0434\u044C \u043B\u0430\u0441\u043A\u0430, \u0456\u043C\u0435\u043D\u0430\xBB.",
+    options: [
+      {
+        id: "names",
+        text: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0432\u0441\u0456 \u0456\u043C\u0435\u043D\u0430, \u0432\u043A\u043B\u044E\u0447\u043D\u043E \u0437 \u0442\u0438\u043C\u0438, \u043A\u043E\u0433\u043E \u0432\u0436\u0435 \u043D\u0435\u043C\u0430\u0454",
+        effects: { stats: { bonds: 2, understanding: 2, energy: -1 }, flags: { names_sent: true } }
+      },
+      {
+        id: "short",
+        text: "\u041D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0442\u0456\u043B\u044C\u043A\u0438 \u0441\u0432\u043E\u0454",
+        effects: { stats: { understanding: 1, bonds: -1, energy: 1 } }
+      },
+      {
+        id: "nothing",
+        text: "\u041D\u0435 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u0430\u0442\u0438",
+        effects: {}
+      }
+    ]
+  },
+  {
+    id: "line.assault_after",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["assault"] },
+    text: "\u0422\u0432\u043E\u044F \xAB\u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0430\xBB \u0432\u0438\u044F\u0432\u0438\u043B\u0430\u0441\u044C \u0437\u0432\u0438\u0447\u0430\u0439\u043D\u043E\u044E \u043F\u0456\u0445\u043E\u0442\u043E\u044E \u0437 \u0433\u0443\u0447\u043D\u043E\u044E \u043D\u0430\u0437\u0432\u043E\u044E. \u0406\u0437 \u0434\u0432\u0430\u0434\u0446\u044F\u0442\u0438 \u2014 \u0441\u0435\u043C\u0435\u0440\u043E.",
+    options: [
+      {
+        id: "count",
+        text: "\u041F\u043E\u0440\u0430\u0445\u0443\u0432\u0430\u0442\u0438 \u0439 \u0437\u0430\u043F\u0430\u043C'\u044F\u0442\u0430\u0442\u0438",
+        effects: { stats: { understanding: 3, energy: -2 }, flags: { knows_seven: true } }
+      },
+      {
+        id: "tell",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0456\u043D\u0448\u0438\u043C \u043F\u0440\u0430\u0432\u0434\u0443 \u043F\u0440\u043E \xAB\u0448\u0442\u0443\u0440\u043C\u043E\u0432\u0443\xBB",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
+      },
+      {
+        id: "silence",
+        text: "\u041D\u0435 \u0437\u0433\u0430\u0434\u0443\u0432\u0430\u0442\u0438",
+        effects: { stats: { energy: 1, understanding: -1 } }
+      }
+    ]
+  },
+  {
+    id: "line.fake_informer",
+    kind: "event",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["fake_informer"] },
+    text: "\u041A\u043E\u043C\u0430\u043D\u0434\u0438\u0440 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u044F \u043F\u0438\u0442\u0430\u0454, \u0447\u043E\u043C\u0443 \u0432\u0456\u0434 \u0442\u0435\u0431\u0435 \u0434\u043E\u0441\u0456 \xAB\u0436\u043E\u0434\u043D\u043E\u0457 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u0438\u043A\u0438\xBB. \u0414\u0438\u0432\u0438\u0442\u044C\u0441\u044F \u0434\u043E\u0432\u0433\u043E.",
+    options: [
+      {
+        id: "give",
+        text: "\u0414\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0449\u043E\u0441\u044C \u2014 \u0431\u0443\u0434\u044C-\u0449\u043E",
+        effects: { stats: { trust: 2, bonds: -3, understanding: -1 } }
+      },
+      {
+        id: "refuse",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435\u043C\u0430\u0454",
+        effects: { stats: { trust: -2, bonds: 2, understanding: 1 } }
+      },
+      {
+        id: "turn",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0449\u043E \u043F\u0435\u0440\u0435\u0434\u0443\u043C\u0430\u0432",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 1, trust: -1 }, flags: { informer_out: true } }
+      }
+    ]
+  },
+  {
+    id: "line.kept_promise",
+    kind: "event",
+    phase: [5],
+    once: true,
+    requires: { flagTrue: ["true_promise"] },
+    text: "\u0422\u043E\u0439 \u0445\u043B\u043E\u043F\u0435\u0446\u044C \u0436\u0438\u0432\u0438\u0439. \u0414\u0438\u0432\u0438\u0442\u044C\u0441\u044F \u043D\u0430 \u0442\u0435\u0431\u0435 \u0439 \u0447\u0435\u043A\u0430\u0454, \u0447\u0438 \u0442\u0438 \u043F\u0430\u043C'\u044F\u0442\u0430\u0454\u0448, \u0449\u043E \u043E\u0431\u0456\u0446\u044F\u0432. \u0422\u0438 \u043F\u0430\u043C'\u044F\u0442\u0430\u0454\u0448.",
+    options: [
+      {
+        id: "say",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0442\u0435, \u0449\u043E \u043E\u0431\u0456\u0446\u044F\u0432",
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { promise_kept: true } }
+      },
+      {
+        id: "now",
+        text: "\u0412\u0456\u0434\u043A\u043B\u0430\u0441\u0442\u0438 \u2014 \u043D\u0435 \u0447\u0430\u0441",
+        effects: { stats: { energy: 1, bonds: -2 } }
+      },
+      {
+        id: "write",
+        text: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u0438, \u0449\u043E\u0431 \u043D\u0435 \u0437\u0430\u0431\u0443\u0442\u0438",
+        effects: { stats: { understanding: 2, energy: -1 }, flags: { promise_written: true } }
+      }
+    ]
+  },
+  {
+    id: "line.known_plan",
+    kind: "event",
+    phase: [5],
+    once: true,
+    requires: { flagTrue: ["knows_plan"] },
+    text: "\u0422\u0438 \u0437\u043D\u0430\u0454\u0448 \u043F\u043B\u0430\u043D. \u0412\u0456\u043D \u043D\u0435 \u043F\u0435\u0440\u0435\u0434\u0431\u0430\u0447\u0430\u0454, \u0449\u043E \u0432\u0441\u0456 \u0432\u0438\u0439\u0434\u0443\u0442\u044C. \u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C \u2014 \u0446\u0435 \u0432\u0436\u0435 \u0437\u0440\u0430\u0434\u0430, \u043C\u043E\u0432\u0447\u0430\u0442\u0438 \u2014 \u0442\u0435\u0436.",
+    options: [
+      {
+        id: "tell_all",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0441\u0456\u043C",
+        effects: { stats: { understanding: 3, bonds: 2, trust: -3 } }
+      },
+      {
+        id: "tell_few",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438 \u0442\u0456\u043B\u044C\u043A\u0438 \u0442\u0438\u043C, \u043A\u043E\u043C\u0443 \u0434\u043E\u0432\u0456\u0440\u044F\u0454\u0448",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { understanding: 2, bonds: 2, energy: -1 }, flags: { told_withdraw: true } }
+      },
+      {
+        id: "keep",
+        text: "\u041D\u043E\u0441\u0438\u0442\u0438 \u0446\u0435 \u0441\u0430\u043C",
+        effects: { stats: { understanding: 2, energy: -3, bonds: -1 } }
+      }
+    ]
+  },
+  {
+    id: "line.named_photo",
+    kind: "routine",
+    phase: [4, 5],
+    once: true,
+    requires: { flagTrue: ["names_sent"] },
+    text: "\u0412\u043E\u043B\u043E\u043D\u0442\u0435\u0440\u0438 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043B\u0438 \u0444\u043E\u0442\u043E: \u043D\u0430\u0448\u0456 \u0456\u043C\u0435\u043D\u0430 \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u0456 \u043D\u0430 \u0442\u0430\u0431\u043B\u0438\u0447\u0446\u0456 \u0432 \u0457\u0445\u043D\u044C\u043E\u043C\u0443 \u0448\u0442\u0430\u0431\u0456. \u0417\u043D\u0430\u0439\u0448\u043E\u0432 \u0441\u0432\u043E\u0454. \u0406 \u043E\u0434\u0440\u0430\u0437\u0443 \u043F\u043E\u0431\u0430\u0447\u0438\u0432, \u0447\u0438\u0457\u0445 \u043D\u0435\u043C\u0430\u0454.",
+    options: [
+      {
+        id: "look",
+        text: "\u0414\u0438\u0432\u0438\u0442\u0438\u0441\u044F \u0434\u043E\u0432\u0433\u043E",
+        effects: { stats: { understanding: 3, bonds: 1, energy: -1 }, flags: { saw_names: true } }
+      },
+      {
+        id: "pass",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438 \u0445\u043B\u043E\u043F\u0446\u044F\u043C",
+        effects: { stats: { bonds: 3, understanding: 1, energy: -1 } }
+      },
+      {
+        id: "hide",
+        text: "\u0421\u0445\u043E\u0432\u0430\u0442\u0438",
+        effects: { stats: { energy: 1, understanding: -1 } }
+      }
+    ]
+  },
+  // ─────────────────────────── Розрядка: людина, а не посада ───────────────────────────
+  {
+    id: "misc.dog",
+    kind: "event",
+    phase: [3, 4, 5],
+    once: true,
+    text: "\u0414\u043E \u043F\u043E\u0437\u0438\u0446\u0456\u0457 \u043F\u0440\u0438\u0431\u043B\u0443\u043A\u0430\u0432 \u043F\u0435\u0441. \u0425\u0443\u0434\u0438\u0439, \u0437 \u043E\u0431\u0456\u0440\u0432\u0430\u043D\u0438\u043C \u043F\u043E\u0432\u0456\u0434\u043A\u043E\u043C. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u0440\u043E\u0433\u0430\u043D\u044F\u0454. \u0423\u0441\u0456 \u0440\u043E\u0431\u043B\u044F\u0442\u044C \u0432\u0438\u0433\u043B\u044F\u0434, \u0449\u043E \u043D\u0435 \u0440\u0430\u0434\u0456.",
+    options: [
+      {
+        id: "feed",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0447\u0430\u0441\u0442\u0438\u043D\u0443 \u043F\u0430\u0439\u043A\u0438",
+        effects: { stats: { bonds: 2, supplies: -2, health: -1 } }
+      },
+      {
+        id: "name",
+        text: "\u0414\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0456\u043C'\u044F",
+        effects: { stats: { bonds: 2, energy: 1 } }
+      },
+      {
+        id: "drive",
+        text: "\u041F\u0440\u043E\u0433\u043D\u0430\u0442\u0438, \u043F\u043E\u043A\u0438 \u043D\u0435 \u043F\u0440\u0438\u0432'\u044F\u0437\u0430\u043B\u0438\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: -2, energy: 1 } }
+      }
+    ]
+  },
+  {
+    id: "misc.dugout",
+    kind: "routine",
+    phase: [3, 4],
+    text: "\u0423 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456 \u0437\u043D\u0430\u0439\u0448\u043B\u0438 \u0441\u0442\u0430\u0440\u0456 \u0433\u0430\u0437\u0435\u0442\u0438 2014 \u0440\u043E\u043A\u0443. \u0425\u0442\u043E\u0441\u044C \u0447\u0438\u0442\u0430\u0454 \u0432\u0433\u043E\u043B\u043E\u0441, \u0456 \u0432\u0441\u0456 \u0441\u043B\u0443\u0445\u0430\u044E\u0442\u044C, \u044F\u043A \u043A\u0430\u0437\u043A\u0443.",
+    options: [
+      {
+        id: "listen",
+        text: "\u0421\u043B\u0443\u0445\u0430\u0442\u0438",
+        effects: { stats: { understanding: 2, energy: 1 } }
+      },
+      {
+        id: "joke",
+        text: "\u0416\u0430\u0440\u0442\u0443\u0432\u0430\u0442\u0438, \u0449\u043E \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E\u0441\u044C",
+        effects: { stats: { understanding: 1, bonds: 2, trust: -1 } }
+      },
+      {
+        id: "compare",
+        text: "\u041F\u043E\u0440\u0456\u0432\u043D\u044F\u0442\u0438, \u0449\u043E \u043F\u0438\u0441\u0430\u043B\u0438 \u0442\u043E\u0434\u0456 \u0439 \u0449\u043E \u043F\u0438\u0448\u0443\u0442\u044C \u0437\u0430\u0440\u0430\u0437",
+        effects: { stats: { understanding: 3, energy: -1 }, skills: { system: 1 } }
+      }
+    ]
+  },
+  {
+    id: "misc.tea",
+    kind: "routine",
+    phase: [2, 3, 4, 5],
+    text: "\u0425\u0442\u043E\u0441\u044C \u0437\u0430\u0432\u0430\u0440\u0438\u0432 \u0447\u0430\u0439 \u043D\u0430 \u0431\u0443\u0440\u0436\u0443\u0439\u0446\u0456. \u0423 \u043D\u044C\u043E\u043C\u0443 \u0449\u043E\u0441\u044C \u043F\u043B\u0430\u0432\u0430\u0454. \u041F\u0430\u0445\u043D\u0435 \u0434\u0438\u0442\u0438\u043D\u0441\u0442\u0432\u043E\u043C.",
+    options: [
+      {
+        id: "drink",
+        text: "\u0412\u0438\u043F\u0438\u0442\u0438",
+        effects: { stats: { energy: 2, bonds: 1 } }
+      },
+      {
+        id: "share",
+        text: "\u041D\u0430\u043B\u0438\u0442\u0438 \u0432\u0441\u0456\u043C",
+        effects: { stats: { bonds: 2, energy: 1, supplies: -1 } }
+      },
+      {
+        id: "skip",
+        text: "\u0412\u0456\u0434\u043C\u043E\u0432\u0438\u0442\u0438\u0441\u044C",
+        effects: { stats: { health: 1 } }
+      }
+    ]
+  },
+  {
+    id: "misc.argue",
+    kind: "event",
+    phase: [3, 4],
+    text: "\u0414\u0432\u043E\u0454 \u0441\u0432\u0430\u0440\u044F\u0442\u044C\u0441\u044F, \u0445\u0442\u043E \u0432\u0438\u043D\u0435\u043D, \u0449\u043E \u0432\u0447\u043E\u0440\u0430\u0448\u043D\u0456\u0439 \u0432\u0438\u0445\u0456\u0434 \u043F\u0440\u043E\u0432\u0430\u043B\u0438\u0432\u0441\u044F. \u041A\u0440\u0438\u0447\u0430\u0442\u044C \u0442\u0430\u043A, \u0449\u043E \u0447\u0443\u0442\u0438 \u043D\u0430 \u0441\u0443\u0441\u0456\u0434\u043D\u0456\u0439 \u043F\u043E\u0437\u0438\u0446\u0456\u0457.",
+    options: [
+      {
+        id: "split",
+        text: "\u0420\u043E\u0437\u0431\u043E\u0440\u043E\u043D\u0438\u0442\u0438",
+        effects: { stats: { bonds: 1, energy: -2, understanding: 1 } }
+      },
+      {
+        id: "truth",
+        text: "\u0421\u043A\u0430\u0437\u0430\u0442\u0438, \u0445\u0442\u043E \u0441\u043F\u0440\u0430\u0432\u0434\u0456 \u0432\u0438\u043D\u0435\u043D",
+        effects: { stats: { understanding: 2, bonds: -3, trust: 1 } }
+      },
+      {
+        id: "leave",
+        text: "\u041F\u0456\u0442\u0438, \u043F\u043E\u043A\u0438 \u043D\u0435 \u0432\u0442\u044F\u0433\u043D\u0443\u043B\u0438",
+        effects: { stats: { energy: 1, bonds: -1 } }
+      }
+    ]
+  },
+  {
+    id: "misc.birthday",
+    kind: "routine",
+    phase: [4, 5],
+    once: true,
+    text: "\u0423 \u0445\u043B\u043E\u043F\u0446\u044F \u0434\u0435\u043D\u044C \u043D\u0430\u0440\u043E\u0434\u0436\u0435\u043D\u043D\u044F. \u041D\u0456\u0447\u0438\u043C \u043F\u0440\u0438\u0433\u043E\u0441\u0442\u0438\u0442\u0438. \u0412\u0456\u043D \u043A\u0430\u0436\u0435: \xAB\u0422\u0430 \u043D\u0456\u0447\u043E\u0433\u043E, \u044F \u0432\u0436\u0435 \u0434\u043E\u0440\u043E\u0441\u043B\u0438\u0439\xBB.",
+    options: [
+      {
+        id: "give",
+        text: "\u0412\u0456\u0434\u0434\u0430\u0442\u0438 \u0439\u043E\u043C\u0443 \u0449\u043E\u0441\u044C \u0441\u0432\u043E\u0454",
+        effects: { stats: { supplies: -2, bonds: 3 } }
+      },
+      {
+        id: "sing",
+        text: "\u0417\u0430\u0441\u043F\u0456\u0432\u0430\u0442\u0438 \xAB\u041C\u043D\u043E\u0433\u0430\u044F \u043B\u0456\u0442\u0430\xBB \u044F\u043A\u043E\u043C\u043E\u0433\u0430 \u0433\u0456\u0440\u0448\u0435",
+        effects: { stats: { bonds: 2, energy: 1 } }
+      },
+      {
+        id: "word",
+        text: "\u041F\u0440\u043E\u0441\u0442\u043E \u0441\u043A\u0430\u0437\u0430\u0442\u0438 \u0449\u043E\u0441\u044C \u0441\u043F\u0440\u0430\u0432\u0436\u043D\u0454",
+        requires: { skillAtLeast: { people: 1 } },
+        effects: { stats: { bonds: 3, understanding: 2, energy: -1 }, flags: { said_real_thing: true } }
+      }
+    ]
+  },
+  {
+    id: "misc.writing",
+    kind: "routine",
+    phase: [3, 4, 5],
+    text: "\u0422\u0438 \u043F\u043E\u0447\u0438\u043D\u0430\u0454\u0448 \u0437\u0430\u043F\u0438\u0441\u0443\u0432\u0430\u0442\u0438, \u0449\u043E \u0431\u0430\u0447\u0438\u0448. \u041D\u0435 \u0434\u043B\u044F \u0437\u0432\u0456\u0442\u0443. \u041F\u0440\u043E\u0441\u0442\u043E \u0449\u043E\u0431 \u0446\u0435 \u043D\u0435 \u0437\u043D\u0438\u043A\u043B\u043E.",
+    options: [
+      {
+        id: "write",
+        text: "\u041F\u0438\u0441\u0430\u0442\u0438 \u0449\u043E\u0434\u043D\u044F",
+        effects: { stats: { understanding: 3, energy: -2 }, flags: { keeps_diary: true } }
+      },
+      {
+        id: "burn",
+        text: "\u0421\u043F\u0430\u043B\u0438\u0442\u0438 \u0437\u043E\u0448\u0438\u0442 \u2014 \u043D\u0435\u0431\u0435\u0437\u043F\u0435\u0447\u043D\u043E",
+        effects: { stats: { understanding: -2, trust: 2, energy: 1 } }
+      },
+      {
+        id: "show",
+        text: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u0438 \u043A\u043E\u043C\u0443\u0441\u044C \u0431\u043B\u0438\u0437\u044C\u043A\u043E\u043C\u0443",
+        effects: { stats: { understanding: 2, bonds: 2, trust: -1 }, flags: { diary_shown: true } }
+      }
+    ]
   }
 ];
 var TEST_ENDINGS = [
@@ -1261,7 +2315,9 @@ var TEST_ENDINGS = [
     title: "\u0417\u0430 \u0431\u0430\u043D\u043A\u0443 \u043C\u043E\u0440\u043A\u0432\u0438",
     epilogue: "\u0412\u0456\u043D \u0437\u0430\u0433\u0438\u043D\u0443\u0432 \u0437\u0430 \u0431\u0430\u043D\u043A\u0443 \u0442\u0443\u0448\u043A\u043E\u0432\u0430\u043D\u043E\u0457 \u043C\u043E\u0440\u043A\u0432\u0438, \u044F\u043A\u0443 \u043F\u0440\u0438\u043D\u0456\u0441 \u0456\u0437 \u0441\u043E\u0431\u043E\u044E \u0432 \u043E\u043A\u043E\u043F. \u0423 \u0437\u0432\u0435\u0434\u0435\u043D\u043D\u0456 \u0446\u044C\u043E\u0433\u043E \u043D\u0435 \u0431\u0443\u0434\u0435. \u0423 \u0441\u0435\u043B\u0456 \u2014 \u0442\u0435\u0436.",
     defaultEpitaph: "\u041D\u043E\u0441\u0438\u0432 \u0456\u0437 \u0441\u043E\u0431\u043E\u044E \u043C\u043E\u0440\u043A\u0432\u0443. \u041D\u0435 \u0434\u043E\u043D\u0456\u0441.",
-    weight: 1
+    weight: 1,
+    // Тільки коли військкомат/збірка лишили слід — «зронив з рук» трапляється з побутом.
+    requires: { flagTrue: ["hid_call"] }
   },
   {
     id: "ending.tihiy",
@@ -1270,7 +2326,7 @@ var TEST_ENDINGS = [
     epilogue: "\u0419\u043E\u0433\u043E \xAB\u0441\u043F\u0438\u0441\u0430\u043B\u0438\xBB \u0437\u0430 \u0440\u043E\u0437\u043A\u043B\u0430\u0434\u0435\u043D\u0438\u043C \u0433\u0440\u0430\u0444\u0456\u043A\u043E\u043C. \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0438 \u0432 \u043F\u043E\u0440\u044F\u0434\u043A\u0443, \u0434\u0430\u0442\u0430 \u0432 \u043D\u0430\u043A\u0430\u0437\u0456 \u2014 \u0442\u043E\u0447\u043D\u0430. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u043F\u043E\u043C\u0456\u0442\u0438\u0432, \u043A\u043E\u043B\u0438 \u0441\u0430\u043C\u0435 \u0432\u0441\u0435 \u0441\u043A\u0456\u043D\u0447\u0438\u043B\u043E\u0441\u044F.",
     defaultEpitaph: "\u0421\u043F\u0438\u0441\u0430\u043B\u0438 \u0437\u0430 \u0433\u0440\u0430\u0444\u0456\u043A\u043E\u043C. \u0411\u0435\u0437 \u043A\u043E\u043C\u0435\u043D\u0442\u0430\u0440\u0456\u0432.",
     weight: 2,
-    requires: { statAtMost: { understanding: 4 } }
+    requires: { statAtMost: { understanding: 5 } }
   },
   {
     id: "ending.poruch",
@@ -1278,8 +2334,9 @@ var TEST_ENDINGS = [
     title: "\u041F\u043E\u0440\u0443\u0447 \u0456\u0437 \u0442\u0438\u043C, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432",
     epilogue: "\u0419\u043E\u0433\u043E \u0432\u0438\u043D\u0435\u0441\u043B\u0438 \u0437 \u043F\u043E\u0437\u0438\u0446\u0456\u0457, \u044F\u043A\u0443 \u043D\u0456\u0445\u0442\u043E \u043D\u0435 \u043C\u0430\u0432 \u0442\u0440\u0438\u043C\u0430\u0442\u0438. \u0422\u043E\u0439, \u0445\u0442\u043E \u0432\u0438\u0436\u0438\u0432, \u043D\u0435 \u0437\u043D\u0430\u0432 \u0439\u043E\u0433\u043E \u043F\u0440\u0456\u0437\u0432\u0438\u0449\u0430, \u0430\u043B\u0435 \u0437\u0430\u043F\u0430\u043C\u2019\u044F\u0442\u0430\u0432 \u0439\u043E\u0433\u043E \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A.",
     defaultEpitaph: "\u0412\u0456\u0434\u0434\u0430\u0432 \u0441\u043F\u0430\u043B\u044C\u043D\u0438\u043A. \u0411\u0456\u043B\u044C\u0448\u0435 \u043D\u0435 \u0437\u043C\u0435\u0440\u0437.",
-    weight: 2,
-    requires: { statAtLeast: { bonds: 6 } }
+    weight: 3,
+    // Не лише великі зв'язки: ще й передчасний день, щоб не перекривати пізні фінали.
+    requires: { statAtLeast: { bonds: 8 }, dayAtMost: 38 }
   },
   {
     id: "ending.dobra",
@@ -1287,8 +2344,10 @@ var TEST_ENDINGS = [
     title: "\u0414\u043E\u0431\u0440\u0430 \u043F\u0430\u043C\u2019\u044F\u0442\u044C",
     epilogue: "\u041F\u0440\u043E \u043D\u044C\u043E\u0433\u043E \u0437\u0433\u0430\u0434\u0443\u044E\u0442\u044C \u0443 \u0432\u0456\u0434\u0434\u0456\u043B\u0435\u043D\u043D\u0456 \u0431\u0435\u0437 \u043F\u0430\u0444\u043E\u0441\u0443: \xAB\u0412\u0456\u043D \u0440\u0430\u0445\u0443\u0432\u0430\u0432 \u0431\u043B\u043E\u043A\u043F\u043E\u0441\u0442\u0438 \u0439 \u043F\u0438\u0442\u0430\u0432 \u0434\u0443\u0440\u043D\u0456 \u043F\u0438\u0442\u0430\u043D\u043D\u044F\xBB. \u0426\u0435 \u2014 \u043D\u0430\u0439\u043A\u0440\u0430\u0449\u0435, \u0449\u043E \u0442\u0443\u0442 \u043C\u043E\u0436\u043D\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438.",
     defaultEpitaph: "\u041F\u0438\u0442\u0430\u0432 \u0434\u0443\u0440\u043D\u0456 \u043F\u0438\u0442\u0430\u043D\u043D\u044F. \u041D\u0456\u0445\u0442\u043E \u043D\u0435 \u0441\u043C\u0456\u0432 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438.",
-    weight: 1,
-    requires: { statAtLeast: { understanding: 6, bonds: 6 } }
+    weight: 2,
+    // Стає основним фіналом лише коли гравець справді дійшов до розуміння
+    // й не втратив людей: потрібна й помірна довіра, інакше тіло просто не дійшло.
+    requires: { statAtLeast: { understanding: 6, bonds: 5 } }
   },
   {
     id: "ending.kryk",
@@ -1296,7 +2355,7 @@ var TEST_ENDINGS = [
     title: "\u041F\u043E\u0442\u0430\u0439\u043D\u0438\u0439 \u043A\u0440\u0438\u043A",
     epilogue: "\u0412\u0456\u043D \u0443\u0441\u0442\u0438\u0433 \u0441\u043A\u0430\u0437\u0430\u0442\u0438 \u0432\u0433\u043E\u043B\u043E\u0441 \u0442\u0435, \u0449\u043E \u0432\u0441\u0456 \u0434\u0443\u043C\u0430\u043B\u0438 \u0432\u043D\u043E\u0447\u0456. \u0426\u0435 \u043D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E. \u0426\u0435 \u0437\u043C\u0456\u043D\u0438\u043B\u043E \u0442\u0440\u044C\u043E\u0445 \u043B\u044E\u0434\u0435\u0439 \u0443 \u0431\u043B\u0456\u043D\u0434\u0430\u0436\u0456.",
     defaultEpitaph: "\u0421\u043A\u0430\u0437\u0430\u0432 \u0446\u0435 \u0432\u0433\u043E\u043B\u043E\u0441. \u041E\u0434\u0438\u043D \u0440\u0430\u0437.",
-    weight: 1,
+    weight: 2,
     requires: { flagTrue: ["doubt_shared", "honest_epitaph"] }
   },
   {
@@ -1311,19 +2370,30 @@ var TEST_ENDINGS = [
     id: "ending.wounds",
     kind: "accident",
     title: "\u0421\u0432\u043E\u0457\u043C\u0438 \u043D\u043E\u0433\u0430\u043C\u0438, \u043D\u0435 \u0441\u0432\u043E\u0454\u044E \u0432\u043E\u043B\u0435\u044E",
-    epilogue: "\u0412\u0456\u043D \u0437\u0440\u043E\u0431\u0438\u0432 \u0443\u0441\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E \u2014 \u0456 \u0432\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0432\u0441\u0442\u0438\u0433. \u0420\u0430\u043D\u0430 \u0432\u0438\u044F\u0432\u0438\u043B\u0430\u0441\u044C \u0448\u0432\u0438\u0434\u0448\u043E\u044E \u0437\u0430 \u0431\u0443\u0434\u044C-\u044F\u043A\u0443 \u043D\u0430\u0432\u0438\u0447\u043A\u0443.",
-    defaultEpitaph: "\u0412\u0441\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E. \u0412\u0441\u0435 \u043E\u0434\u043D\u043E \u043D\u0435 \u0432\u0441\u0442\u0438\u0433.",
+    epilogue: "\u0412\u0456\u043D \u0432\u0438\u0439\u0448\u043E\u0432 \u0441\u0430\u043C. \u0414\u0456\u0439\u0448\u043E\u0432 \u0434\u043E \u043A\u0440\u0430\u044E \u043F\u043E\u0441\u0430\u0434\u043A\u0438 \u0439 \u0441\u0456\u0432. \u0414\u0430\u043B\u0456 \u0439\u043E\u0433\u043E \u043D\u0435\u0441\u043B\u0438. \u0423 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430\u0445 \u0446\u0435 \u043D\u0430\u0437\u0432\u0443\u0442\u044C \xAB\u043F\u043E\u0440\u0430\u043D\u0435\u043D\u043D\u044F\u043C, \u043D\u0435\u0441\u0443\u043C\u0456\u0441\u043D\u0438\u043C \u0456\u0437 \u0436\u0438\u0442\u0442\u044F\u043C\xBB. \u0423 \u0441\u0435\u043B\u0456 \u0441\u043A\u0430\u0436\u0443\u0442\u044C: \xAB\u043F\u043E\u043C\u0435\u0440 \u043D\u0430 \u0432\u0456\u0439\u043D\u0456\xBB.",
+    defaultEpitaph: "\u0414\u0456\u0439\u0448\u043E\u0432 \u0441\u0430\u043C. \u0426\u0435 \u0432\u0432\u0430\u0436\u0430\u0454\u0442\u044C\u0441\u044F.",
     weight: 2,
-    requires: { statAtLeast: { understanding: 3 } }
+    // Тільки коли здоров’я впало до нуля власними рішеннями (reason === 'wounds'),
+    // і тільки на початку чи в середині — щоб не перекривати «долю» примерту на пізніх днях.
+    requires: { dayAtMost: 40 }
   },
   {
     id: "ending.letters",
     kind: "quiet",
     title: "\u041F\u043E\u0442\u0456\u043C \u043D\u0430\u043F\u0438\u0448\u0435\u0448",
-    epilogue: "\u0412\u0456\u043D \u043F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442\u0438, \u044F\u043A\u0456 \u043D\u0435 \u0434\u043E\u0445\u043E\u0434\u0438\u043B\u0438. \u041E\u0434\u043D\u043E\u0433\u043E \u043B\u0438\u0441\u0442\u0430 \u0442\u0430\u043A\u0438 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043B\u0438 \u2014 \u0447\u0435\u0440\u0435\u0437 \u0440\u0456\u043A, \u0432 \u0456\u043D\u0448\u043E\u043C\u0443 \u043C\u0456\u0441\u0442\u0456, \u0447\u0443\u0436\u0456 \u043B\u044E\u0434\u0438.",
-    defaultEpitaph: "\u041F\u0438\u0441\u0430\u0432 \u043B\u0438\u0441\u0442\u0438. \u041E\u0434\u0438\u043D \u0434\u0456\u0439\u0448\u043E\u0432.",
-    weight: 1,
+    epilogue: "\u0412\u0456\u043D \u043D\u0435 \u0432\u0441\u0442\u0438\u0433. \u041B\u0438\u0441\u0442\u0438 \u0437\u043D\u0430\u0439\u0448\u043B\u0438 \u0432 \u043A\u0438\u0448\u0435\u043D\u0456, \u043F\u0435\u0440\u0435\u0432\u2019\u044F\u0437\u0430\u043D\u0456 \u0448\u043D\u0443\u0440\u043A\u043E\u043C. \u041E\u0434\u0438\u043D \u2014 \u043D\u0435\u0434\u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0439, \u0437 \u0434\u0430\u0442\u043E\u044E, \u044F\u043A\u043E\u0457 \u0432\u0436\u0435 \u043D\u0435 \u0431\u0443\u043B\u043E.",
+    defaultEpitaph: "\u041E\u0431\u0456\u0446\u044F\u0432 \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u0438 \u0437\u0430\u0432\u0442\u0440\u0430.",
+    weight: 2,
     requires: { flagTrue: ["letters_help"] }
+  },
+  {
+    id: "ending.diary",
+    kind: "quiet",
+    title: "\u0417\u043E\u0448\u0438\u0442 \u0443 \u043F\u0456\u0434\u043A\u043B\u0430\u0434\u0446\u0456",
+    epilogue: "\u0417\u043E\u0448\u0438\u0442 \u0437\u043D\u0430\u0439\u0448\u043B\u0438 \u0447\u0435\u0440\u0435\u0437 \u0440\u0456\u043A. \u0421\u0442\u043E\u0440\u0456\u043D\u043A\u0438 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043B\u0438 \u0432\u0433\u043E\u043B\u043E\u0441 \u0443 \u0440\u0435\u0434\u0430\u043A\u0446\u0456\u0457 \u2014 \u0456 \u0432\u0438\u0440\u0456\u0437\u0430\u043B\u0438 \u043F\u043E\u043B\u043E\u0432\u0438\u043D\u0443. \u0422\u0435, \u0449\u043E \u043B\u0438\u0448\u0438\u043B\u043E\u0441\u044C, \u043D\u0430\u0434\u0440\u0443\u043A\u0443\u0432\u0430\u043B\u0438. \u0426\u0435 \u0432\u0436\u0435 \u043D\u0435 \u0432\u0456\u043D, \u0430\u043B\u0435 \u0446\u0435 \u0442\u043E\u0447\u043D\u0456\u0448\u0435 \u0437\u0430 \u0437\u0432\u0435\u0434\u0435\u043D\u043D\u044F.",
+    defaultEpitaph: "\u041F\u0438\u0441\u0430\u0432, \u0449\u043E\u0431 \u043D\u0435 \u0437\u043D\u0438\u043A\u043B\u043E.",
+    weight: 2,
+    requires: { flagTrue: ["keeps_diary"], statAtLeast: { understanding: 6 } }
   }
 ];
 
@@ -1392,11 +2462,6 @@ function renderLog() {
   const last = run.state.journal.slice(-3).reverse();
   elLog.innerHTML = last.map((j) => `<div>\u0434${j.day} \xB7 ${escapeHtml(j.text)}</div>`).join("");
 }
-function fadeOut(node, done) {
-  if (!node) return done();
-  node.classList.add("leaving");
-  setTimeout(done, 160);
-}
 function render() {
   elDay.textContent = `\u0414\u0435\u043D\u044C ${run.state.day} \xB7 \u0444\u0430\u0437\u0430 ${run.state.phase}`;
   renderStats();
@@ -1455,10 +2520,10 @@ function onChoose(card, btn) {
   const next = document.getElementById("next");
   next.addEventListener("click", () => {
     reactionOpen = false;
-    fadeOut(elMain.querySelector(".card"), () => {
-      lastChoice = null;
-      render();
-    });
+    next.disabled = true;
+    elMain.querySelectorAll("button.opt").forEach((b) => b.setAttribute("disabled", ""));
+    lastChoice = null;
+    render();
   });
 }
 function buildReaction(option, before, after) {
