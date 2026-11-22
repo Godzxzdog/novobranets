@@ -2,11 +2,7 @@ import { Run } from '../src/run.ts';
 import { TEST_CARDS, TEST_ENDINGS } from '../data/test-content.ts';
 import { approach, atmosphereFor } from './atmosphere.js';
 import { Mist } from './mist.js';
-<<<<<<< HEAD
-import { cardScenerySvg, chartCaption, optionWeatherSvg, routeStripSvg, statsChartSvg } from './visuals.js';
-=======
 import { STAT_COLORS, TIME_LABEL, cardScenerySvg, chartCaption, kindAccent, optionWeatherSvg, routeStripSvg, statsChartSvg, themeFor, timeOfDay } from './visuals.js';
->>>>>>> d95bf45 (Add extra cards for phases 1 to 5, enhancing gameplay with new choices and narrative depth)
 
 const STAT_LABELS = {
   health: 'Здор',
@@ -198,14 +194,6 @@ function render() {
   const ka = kindAccent(card.kind);
   const understanding = run.state.stats.understanding;
   elMain.innerHTML = `
-<<<<<<< HEAD
-    <div class="card">
-      <span class="kind" style="top:10px;left:12px">${KIND_LABELS[card.kind] ?? ''}</span>
-      ${lead ? `<div class="lead">${isContinuation ? '↳ ' : ''}${escapeHtml(lead)}</div>` : ''}
-      ${echoes.map((l) => `<div class="echo">${escapeHtml(l)}</div>`).join('')}
-      <div class="scenery-wrap">${cardScenerySvg(card.id, card.kind, run.state.day)}</div>
-      <div>${escapeHtml(card.text)}</div>
-=======
     <div class="card" style="--ka:${ka}">
       <div class="scene">
         ${cardScenerySvg(card.id, card.kind, { phase: run.state.phase, decisions: run.state.decisions })}
@@ -217,22 +205,14 @@ function render() {
         ${echoes.map((l) => `<div class="echo">${escapeHtml(l)}</div>`).join('')}
         <div>${escapeHtml(card.text)}</div>
       </div>
->>>>>>> d95bf45 (Add extra cards for phases 1 to 5, enhancing gameplay with new choices and narrative depth)
     </div>
     <div class="options">
       ${card.options.map((o, idx) => {
         const tag = ghostPick && ghostPick.optionId === o.id ? '<span class="ghost-tag">↺ минулого разу ти обрав це</span>' : '';
-<<<<<<< HEAD
-        const weather = optionWeatherSvg(card.id, o.id, o.effects?.stats);
-        return available.has(o.id)
-          ? `<button class="opt${tag ? ' ghost' : ''}" data-opt="${escapeHtml(o.id)}"><span class="opt-text">${escapeHtml(o.text)}</span>${weather}${tag}</button>`
-          : `<button class="opt locked" disabled><span class="opt-text">${escapeHtml(o.text)}</span>${weather}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
-=======
         const weather = optionWeatherSvg(card.id, o.id, o.effects?.stats, understanding);
         return available.has(o.id)
           ? `<button class="opt${tag ? ' ghost' : ''}" style="--i:${idx}" data-opt="${escapeHtml(o.id)}"><span class="opt-text">${escapeHtml(o.text)}</span>${weather}${tag}</button>`
           : `<button class="opt locked" style="--i:${idx}" disabled><span class="opt-text">${escapeHtml(o.text)}</span>${weather}<span class="hint">${escapeHtml(run.lockedHint(o))}</span></button>`;
->>>>>>> d95bf45 (Add extra cards for phases 1 to 5, enhancing gameplay with new choices and narrative depth)
       }).join('')}
     </div>
   `;
