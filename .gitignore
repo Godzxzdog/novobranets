@@ -2,3 +2,6 @@ node_modules/
 *.log
 .DS_Store
 tmp_shots/
+
+# Збірка генерується: build.mjs → dist/novobranets.html. У git лише джерело.
+dist/
